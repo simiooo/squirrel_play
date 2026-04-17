@@ -1,0 +1,84 @@
+name: squirrel_play
+description: "A Steam Big Picture-inspired game management application for couch gaming."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.11.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State Management
+  flutter_bloc: ^9.1.1
+
+  # Navigation
+  go_router: ^14.0.0
+
+  # Dependency Injection
+  get_it: ^8.0.0
+  injectable: ^2.5.0
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.9.0
+
+  # Networking
+  dio: ^5.8.0
+
+  # Form Validation
+  formz: ^0.8.0
+
+  # File Operations
+  file_picker: ^11.0.2
+  mime: ^2.0.0
+  path: ^1.9.0
+
+  # Storage
+  shared_preferences: ^2.5.5
+  sqflite_common: ^2.5.6
+  sqflite_common_ffi: ^2.3.5
+
+  # Gamepad Input
+  gamepads: ^0.1.10+1
+
+  # Audio
+  audioplayers: ^6.0.0
+
+  # Animations
+  animations: ^2.1.2
+  shimmer: ^3.0.0
+
+  # Images
+  cached_network_image: ^3.4.0
+
+  # Utilities
+  uuid: ^4.5.0
+  equatable: ^2.0.7
+  google_fonts: ^6.2.1
+
+  # Window Management
+  window_manager: ^0.3.9
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+  # Testing
+  bloc_test: ^10.0.0
+  mocktail: ^1.0.0
+
+  # Code Generation
+  build_runner: ^2.4.15
+  injectable_generator: ^2.7.0
+  freezed: ^3.2.5
+  json_serializable: ^6.13.1
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+    - assets/sounds/

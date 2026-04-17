@@ -1,0 +1,710 @@
+{
+  "@@locale": "zh",
+  "appTitle": "Squirrel Play",
+  "@appTitle": {
+    "description": "应用程序标题，显示在窗口和顶部栏"
+  },
+
+  "topBarAddGame": "添加游戏",
+  "@topBarAddGame": {
+    "description": "添加新游戏的按钮标签"
+  },
+
+  "topBarGameLibrary": "游戏库",
+  "@topBarGameLibrary": {
+    "description": "导航到游戏库页面的按钮标签"
+  },
+
+  "topBarRescan": "重新扫描",
+  "@topBarRescan": {
+    "description": "重新扫描目录的按钮标签"
+  },
+
+  "topBarSettings": "设置",
+  "@topBarSettings": {
+    "description": "打开设置页面的按钮标签"
+  },
+
+  "topBarHome": "主页",
+  "@topBarHome": {
+    "description": "导航到主页的按钮标签"
+  },
+
+  "pageHome": "主页",
+  "@pageHome": {
+    "description": "主页标题"
+  },
+
+  "pageLibrary": "库",
+  "@pageLibrary": {
+    "description": "库页面标题"
+  },
+
+  "pageSettings": "设置",
+  "@pageSettings": {
+    "description": "设置页面标题"
+  },
+
+  "homeEmptyState": "还没有游戏。添加一个游戏开始吧。",
+  "@homeEmptyState": {
+    "description": "主页没有游戏时显示的消息"
+  },
+
+  "libraryEmptyState": "您的游戏库是空的。",
+  "@libraryEmptyState": {
+    "description": "库页面没有游戏时显示的消息"
+  },
+
+  "timeFormat": "{hour}:{minute}",
+  "@timeFormat": {
+    "description": "顶部栏显示时间的格式",
+    "placeholders": {
+      "hour": {
+        "type": "String"
+      },
+      "minute": {
+        "type": "String"
+      }
+    }
+  },
+
+  "focusAddGameHint": "将新游戏添加到您的库中",
+  "@focusAddGameHint": {
+    "description": "添加游戏按钮的无障碍提示"
+  },
+
+  "focusGameLibraryHint": "查看库中的所有游戏",
+  "@focusGameLibraryHint": {
+    "description": "游戏库按钮的无障碍提示"
+  },
+
+  "focusRescanHint": "重新扫描目录以查找新游戏",
+  "@focusRescanHint": {
+    "description": "重新扫描按钮的无障碍提示"
+  },
+
+  "topBarRefresh": "刷新",
+  "@topBarRefresh": {
+    "description": "刷新游戏库的按钮标签"
+  },
+
+  "topBarScanning": "扫描中...",
+  "@topBarScanning": {
+    "description": "扫描游戏时显示的消息"
+  },
+
+  "topBarScanNewGames": "发现 {count} 个新游戏",
+  "@topBarScanNewGames": {
+    "description": "扫描发现新游戏时显示的消息",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "topBarScanNoNewGames": "未发现新游戏",
+  "@topBarScanNoNewGames": {
+    "description": "扫描未发现新游戏时显示的消息"
+  },
+
+  "topBarScanNoDirectories": "未配置扫描目录",
+  "@topBarScanNoDirectories": {
+    "description": "未配置扫描目录时显示的消息"
+  },
+
+  "topBarScanError": "扫描错误",
+  "@topBarScanError": {
+    "description": "扫描错误消息的标题"
+  },
+
+  "topBarRefreshHint": "刷新游戏库",
+  "@topBarRefreshHint": {
+    "description": "刷新按钮的无障碍提示"
+  },
+
+  "focusSettingsHint": "打开应用程序设置",
+  "@focusSettingsHint": {
+    "description": "设置按钮的无障碍提示"
+  },
+
+  "focusHomeHint": "返回主页",
+  "@focusHomeHint": {
+    "description": "主页按钮的无障碍提示"
+  },
+
+  "dialogAddGameTitle": "添加游戏",
+  "@dialogAddGameTitle": {
+    "description": "添加游戏对话框的标题"
+  },
+
+  "dialogAddGameManualTab": "手动添加",
+  "@dialogAddGameManualTab": {
+    "description": "手动添加游戏标签页"
+  },
+
+  "dialogAddGameScanTab": "扫描目录",
+  "@dialogAddGameScanTab": {
+    "description": "扫描目录标签页"
+  },
+
+  "dialogAddGameSteamTab": "Steam 游戏",
+  "@dialogAddGameSteamTab": {
+    "description": "Steam游戏导入标签页"
+  },
+
+  "dialogClose": "关闭",
+  "@dialogClose": {
+    "description": "关闭对话框的按钮标签"
+  },
+
+  "buttonBack": "返回",
+  "@buttonBack": {
+    "description": "返回导航的按钮标签"
+  },
+
+  "buttonCancel": "取消",
+  "@buttonCancel": {
+    "description": "取消操作的按钮标签"
+  },
+
+  "buttonSave": "保存",
+  "@buttonSave": {
+    "description": "保存操作的按钮标签"
+  },
+
+  "buttonRetry": "重试",
+  "@buttonRetry": {
+    "description": "重试操作的按钮标签"
+  },
+
+  "buttonConfirm": "确认",
+  "@buttonConfirm": {
+    "description": "确认操作的按钮标签"
+  },
+
+  "focusCardHint": "游戏卡片 - 按A键选择",
+  "@focusCardHint": {
+    "description": "游戏卡片的无障碍提示"
+  },
+
+  "snackbarRescanPlaceholder": "重新扫描功能即将推出",
+  "@snackbarRescanPlaceholder": {
+    "description": "点击重新扫描按钮时显示的消息"
+  },
+
+  "dialogPlaceholderText": "此功能将在未来更新中提供",
+  "@dialogPlaceholderText": {
+    "description": "未完成对话框标签页中的占位文本"
+  },
+
+  "emptyStateAddGame": "添加您的第一个游戏",
+  "@emptyStateAddGame": {
+    "description": "空状态中的行动按钮"
+  },
+
+  "emptyStateSubtitle": "添加您的第一个游戏以开始使用",
+  "@emptyStateSubtitle": {
+    "description": "空主页状态的副标题消息"
+  },
+
+  "buttonScanDirectory": "扫描目录",
+  "@buttonScanDirectory": {
+    "description": "空状态中扫描目录的按钮标签"
+  },
+
+  "noDescriptionAvailable": "暂无描述",
+  "@noDescriptionAvailable": {
+    "description": "游戏没有描述时显示的消息"
+  },
+
+  "errorLoadGames": "加载游戏失败",
+  "@errorLoadGames": {
+    "description": "加载游戏失败时的错误消息"
+  },
+
+  "homeRowRecentlyAdded": "最近添加",
+  "@homeRowRecentlyAdded": {
+    "description": "主页最近添加游戏行的标题"
+  },
+
+  "homeRowAllGames": "所有游戏",
+  "@homeRowAllGames": {
+    "description": "主页所有游戏行的标题"
+  },
+
+  "homeRowFavorites": "收藏",
+  "@homeRowFavorites": {
+    "description": "主页收藏游戏行的标题"
+  },
+
+  "homeRowRecentlyPlayed": "最近玩过",
+  "@homeRowRecentlyPlayed": {
+    "description": "主页最近玩过游戏行的标题"
+  },
+
+  "launchingGame": "正在启动 {gameName}...",
+  "@launchingGame": {
+    "description": "启动游戏时显示的消息",
+    "placeholders": {
+      "gameName": {
+        "type": "String"
+      }
+    }
+  },
+
+  "launchCancelHint": "按B键取消",
+  "@launchCancelHint": {
+    "description": "游戏启动倒计时期间显示的提示"
+  },
+
+  "settingsLanguage": "语言",
+  "@settingsLanguage": {
+    "description": "语言设置部分的标题"
+  },
+
+  "settingsLanguageEnglish": "英语",
+  "@settingsLanguageEnglish": {
+    "description": "英语语言选项的标签"
+  },
+
+  "settingsLanguageChinese": "中文（简体）",
+  "@settingsLanguageChinese": {
+    "description": "中文语言选项的标签"
+  },
+
+  "settingsApiKey": "API密钥",
+  "@settingsApiKey": {
+    "description": "API密钥设置部分的标题"
+  },
+
+  "settingsApiKeyLabel": "RAWG API密钥",
+  "@settingsApiKeyLabel": {
+    "description": "API密钥输入框的标签"
+  },
+
+  "settingsApiKeyPlaceholder": "输入您的RAWG API密钥",
+  "@settingsApiKeyPlaceholder": {
+    "description": "API密钥输入框的占位文本"
+  },
+
+  "settingsApiKeyHelp": "从rawg.io获取免费API密钥",
+  "@settingsApiKeyHelp": {
+    "description": "API密钥配置的帮助文本"
+  },
+
+  "settingsApiKeyDegraded": "降级模式",
+  "@settingsApiKeyDegraded": {
+    "description": "未配置API密钥时显示的标签"
+  },
+
+  "settingsApiKeyConnected": "API已连接",
+  "@settingsApiKeyConnected": {
+    "description": "配置API密钥后显示的标签"
+  },
+
+  "settingsSound": "声音",
+  "@settingsSound": {
+    "description": "声音设置部分的标题"
+  },
+
+  "settingsSoundVolume": "主音量",
+  "@settingsSoundVolume": {
+    "description": "音量滑块的标签"
+  },
+
+  "settingsSoundMute": "静音",
+  "@settingsSoundMute": {
+    "description": "静音切换的标签"
+  },
+
+  "settingsSoundTest": "测试声音",
+  "@settingsSoundTest": {
+    "description": "测试声音按钮的标签"
+  },
+
+  "settingsSoundVolumeHint": "音量滑块 - 使用左右方向键调整",
+  "@settingsSoundVolumeHint": {
+    "description": "音量滑块的无障碍提示"
+  },
+
+  "settingsSoundMuteHint": "静音切换 - 按下以切换静音开关",
+  "@settingsSoundMuteHint": {
+    "description": "静音切换的无障碍提示"
+  },
+
+  "settingsLanguageEnglishLabel": "英语语言选项",
+  "@settingsLanguageEnglishLabel": {
+    "description": "英语语言选项的无障碍标签"
+  },
+
+  "settingsLanguageChineseLabel": "中文语言选项",
+  "@settingsLanguageChineseLabel": {
+    "description": "中文语言选项的无障碍标签"
+  },
+
+  "settingsAbout": "关于",
+  "@settingsAbout": {
+    "description": "关于部分的标题"
+  },
+
+  "settingsAboutVersion": "版本 {version}",
+  "@settingsAboutVersion": {
+    "description": "关于部分的版本信息",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+
+  "settingsAboutCredits": "由RAWG API提供支持",
+  "@settingsAboutCredits": {
+    "description": "关于部分的致谢信息"
+  },
+
+  "errorGenericTitle": "出错了",
+  "@errorGenericTitle": {
+    "description": "通用错误的标题"
+  },
+
+  "errorGenericMessage": "发生意外错误。请重试。",
+  "@errorGenericMessage": {
+    "description": "通用错误的消息"
+  },
+
+  "errorDatabaseTitle": "数据库错误",
+  "@errorDatabaseTitle": {
+    "description": "数据库错误的标题"
+  },
+
+  "errorDatabaseMessage": "无法访问游戏数据库。请重新启动应用程序。",
+  "@errorDatabaseMessage": {
+    "description": "数据库错误的消息"
+  },
+
+  "errorApiTitle": "连接错误",
+  "@errorApiTitle": {
+    "description": "API错误的标题"
+  },
+
+  "errorApiMessage": "无法连接到游戏数据库。您仍然可以玩游戏。",
+  "@errorApiMessage": {
+    "description": "API错误的消息"
+  },
+
+  "errorFileNotFoundTitle": "游戏未找到",
+  "@errorFileNotFoundTitle": {
+    "description": "文件未找到错误的标题"
+  },
+
+  "errorFileNotFoundMessage": "找不到游戏可执行文件。它可能已被移动或删除。",
+  "@errorFileNotFoundMessage": {
+    "description": "文件未找到错误的消息"
+  },
+
+  "errorMissingExecutableTitle": "缺少可执行文件",
+  "@errorMissingExecutableTitle": {
+    "description": "缺少可执行文件错误的标题"
+  },
+
+  "errorMissingExecutableMessage": "游戏可执行文件缺失。请浏览新的位置。",
+  "@errorMissingExecutableMessage": {
+    "description": "缺少可执行文件错误的消息"
+  },
+
+  "emptyStateNoGamesTitle": "还没有游戏",
+  "@emptyStateNoGamesTitle": {
+    "description": "没有游戏空状态的标题"
+  },
+
+  "emptyStateNoGamesMessage": "添加您的第一个游戏以开始使用",
+  "@emptyStateNoGamesMessage": {
+    "description": "没有游戏空状态的消息"
+  },
+
+  "emptyStateNoSearchResultsTitle": "无结果",
+  "@emptyStateNoSearchResultsTitle": {
+    "description": "无搜索结果空状态的标题"
+  },
+
+  "emptyStateNoSearchResultsMessage": "尝试不同的搜索词",
+  "@emptyStateNoSearchResultsMessage": {
+    "description": "无搜索结果空状态的消息"
+  },
+
+  "emptyStateApiUnreachableTitle": "无法连接",
+  "@emptyStateApiUnreachableTitle": {
+    "description": "API不可达空状态的标题"
+  },
+
+  "emptyStateApiUnreachableMessage": "游戏信息不可用。您仍然可以玩游戏。",
+  "@emptyStateApiUnreachableMessage": {
+    "description": "API不可达空状态的消息"
+  },
+
+  "favoritesAdded": "已添加到收藏",
+  "@favoritesAdded": {
+    "description": "游戏添加到收藏时显示的消息"
+  },
+
+  "favoritesRemoved": "已从收藏移除",
+  "@favoritesRemoved": {
+    "description": "游戏从收藏移除时显示的消息"
+  },
+
+  "favoritesEmptyState": "还没有收藏的游戏",
+  "@favoritesEmptyState": {
+    "description": "没有收藏时显示的消息"
+  },
+
+  "gameInfoPlayCount": "已玩{count}次",
+  "@gameInfoPlayCount": {
+    "description": "游戏信息中显示游玩次数",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "gameInfoPlayCountNever": "从未玩过",
+  "@gameInfoPlayCountNever": {
+    "description": "游戏从未玩过时显示"
+  },
+
+  "gameInfoLastPlayed": "上次游玩：{timeAgo}",
+  "@gameInfoLastPlayed": {
+    "description": "游戏信息中显示上次游玩时间",
+    "placeholders": {
+      "timeAgo": {
+        "type": "String"
+      }
+    }
+  },
+
+  "gameInfoLastPlayedNever": "从未玩过",
+  "@gameInfoLastPlayedNever": {
+    "description": "游戏从未玩过时显示"
+  },
+
+  "gameInfoFavoriteButton": "添加到收藏",
+  "@gameInfoFavoriteButton": {
+    "description": "添加游戏到收藏的按钮标签"
+  },
+
+  "gameInfoUnfavoriteButton": "从收藏移除",
+  "@gameInfoUnfavoriteButton": {
+    "description": "从收藏移除游戏的按钮标签"
+  },
+
+  "gameInfoLaunchButton": "启动游戏",
+  "@gameInfoLaunchButton": {
+    "description": "启动游戏的按钮标签"
+  },
+
+  "gamepadAButton": "A：选择",
+  "@gamepadAButton": {
+    "description": "A按钮的游戏手柄提示"
+  },
+
+  "gamepadBButton": "B：返回",
+  "@gamepadBButton": {
+    "description": "B按钮的游戏手柄提示"
+  },
+
+  "gamepadXButton": "X：详情",
+  "@gamepadXButton": {
+    "description": "X按钮的游戏手柄提示"
+  },
+
+  "gamepadYButton": "Y：收藏",
+  "@gamepadYButton": {
+    "description": "Y按钮的游戏手柄提示"
+  },
+
+  "gamepadStartButton": "Start：菜单",
+  "@gamepadStartButton": {
+    "description": "Start按钮的游戏手柄提示"
+  },
+
+  "gamepadBackButton": "Back：主页",
+  "@gamepadBackButton": {
+    "description": "Back按钮的游戏手柄提示"
+  },
+
+  "gamepadNavSelect": "选择",
+  "@gamepadNavSelect": {
+    "description": "游戏手柄导航栏选择操作提示"
+  },
+
+  "gamepadNavBack": "返回",
+  "@gamepadNavBack": {
+    "description": "游戏手柄导航栏返回操作提示"
+  },
+
+  "gamepadNavDetails": "详情",
+  "@gamepadNavDetails": {
+    "description": "游戏手柄导航栏详情操作提示"
+  },
+
+  "gamepadNavFavorite": "收藏",
+  "@gamepadNavFavorite": {
+    "description": "游戏手柄导航栏收藏操作提示"
+  },
+
+  "gamepadNavMenu": "菜单",
+  "@gamepadNavMenu": {
+    "description": "游戏手柄导航栏菜单操作提示"
+  },
+
+  "gamepadNavHome": "主页",
+  "@gamepadNavHome": {
+    "description": "游戏手柄导航栏主页操作提示"
+  },
+
+  "gamepadNavConfirm": "确认",
+  "@gamepadNavConfirm": {
+    "description": "游戏手柄导航栏确认操作提示"
+  },
+
+  "gamepadNavCancel": "取消",
+  "@gamepadNavCancel": {
+    "description": "游戏手柄导航栏取消操作提示"
+  },
+
+  "gamepadNavPlay": "启动",
+  "@gamepadNavPlay": {
+    "description": "游戏手柄导航栏启动操作提示"
+  },
+
+  "gamepadNavToggle": "切换",
+  "@gamepadNavToggle": {
+    "description": "游戏手柄导航栏切换操作提示"
+  },
+
+  "gamepadNavScreenshots": "截图",
+  "@gamepadNavScreenshots": {
+    "description": "游戏手柄导航栏截图操作提示"
+  },
+
+  "settingsGamepad": "手柄",
+  "@settingsGamepad": {
+    "description": "手柄设置部分的标题"
+  },
+
+  "settingsGamepadConnected": "手柄：已连接",
+  "@settingsGamepadConnected": {
+    "description": "手柄已连接时显示的标签"
+  },
+
+  "settingsGamepadDisconnected": "手柄：未连接",
+  "@settingsGamepadDisconnected": {
+    "description": "手柄未连接时显示的标签"
+  },
+
+  "settingsGamepadTest": "测试手柄",
+  "@settingsGamepadTest": {
+    "description": "手柄测试按钮的标签"
+  },
+
+  "gamepadTestTitle": "手柄测试",
+  "@gamepadTestTitle": {
+    "description": "手柄测试页面的标题"
+  },
+
+  "gamepadTestConnected": "已连接",
+  "@gamepadTestConnected": {
+    "description": "手柄已连接时显示的状态"
+  },
+
+  "gamepadTestDisconnected": "未检测到手柄",
+  "@gamepadTestDisconnected": {
+    "description": "未连接手柄时显示的状态"
+  },
+
+  "gamepadTestConnectHelp": "连接手柄并按任意按钮",
+  "@gamepadTestConnectHelp": {
+    "description": "连接手柄的帮助文本"
+  },
+
+  "gamepadTestInputLog": "输入日志",
+  "@gamepadTestInputLog": {
+    "description": "输入日志部分的标题"
+  },
+
+  "gamepadTestNoGamepad": "未检测到手柄",
+  "@gamepadTestNoGamepad": {
+    "description": "未检测到手柄时显示的消息"
+  },
+
+  "gamepadTestConnectInstructions": "连接手柄并按任意按钮开始测试",
+  "@gamepadTestConnectInstructions": {
+    "description": "连接手柄的说明"
+  },
+
+  "timeAgoJustNow": "刚刚",
+  "@timeAgoJustNow": {
+    "description": "非常近的时间格式"
+  },
+
+  "timeAgoMinutes": "{minutes}分钟前",
+  "@timeAgoMinutes": {
+    "description": "分钟前的时间格式",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+
+  "timeAgoHours": "{hours}小时前",
+  "@timeAgoHours": {
+    "description": "小时前的时间格式",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+
+  "timeAgoDays": "{days}天前",
+  "@timeAgoDays": {
+    "description": "天前的时间格式",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+
+  "timeAgoWeeks": "{weeks}周前",
+  "@timeAgoWeeks": {
+    "description": "周前的时间格式",
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+
+  "timeAgoMonths": "{months}个月前",
+  "@timeAgoMonths": {
+    "description": "个月前的时间格式",
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+
+  "timeAgoYears": "{years}年前",
+  "@timeAgoYears": {
+    "description": "年前的时间格式",
+    "placeholders": {
+      "years": {
+        "type": "int"
+      }
+    }
+  }
+}

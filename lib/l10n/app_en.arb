@@ -1,0 +1,710 @@
+{
+  "@@locale": "en",
+  "appTitle": "Squirrel Play",
+  "@appTitle": {
+    "description": "The application title displayed in window and top bar"
+  },
+
+  "topBarAddGame": "Add Game",
+  "@topBarAddGame": {
+    "description": "Button label for adding a new game"
+  },
+
+  "topBarGameLibrary": "Game Library",
+  "@topBarGameLibrary": {
+    "description": "Button label for navigating to game library page"
+  },
+
+  "topBarRescan": "Rescan",
+  "@topBarRescan": {
+    "description": "Button label for rescanning directories"
+  },
+
+  "topBarSettings": "Settings",
+  "@topBarSettings": {
+    "description": "Button label for opening settings page"
+  },
+
+  "topBarHome": "Home",
+  "@topBarHome": {
+    "description": "Button label for navigating to home page"
+  },
+
+  "pageHome": "Home",
+  "@pageHome": {
+    "description": "Title for the home page"
+  },
+
+  "pageLibrary": "Library",
+  "@pageLibrary": {
+    "description": "Title for the library page"
+  },
+
+  "pageSettings": "Settings",
+  "@pageSettings": {
+    "description": "Title for the settings page"
+  },
+
+  "homeEmptyState": "No games yet. Add a game to get started.",
+  "@homeEmptyState": {
+    "description": "Message shown on home page when no games are added"
+  },
+
+  "libraryEmptyState": "Your game library is empty.",
+  "@libraryEmptyState": {
+    "description": "Message shown on library page when no games are added"
+  },
+
+  "timeFormat": "{hour}:{minute}",
+  "@timeFormat": {
+    "description": "Format for displaying time in top bar",
+    "placeholders": {
+      "hour": {
+        "type": "String"
+      },
+      "minute": {
+        "type": "String"
+      }
+    }
+  },
+
+  "focusAddGameHint": "Add a new game to your library",
+  "@focusAddGameHint": {
+    "description": "Accessibility hint for Add Game button"
+  },
+
+  "focusGameLibraryHint": "View all games in your library",
+  "@focusGameLibraryHint": {
+    "description": "Accessibility hint for Game Library button"
+  },
+
+  "focusRescanHint": "Rescan directories for new games",
+  "@focusRescanHint": {
+    "description": "Accessibility hint for Rescan button"
+  },
+
+  "topBarRefresh": "Refresh",
+  "@topBarRefresh": {
+    "description": "Button label for refreshing game library"
+  },
+
+  "topBarScanning": "Scanning...",
+  "@topBarScanning": {
+    "description": "Message shown while scanning for games"
+  },
+
+  "topBarScanNewGames": "{count} new games found",
+  "@topBarScanNewGames": {
+    "description": "Message shown when new games are found during scan",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "topBarScanNoNewGames": "No new games found",
+  "@topBarScanNoNewGames": {
+    "description": "Message shown when no new games are found during scan"
+  },
+
+  "topBarScanNoDirectories": "No directories configured",
+  "@topBarScanNoDirectories": {
+    "description": "Message shown when no scan directories are configured"
+  },
+
+  "topBarScanError": "Scan error",
+  "@topBarScanError": {
+    "description": "Title for scan error message"
+  },
+
+  "topBarRefreshHint": "Refresh game library",
+  "@topBarRefreshHint": {
+    "description": "Accessibility hint for refresh button"
+  },
+
+  "focusSettingsHint": "Open application settings",
+  "@focusSettingsHint": {
+    "description": "Accessibility hint for Settings button"
+  },
+
+  "focusHomeHint": "Return to home page",
+  "@focusHomeHint": {
+    "description": "Accessibility hint for Home button"
+  },
+
+  "dialogAddGameTitle": "Add Game",
+  "@dialogAddGameTitle": {
+    "description": "Title for the Add Game dialog"
+  },
+
+  "dialogAddGameManualTab": "Manual Add",
+  "@dialogAddGameManualTab": {
+    "description": "Tab label for manual game addition"
+  },
+
+  "dialogAddGameScanTab": "Scan Directory",
+  "@dialogAddGameScanTab": {
+    "description": "Tab label for directory scanning"
+  },
+
+  "dialogAddGameSteamTab": "Steam Games",
+  "@dialogAddGameSteamTab": {
+    "description": "Tab label for Steam games import"
+  },
+
+  "dialogClose": "Close",
+  "@dialogClose": {
+    "description": "Button label to close a dialog"
+  },
+
+  "buttonBack": "Back",
+  "@buttonBack": {
+    "description": "Button label for back navigation"
+  },
+
+  "buttonCancel": "Cancel",
+  "@buttonCancel": {
+    "description": "Button label for cancel action"
+  },
+
+  "buttonSave": "Save",
+  "@buttonSave": {
+    "description": "Button label for save action"
+  },
+
+  "buttonRetry": "Retry",
+  "@buttonRetry": {
+    "description": "Button label for retry action"
+  },
+
+  "buttonConfirm": "Confirm",
+  "@buttonConfirm": {
+    "description": "Button label for confirm action"
+  },
+
+  "focusCardHint": "Game card - press A to select",
+  "@focusCardHint": {
+    "description": "Accessibility hint for game cards"
+  },
+
+  "snackbarRescanPlaceholder": "Rescan feature coming soon",
+  "@snackbarRescanPlaceholder": {
+    "description": "Message shown when Rescan button is pressed"
+  },
+
+  "dialogPlaceholderText": "This feature will be available in a future update",
+  "@dialogPlaceholderText": {
+    "description": "Placeholder text in unfinished dialog tabs"
+  },
+
+  "emptyStateAddGame": "Add your first game",
+  "@emptyStateAddGame": {
+    "description": "Call-to-action button in empty state"
+  },
+
+  "emptyStateSubtitle": "Add your first game to get started",
+  "@emptyStateSubtitle": {
+    "description": "Subtitle message in empty home state"
+  },
+
+  "buttonScanDirectory": "Scan Directory",
+  "@buttonScanDirectory": {
+    "description": "Button label for scanning directory in empty state"
+  },
+
+  "noDescriptionAvailable": "No description available",
+  "@noDescriptionAvailable": {
+    "description": "Message shown when no description is available for a game"
+  },
+
+  "errorLoadGames": "Failed to load games",
+  "@errorLoadGames": {
+    "description": "Error message when loading games fails"
+  },
+
+  "homeRowRecentlyAdded": "Recently Added",
+  "@homeRowRecentlyAdded": {
+    "description": "Title for recently added games row on home page"
+  },
+
+  "homeRowAllGames": "All Games",
+  "@homeRowAllGames": {
+    "description": "Title for all games row on home page"
+  },
+
+  "homeRowFavorites": "Favorites",
+  "@homeRowFavorites": {
+    "description": "Title for favorites row on home page"
+  },
+
+  "homeRowRecentlyPlayed": "Recently Played",
+  "@homeRowRecentlyPlayed": {
+    "description": "Title for recently played games row on home page"
+  },
+
+  "launchingGame": "Launching {gameName}...",
+  "@launchingGame": {
+    "description": "Message shown when launching a game",
+    "placeholders": {
+      "gameName": {
+        "type": "String"
+      }
+    }
+  },
+
+  "launchCancelHint": "Press B to cancel",
+  "@launchCancelHint": {
+    "description": "Hint shown during game launch countdown"
+  },
+
+  "settingsLanguage": "Language",
+  "@settingsLanguage": {
+    "description": "Section title for language settings"
+  },
+
+  "settingsLanguageEnglish": "English",
+  "@settingsLanguageEnglish": {
+    "description": "Label for English language option"
+  },
+
+  "settingsLanguageChinese": "Chinese (Simplified)",
+  "@settingsLanguageChinese": {
+    "description": "Label for Chinese language option"
+  },
+
+  "settingsApiKey": "API Key",
+  "@settingsApiKey": {
+    "description": "Section title for API key settings"
+  },
+
+  "settingsApiKeyLabel": "RAWG API Key",
+  "@settingsApiKeyLabel": {
+    "description": "Label for API key input field"
+  },
+
+  "settingsApiKeyPlaceholder": "Enter your RAWG API key",
+  "@settingsApiKeyPlaceholder": {
+    "description": "Placeholder text for API key input"
+  },
+
+  "settingsApiKeyHelp": "Get your free API key from rawg.io",
+  "@settingsApiKeyHelp": {
+    "description": "Help text for API key configuration"
+  },
+
+  "settingsApiKeyDegraded": "Degraded Mode",
+  "@settingsApiKeyDegraded": {
+    "description": "Label shown when API key is not configured"
+  },
+
+  "settingsApiKeyConnected": "API Connected",
+  "@settingsApiKeyConnected": {
+    "description": "Label shown when API key is configured"
+  },
+
+  "settingsSound": "Sound",
+  "@settingsSound": {
+    "description": "Section title for sound settings"
+  },
+
+  "settingsSoundVolume": "Master Volume",
+  "@settingsSoundVolume": {
+    "description": "Label for volume slider"
+  },
+
+  "settingsSoundMute": "Mute",
+  "@settingsSoundMute": {
+    "description": "Label for mute toggle"
+  },
+
+  "settingsSoundTest": "Test Sound",
+  "@settingsSoundTest": {
+    "description": "Label for test sound button"
+  },
+
+  "settingsSoundVolumeHint": "Volume slider - use left and right to adjust",
+  "@settingsSoundVolumeHint": {
+    "description": "Accessibility hint for volume slider"
+  },
+
+  "settingsSoundMuteHint": "Mute toggle - press to toggle mute on or off",
+  "@settingsSoundMuteHint": {
+    "description": "Accessibility hint for mute switch"
+  },
+
+  "settingsLanguageEnglishLabel": "English language option",
+  "@settingsLanguageEnglishLabel": {
+    "description": "Accessibility label for English language option"
+  },
+
+  "settingsLanguageChineseLabel": "Chinese language option",
+  "@settingsLanguageChineseLabel": {
+    "description": "Accessibility label for Chinese language option"
+  },
+
+  "settingsAbout": "About",
+  "@settingsAbout": {
+    "description": "Section title for about section"
+  },
+
+  "settingsAboutVersion": "Version {version}",
+  "@settingsAboutVersion": {
+    "description": "Version information in about section",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+
+  "settingsAboutCredits": "Powered by RAWG API",
+  "@settingsAboutCredits": {
+    "description": "Credits in about section"
+  },
+
+  "errorGenericTitle": "Something Went Wrong",
+  "@errorGenericTitle": {
+    "description": "Title for generic error"
+  },
+
+  "errorGenericMessage": "An unexpected error occurred. Please try again.",
+  "@errorGenericMessage": {
+    "description": "Message for generic error"
+  },
+
+  "errorDatabaseTitle": "Database Error",
+  "@errorDatabaseTitle": {
+    "description": "Title for database error"
+  },
+
+  "errorDatabaseMessage": "Failed to access the game database. Please restart the application.",
+  "@errorDatabaseMessage": {
+    "description": "Message for database error"
+  },
+
+  "errorApiTitle": "Connection Error",
+  "@errorApiTitle": {
+    "description": "Title for API error"
+  },
+
+  "errorApiMessage": "Could not connect to game database. You can still play your games.",
+  "@errorApiMessage": {
+    "description": "Message for API error"
+  },
+
+  "errorFileNotFoundTitle": "Game Not Found",
+  "@errorFileNotFoundTitle": {
+    "description": "Title for file not found error"
+  },
+
+  "errorFileNotFoundMessage": "The game executable could not be found. It may have been moved or deleted.",
+  "@errorFileNotFoundMessage": {
+    "description": "Message for file not found error"
+  },
+
+  "errorMissingExecutableTitle": "Missing Executable",
+  "@errorMissingExecutableTitle": {
+    "description": "Title for missing executable error"
+  },
+
+  "errorMissingExecutableMessage": "The game executable is missing. Please browse for a new location.",
+  "@errorMissingExecutableMessage": {
+    "description": "Message for missing executable error"
+  },
+
+  "emptyStateNoGamesTitle": "No Games Yet",
+  "@emptyStateNoGamesTitle": {
+    "description": "Title for no games empty state"
+  },
+
+  "emptyStateNoGamesMessage": "Add your first game to get started",
+  "@emptyStateNoGamesMessage": {
+    "description": "Message for no games empty state"
+  },
+
+  "emptyStateNoSearchResultsTitle": "No Results",
+  "@emptyStateNoSearchResultsTitle": {
+    "description": "Title for no search results empty state"
+  },
+
+  "emptyStateNoSearchResultsMessage": "Try a different search term",
+  "@emptyStateNoSearchResultsMessage": {
+    "description": "Message for no search results empty state"
+  },
+
+  "emptyStateApiUnreachableTitle": "Can't Connect",
+  "@emptyStateApiUnreachableTitle": {
+    "description": "Title for API unreachable empty state"
+  },
+
+  "emptyStateApiUnreachableMessage": "Game info unavailable. You can still play your games.",
+  "@emptyStateApiUnreachableMessage": {
+    "description": "Message for API unreachable empty state"
+  },
+
+  "favoritesAdded": "Added to favorites",
+  "@favoritesAdded": {
+    "description": "Message shown when game is added to favorites"
+  },
+
+  "favoritesRemoved": "Removed from favorites",
+  "@favoritesRemoved": {
+    "description": "Message shown when game is removed from favorites"
+  },
+
+  "favoritesEmptyState": "No favorite games yet",
+  "@favoritesEmptyState": {
+    "description": "Message shown when no favorites exist"
+  },
+
+  "gameInfoPlayCount": "Played {count} times",
+  "@gameInfoPlayCount": {
+    "description": "Display of play count in game info",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "gameInfoPlayCountNever": "Never played",
+  "@gameInfoPlayCountNever": {
+    "description": "Display when game has never been played"
+  },
+
+  "gameInfoLastPlayed": "Last played: {timeAgo}",
+  "@gameInfoLastPlayed": {
+    "description": "Display of last played time in game info",
+    "placeholders": {
+      "timeAgo": {
+        "type": "String"
+      }
+    }
+  },
+
+  "gameInfoLastPlayedNever": "Never played",
+  "@gameInfoLastPlayedNever": {
+    "description": "Display when game has never been played"
+  },
+
+  "gameInfoFavoriteButton": "Add to Favorites",
+  "@gameInfoFavoriteButton": {
+    "description": "Button label to add game to favorites"
+  },
+
+  "gameInfoUnfavoriteButton": "Remove from Favorites",
+  "@gameInfoUnfavoriteButton": {
+    "description": "Button label to remove game from favorites"
+  },
+
+  "gameInfoLaunchButton": "Launch Game",
+  "@gameInfoLaunchButton": {
+    "description": "Button label to launch game"
+  },
+
+  "gamepadAButton": "A: Select",
+  "@gamepadAButton": {
+    "description": "Gamepad hint for A button"
+  },
+
+  "gamepadBButton": "B: Back",
+  "@gamepadBButton": {
+    "description": "Gamepad hint for B button"
+  },
+
+  "gamepadXButton": "X: Details",
+  "@gamepadXButton": {
+    "description": "Gamepad hint for X button"
+  },
+
+  "gamepadYButton": "Y: Favorite",
+  "@gamepadYButton": {
+    "description": "Gamepad hint for Y button"
+  },
+
+  "gamepadStartButton": "Start: Menu",
+  "@gamepadStartButton": {
+    "description": "Gamepad hint for Start button"
+  },
+
+  "gamepadBackButton": "Back: Home",
+  "@gamepadBackButton": {
+    "description": "Gamepad hint for Back button"
+  },
+
+  "gamepadNavSelect": "Select",
+  "@gamepadNavSelect": {
+    "description": "Gamepad nav bar hint for select action"
+  },
+
+  "gamepadNavBack": "Back",
+  "@gamepadNavBack": {
+    "description": "Gamepad nav bar hint for back action"
+  },
+
+  "gamepadNavDetails": "Details",
+  "@gamepadNavDetails": {
+    "description": "Gamepad nav bar hint for details action"
+  },
+
+  "gamepadNavFavorite": "Favorite",
+  "@gamepadNavFavorite": {
+    "description": "Gamepad nav bar hint for favorite action"
+  },
+
+  "gamepadNavMenu": "Menu",
+  "@gamepadNavMenu": {
+    "description": "Gamepad nav bar hint for menu action"
+  },
+
+  "gamepadNavHome": "Home",
+  "@gamepadNavHome": {
+    "description": "Gamepad nav bar hint for home action"
+  },
+
+  "gamepadNavConfirm": "Confirm",
+  "@gamepadNavConfirm": {
+    "description": "Gamepad nav bar hint for confirm action"
+  },
+
+  "gamepadNavCancel": "Cancel",
+  "@gamepadNavCancel": {
+    "description": "Gamepad nav bar hint for cancel action"
+  },
+
+  "gamepadNavPlay": "Play",
+  "@gamepadNavPlay": {
+    "description": "Gamepad nav bar hint for play action"
+  },
+
+  "gamepadNavToggle": "Toggle",
+  "@gamepadNavToggle": {
+    "description": "Gamepad nav bar hint for toggle action"
+  },
+
+  "gamepadNavScreenshots": "Screenshots",
+  "@gamepadNavScreenshots": {
+    "description": "Gamepad nav bar hint for screenshots action"
+  },
+
+  "settingsGamepad": "Gamepad",
+  "@settingsGamepad": {
+    "description": "Section title for gamepad settings"
+  },
+
+  "settingsGamepadConnected": "Gamepad: Connected",
+  "@settingsGamepadConnected": {
+    "description": "Label shown when gamepad is connected"
+  },
+
+  "settingsGamepadDisconnected": "Gamepad: Not connected",
+  "@settingsGamepadDisconnected": {
+    "description": "Label shown when gamepad is not connected"
+  },
+
+  "settingsGamepadTest": "Test Gamepad",
+  "@settingsGamepadTest": {
+    "description": "Button label for gamepad test"
+  },
+
+  "gamepadTestTitle": "Gamepad Test",
+  "@gamepadTestTitle": {
+    "description": "Title for the gamepad test page"
+  },
+
+  "gamepadTestConnected": "Connected",
+  "@gamepadTestConnected": {
+    "description": "Status shown when gamepad is connected"
+  },
+
+  "gamepadTestDisconnected": "No gamepad detected",
+  "@gamepadTestDisconnected": {
+    "description": "Status shown when no gamepad is connected"
+  },
+
+  "gamepadTestConnectHelp": "Connect a gamepad and press any button",
+  "@gamepadTestConnectHelp": {
+    "description": "Help text for connecting a gamepad"
+  },
+
+  "gamepadTestInputLog": "Input Log",
+  "@gamepadTestInputLog": {
+    "description": "Title for the input log section"
+  },
+
+  "gamepadTestNoGamepad": "No gamepad detected",
+  "@gamepadTestNoGamepad": {
+    "description": "Message shown when no gamepad is detected"
+  },
+
+  "gamepadTestConnectInstructions": "Connect a gamepad and press any button to start testing",
+  "@gamepadTestConnectInstructions": {
+    "description": "Instructions for connecting a gamepad"
+  },
+
+  "timeAgoJustNow": "just now",
+  "@timeAgoJustNow": {
+    "description": "Time ago format for very recent"
+  },
+
+  "timeAgoMinutes": "{minutes} minutes ago",
+  "@timeAgoMinutes": {
+    "description": "Time ago format for minutes",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+
+  "timeAgoHours": "{hours} hours ago",
+  "@timeAgoHours": {
+    "description": "Time ago format for hours",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+
+  "timeAgoDays": "{days} days ago",
+  "@timeAgoDays": {
+    "description": "Time ago format for days",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+
+  "timeAgoWeeks": "{weeks} weeks ago",
+  "@timeAgoWeeks": {
+    "description": "Time ago format for weeks",
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+
+  "timeAgoMonths": "{months} months ago",
+  "@timeAgoMonths": {
+    "description": "Time ago format for months",
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+
+  "timeAgoYears": "{years} years ago",
+  "@timeAgoYears": {
+    "description": "Time ago format for years",
+    "placeholders": {
+      "years": {
+        "type": "int"
+      }
+    }
+  }
+}
