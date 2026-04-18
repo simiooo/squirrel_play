@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:squirrel_play/core/theme/design_tokens.dart';
 import 'package:squirrel_play/data/services/sound_service.dart';
@@ -122,7 +123,18 @@ class _PickerButtonState extends State<PickerButton> {
       label: widget.label,
       hint: widget.hint,
       child: Focus(
-        focusNode: widget.focusNode,
+        canRequestFocus: false,
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent || event is KeyRepeatEvent) {
+            if (event.logicalKey == LogicalKeyboardKey.gameButtonA ||
+                event.logicalKey == LogicalKeyboardKey.enter ||
+                event.logicalKey == LogicalKeyboardKey.select) {
+              _handlePress();
+              return KeyEventResult.handled;
+            }
+          }
+          return KeyEventResult.ignored;
+        },
         child: AnimatedContainer(
           duration: isFocused
               ? const Duration(milliseconds: 150)
@@ -136,6 +148,7 @@ class _PickerButtonState extends State<PickerButton> {
             border: border,
           ),
           child: TextButton(
+            focusNode: widget.focusNode,
             onPressed: _handlePress,
             style: TextButton.styleFrom(
               minimumSize: const Size(48, 48),

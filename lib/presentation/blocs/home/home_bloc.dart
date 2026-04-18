@@ -90,7 +90,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       }
     } catch (e) {
       emit(HomeError(
-        message: 'Failed to load games: $e',
+        localizationKey: 'errorLoadGamesFailed',
+        details: e.toString(),
         onRetry: () => add(const HomeLoadRequested()),
       ));
     }

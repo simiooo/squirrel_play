@@ -516,4 +516,253 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorUpdateFailed => 'Failed to update game';
+
+  @override
+  String get manualAddExecutableLabel => 'Executable File';
+
+  @override
+  String get manualAddBrowseButton => 'Browse...';
+
+  @override
+  String get manualAddNoFileSelected => 'No file selected';
+
+  @override
+  String get manualAddInvalidFileError => 'Invalid file';
+
+  @override
+  String get manualAddGameNameLabel => 'Game Name';
+
+  @override
+  String get manualAddGameNameHint => 'Enter game name';
+
+  @override
+  String get manualAddInvalidNameError => 'Invalid name';
+
+  @override
+  String get manualAddConfirmButton => 'Add Game';
+
+  @override
+  String get scanDirectoryAddDirectoryButton => 'Add Directory';
+
+  @override
+  String get scanDirectoryStartScanButton => 'Start Scan';
+
+  @override
+  String scanDirectoryFoundExecutables(int totalCount, int selectedCount) {
+    return 'Found $totalCount executables ($selectedCount selected)';
+  }
+
+  @override
+  String get scanDirectorySelectAllButton => 'Select All';
+
+  @override
+  String get scanDirectorySelectNoneButton => 'Select None';
+
+  @override
+  String scanDirectoryAddGamesButton(int count) {
+    return 'Add $count Games';
+  }
+
+  @override
+  String get scanDirectoryNoExecutablesTitle => 'No executables found';
+
+  @override
+  String get scanDirectoryNoExecutablesSubtitle =>
+      'Try selecting a different directory or check that .exe files exist.';
+
+  @override
+  String get scanDirectorySelectDifferentDirectories =>
+      'Select Different Directories';
+
+  @override
+  String get scanDirectoryAddingGames => 'Adding games...';
+
+  @override
+  String get steamGamesInitializing => 'Initializing...';
+
+  @override
+  String steamGamesDefaultPath(String path) {
+    return 'Default: $path';
+  }
+
+  @override
+  String get steamGamesBrowseSteamFolder => 'Browse for Steam Folder';
+
+  @override
+  String get steamGamesSteamPathLabel => 'Steam Path:';
+
+  @override
+  String get steamGamesSelectAllButton => 'Select All';
+
+  @override
+  String get steamGamesSelectNoneButton => 'Select None';
+
+  @override
+  String steamGamesFoundGames(int count, int alreadyAddedCount) {
+    return 'Found $count games ($alreadyAddedCount already added)';
+  }
+
+  @override
+  String get steamGamesNoGamesFound => 'No Steam games found';
+
+  @override
+  String steamGamesAppId(String appId) {
+    return 'App ID: $appId';
+  }
+
+  @override
+  String get steamGamesAlreadyAdded => 'Already Added';
+
+  @override
+  String get steamGamesImporting => 'Importing games...';
+
+  @override
+  String steamGamesImportProgress(int completed, int total) {
+    return '$completed of $total';
+  }
+
+  @override
+  String get steamGamesImportComplete => 'Import Complete!';
+
+  @override
+  String steamGamesImportedCount(int count) {
+    return '$count games imported';
+  }
+
+  @override
+  String steamGamesSkippedCount(int count) {
+    return '$count skipped';
+  }
+
+  @override
+  String get steamGamesErrorsLabel => 'Errors:';
+
+  @override
+  String get steamGamesImportButton => 'Import Selected Games';
+
+  @override
+  String steamGamesImportCountButton(int count) {
+    return 'Import $count Games';
+  }
+
+  @override
+  String get gamepadNavOpen => 'Open';
+
+  @override
+  String get gamepadNavSelectCurrent => 'Select Current';
+
+  @override
+  String get steamScannerDetecting => 'Detecting Steam installation...';
+
+  @override
+  String get steamScannerNotFound =>
+      'Steam installation not found. Please specify the path manually.';
+
+  @override
+  String steamScannerDetectError(String error) {
+    return 'Error detecting Steam: $error';
+  }
+
+  @override
+  String get steamScannerValidating => 'Validating Steam path...';
+
+  @override
+  String get steamScannerInvalidPath =>
+      'Invalid Steam path. Please check the path and try again.';
+
+  @override
+  String steamScannerValidateError(String error) {
+    return 'Error validating path: $error';
+  }
+
+  @override
+  String get steamScannerNoPathSet =>
+      'No Steam path set. Please detect or specify Steam path first.';
+
+  @override
+  String get steamScannerScanning => 'Scanning Steam libraries...';
+
+  @override
+  String steamScannerScanError(String error) {
+    return 'Error scanning library: $error';
+  }
+
+  @override
+  String steamScannerNoExecutable(String gameName) {
+    return '$gameName: No executable found';
+  }
+
+  @override
+  String steamScannerImportError(String gameName, String error) {
+    return '$gameName: $error';
+  }
+
+  @override
+  String errorAddGameFailed(String error) {
+    return 'Failed to add game: $error';
+  }
+
+  @override
+  String errorAddGamesFailed(String error) {
+    return 'Failed to add games: $error';
+  }
+
+  @override
+  String errorScanFailed(String error) {
+    return 'Scan failed: $error';
+  }
+
+  @override
+  String errorLoadSettingsFailed(String error) {
+    return 'Failed to load settings: $error';
+  }
+
+  @override
+  String errorFetchMetadataFailed(String error) {
+    return 'Failed to fetch metadata: $error';
+  }
+
+  @override
+  String errorSearchFailed(String error) {
+    return 'Search failed: $error';
+  }
+
+  @override
+  String errorUpdateMetadataFailed(String error) {
+    return 'Failed to update metadata: $error';
+  }
+
+  @override
+  String errorClearMetadataFailed(String error) {
+    return 'Failed to clear metadata: $error';
+  }
+
+  @override
+  String get gamepadTestButton => 'BUTTON';
+
+  @override
+  String get gamepadTestAxis => 'AXIS';
+
+  @override
+  String get gamepadTestConnect => 'CONNECT';
+
+  @override
+  String get gamepadTestDisconnect => 'DISCONNECT';
+
+  @override
+  String get gamepadTestPressed => 'pressed';
+
+  @override
+  String get gamepadTestReleased => 'released';
+
+  @override
+  String gamepadTestGamepadConnected(String name) {
+    return 'Gamepad connected: $name';
+  }
+
+  @override
+  String get gamepadTestUnknown => 'Unknown';
+
+  @override
+  String get gamepadTestGamepadDisconnected => 'Gamepad disconnected';
 }

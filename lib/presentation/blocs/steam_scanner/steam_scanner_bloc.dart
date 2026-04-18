@@ -71,14 +71,14 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
     DetectSteam event,
     Emitter<SteamScannerState> emit,
   ) async {
-    emit(const SteamScannerLoading(message: 'Detecting Steam installation...'));
+    emit(const SteamScannerLoading(type: SteamScannerLoadingType.detecting));
 
     try {
       final steamPath = await _steamDetector.detectSteamPath();
 
       if (steamPath == null) {
         emit(const SteamScannerError(
-          message: 'Steam installation not found. Please specify the path manually.',
+          type: SteamScannerErrorType.notFound,
         ));
         return;
       }
@@ -89,7 +89,8 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
       add(const ScanLibrary());
     } catch (e) {
       emit(SteamScannerError(
-        message: 'Error detecting Steam: $e',
+        type: SteamScannerErrorType.detectError,
+        details: e.toString(),
       ));
     }
   }
@@ -98,14 +99,14 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
     SetSteamPath event,
     Emitter<SteamScannerState> emit,
   ) async {
-    emit(const SteamScannerLoading(message: 'Validating Steam path...'));
+    emit(const SteamScannerLoading(type: SteamScannerLoadingType.validating));
 
     try {
       final isValid = await _steamDetector.validateSteamPath(event.path);
 
       if (!isValid) {
         emit(SteamScannerError(
-          message: 'Invalid Steam path. Please check the path and try again.',
+          type: SteamScannerErrorType.invalidPath,
           currentPath: event.path,
         ));
         return;
@@ -117,7 +118,8 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
       add(const ScanLibrary());
     } catch (e) {
       emit(SteamScannerError(
-        message: 'Error validating path: $e',
+        type: SteamScannerErrorType.validateError,
+        details: e.toString(),
         currentPath: event.path,
       ));
     }
@@ -129,12 +131,12 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
   ) async {
     if (_currentSteamPath == null) {
       emit(const SteamScannerError(
-        message: 'No Steam path set. Please detect or specify Steam path first.',
+        type: SteamScannerErrorType.noPathSet,
       ));
       return;
     }
 
-    emit(const SteamScannerLoading(message: 'Scanning Steam libraries...'));
+    emit(const SteamScannerLoading(type: SteamScannerLoadingType.scanning));
 
     try {
       // Parse library folders
@@ -180,7 +182,8 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
       ));
     } catch (e) {
       emit(SteamScannerError(
-        message: 'Error scanning library: $e',
+        type: SteamScannerErrorType.scanError,
+        details: e.toString(),
         currentPath: _currentSteamPath,
       ));
     }
@@ -266,7 +269,7 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
 
     int importedCount = 0;
     int skippedCount = 0;
-    final errors = <String>[];
+    final errors = <SteamImportError>[];
     final addedGames = <Game>[];
 
     for (var i = 0; i < selectedGames.length; i++) {
@@ -282,7 +285,10 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
         // Get primary executable
         final executablePath = steamGame.primaryExecutable;
         if (executablePath == null) {
-          errors.add('${steamGame.name}: No executable found');
+          errors.add(SteamImportError(
+            gameName: steamGame.name,
+            noExecutable: true,
+          ));
           skippedCount++;
           continue;
         }
@@ -326,7 +332,10 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
           executablePath: game.executablePath,
         ));
       } catch (e) {
-        errors.add('${steamGame.name}: $e');
+        errors.add(SteamImportError(
+          gameName: steamGame.name,
+          error: e.toString(),
+        ));
         skippedCount++;
       }
     }

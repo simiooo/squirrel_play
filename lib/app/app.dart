@@ -10,6 +10,7 @@ import 'package:squirrel_play/core/theme/app_theme.dart';
 import 'package:squirrel_play/l10n/app_localizations.dart';
 import 'package:squirrel_play/presentation/blocs/gamepad/gamepad_cubit.dart';
 import 'package:squirrel_play/presentation/blocs/navigation/navigation_cubit.dart';
+import 'package:squirrel_play/presentation/blocs/quick_scan/quick_scan_bloc.dart';
 
 /// The root application widget.
 ///
@@ -29,6 +30,7 @@ class SquirrelPlayApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (_) => NavigationCubit()),
         BlocProvider(create: (_) => getIt<GamepadCubit>()),
+        BlocProvider(create: (_) => getIt<QuickScanBloc>()),
         BlocProvider(
           create: (_) => LocaleCubit(prefs: getIt<SharedPreferences>()),
         ),

@@ -10,6 +10,7 @@ import 'package:squirrel_play/data/services/sound_service.dart';
 import 'package:squirrel_play/l10n/app_localizations.dart';
 import 'package:squirrel_play/presentation/blocs/gamepad/gamepad_cubit.dart';
 import 'package:squirrel_play/presentation/blocs/settings/settings_bloc.dart';
+import 'package:squirrel_play/presentation/widgets/error_localizer.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_button.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_list_tile.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_slider.dart';
@@ -207,7 +208,11 @@ class _SettingsPageContentState extends State<_SettingsPageContent> {
                   if (state is SettingsError) {
                     return Center(
                       child: Text(
-                        state.message,
+                        localizeError(
+                          l10n,
+                          state.localizationKey ?? '',
+                          details: state.details,
+                        ),
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: AppColors.error,
                         ),

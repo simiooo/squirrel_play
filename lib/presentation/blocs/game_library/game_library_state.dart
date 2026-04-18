@@ -44,10 +44,16 @@ class LibraryEmpty extends GameLibraryState {
 
 /// State when an error occurs loading games.
 class LibraryError extends GameLibraryState {
-  final String message;
+  final String? message;
+  final String? localizationKey;
+  final String? details;
 
-  const LibraryError(this.message);
+  const LibraryError({
+    this.message,
+    this.localizationKey,
+    this.details,
+  });
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, localizationKey, details];
 }

@@ -63,10 +63,16 @@ class SettingsLoaded extends SettingsState {
 
 /// Error state when loading fails.
 class SettingsError extends SettingsState {
-  final String message;
+  final String? message;
+  final String? localizationKey;
+  final String? details;
 
-  const SettingsError(this.message);
+  const SettingsError({
+    this.message,
+    this.localizationKey,
+    this.details,
+  });
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, localizationKey, details];
 }

@@ -72,7 +72,8 @@ class MetadataBloc extends Bloc<MetadataEvent, MetadataState> {
     } catch (e) {
       emit(MetadataError(
         gameId: event.gameId,
-        message: 'Failed to fetch metadata: $e',
+        localizationKey: 'errorFetchMetadataFailed',
+        details: e.toString(),
         isRetryable: true,
       ));
     }
@@ -139,7 +140,8 @@ class MetadataBloc extends Bloc<MetadataEvent, MetadataState> {
     } catch (e) {
       emit(MetadataError(
         gameId: '',
-        message: 'Search failed: $e',
+        localizationKey: 'errorSearchFailed',
+        details: e.toString(),
         isRetryable: true,
       ));
     }
@@ -161,7 +163,8 @@ class MetadataBloc extends Bloc<MetadataEvent, MetadataState> {
     } catch (e) {
       emit(MetadataError(
         gameId: event.gameId,
-        message: 'Failed to update metadata: $e',
+        localizationKey: 'errorUpdateMetadataFailed',
+        details: e.toString(),
         isRetryable: true,
       ));
     }
@@ -188,7 +191,8 @@ class MetadataBloc extends Bloc<MetadataEvent, MetadataState> {
     } catch (e) {
       emit(MetadataError(
         gameId: event.gameId,
-        message: 'Failed to clear metadata: $e',
+        localizationKey: 'errorClearMetadataFailed',
+        details: e.toString(),
         isRetryable: false,
       ));
     }

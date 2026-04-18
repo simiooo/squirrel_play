@@ -856,5 +856,462 @@
   "errorUpdateFailed": "更新游戏失败",
   "@errorUpdateFailed": {
     "description": "更新游戏失败时的错误消息"
+  },
+
+  "manualAddExecutableLabel": "可执行文件",
+  "@manualAddExecutableLabel": {
+    "description": "手动添加标签页中可执行文件选择器的标签"
+  },
+
+  "manualAddBrowseButton": "浏览...",
+  "@manualAddBrowseButton": {
+    "description": "浏览可执行文件按钮的标签"
+  },
+
+  "manualAddNoFileSelected": "未选择文件",
+  "@manualAddNoFileSelected": {
+    "description": "未选择文件时的占位文本"
+  },
+
+  "manualAddInvalidFileError": "无效文件",
+  "@manualAddInvalidFileError": {
+    "description": "无效可执行文件的错误消息"
+  },
+
+  "manualAddGameNameLabel": "游戏名称",
+  "@manualAddGameNameLabel": {
+    "description": "游戏名称输入框的标签"
+  },
+
+  "manualAddGameNameHint": "输入游戏名称",
+  "@manualAddGameNameHint": {
+    "description": "游戏名称输入框的提示文本"
+  },
+
+  "manualAddInvalidNameError": "无效名称",
+  "@manualAddInvalidNameError": {
+    "description": "无效游戏名称的错误消息"
+  },
+
+  "manualAddConfirmButton": "添加游戏",
+  "@manualAddConfirmButton": {
+    "description": "手动添加游戏确认按钮的标签"
+  },
+
+  "scanDirectoryAddDirectoryButton": "添加目录",
+  "@scanDirectoryAddDirectoryButton": {
+    "description": "添加扫描目录按钮的标签"
+  },
+
+  "scanDirectoryStartScanButton": "开始扫描",
+  "@scanDirectoryStartScanButton": {
+    "description": "开始扫描目录按钮的标签"
+  },
+
+  "scanDirectoryFoundExecutables": "发现 {totalCount} 个可执行文件（已选择 {selectedCount} 个）",
+  "@scanDirectoryFoundExecutables": {
+    "description": "显示发现和选择的可执行文件数量的状态文本",
+    "placeholders": {
+      "totalCount": {
+        "type": "int"
+      },
+      "selectedCount": {
+        "type": "int"
+      }
+    }
+  },
+
+  "scanDirectorySelectAllButton": "全选",
+  "@scanDirectorySelectAllButton": {
+    "description": "全选发现的可执行文件按钮的标签"
+  },
+
+  "scanDirectorySelectNoneButton": "取消全选",
+  "@scanDirectorySelectNoneButton": {
+    "description": "取消选择所有可执行文件按钮的标签"
+  },
+
+  "scanDirectoryAddGamesButton": "添加 {count} 个游戏",
+  "@scanDirectoryAddGamesButton": {
+    "description": "添加选定游戏按钮的标签",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "scanDirectoryNoExecutablesTitle": "未找到可执行文件",
+  "@scanDirectoryNoExecutablesTitle": {
+    "description": "扫描未找到可执行文件时显示的标题"
+  },
+
+  "scanDirectoryNoExecutablesSubtitle": "请尝试选择其他目录，或确认目录中存在 .exe 文件。",
+  "@scanDirectoryNoExecutablesSubtitle": {
+    "description": "未找到可执行文件时建议操作的副标题"
+  },
+
+  "scanDirectorySelectDifferentDirectories": "选择其他目录",
+  "@scanDirectorySelectDifferentDirectories": {
+    "description": "空扫描后选择其他目录按钮的标签"
+  },
+
+  "scanDirectoryAddingGames": "正在添加游戏...",
+  "@scanDirectoryAddingGames": {
+    "description": "添加发现的游戏时显示的消息"
+  },
+
+  "steamGamesInitializing": "正在初始化...",
+  "@steamGamesInitializing": {
+    "description": "Steam 扫描器初始化时显示的消息"
+  },
+
+  "steamGamesDefaultPath": "默认：{path}",
+  "@steamGamesDefaultPath": {
+    "description": "显示默认 Steam 安装路径的标签",
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+
+  "steamGamesBrowseSteamFolder": "浏览 Steam 文件夹",
+  "@steamGamesBrowseSteamFolder": {
+    "description": "浏览 Steam 安装文件夹按钮的标签"
+  },
+
+  "steamGamesSteamPathLabel": "Steam 路径：",
+  "@steamGamesSteamPathLabel": {
+    "description": "当前 Steam 路径显示的标签"
+  },
+
+  "steamGamesSelectAllButton": "全选",
+  "@steamGamesSelectAllButton": {
+    "description": "全选可用 Steam 游戏按钮的标签"
+  },
+
+  "steamGamesSelectNoneButton": "取消全选",
+  "@steamGamesSelectNoneButton": {
+    "description": "取消全选 Steam 游戏按钮的标签"
+  },
+
+  "steamGamesFoundGames": "发现 {count} 个游戏（{alreadyAddedCount} 个已添加）",
+  "@steamGamesFoundGames": {
+    "description": "显示发现的 Steam 游戏及已添加数量的状态文本",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "alreadyAddedCount": {
+        "type": "int"
+      }
+    }
+  },
+
+  "steamGamesNoGamesFound": "未找到 Steam 游戏",
+  "@steamGamesNoGamesFound": {
+    "description": "未检测到 Steam 游戏时显示的消息"
+  },
+
+  "steamGamesAppId": "App ID：{appId}",
+  "@steamGamesAppId": {
+    "description": "显示 Steam 应用 ID 的标签",
+    "placeholders": {
+      "appId": {
+        "type": "String"
+      }
+    }
+  },
+
+  "steamGamesAlreadyAdded": "已添加",
+  "@steamGamesAlreadyAdded": {
+    "description": "库中已有游戏的徽章标签"
+  },
+
+  "steamGamesImporting": "正在导入游戏...",
+  "@steamGamesImporting": {
+    "description": "导入 Steam 游戏时显示的消息"
+  },
+
+  "steamGamesImportProgress": "{completed} / {total}",
+  "@steamGamesImportProgress": {
+    "description": "显示已完成和总导入数量的进度文本",
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+
+  "steamGamesImportComplete": "导入完成！",
+  "@steamGamesImportComplete": {
+    "description": "Steam 游戏导入完成时显示的标题"
+  },
+
+  "steamGamesImportedCount": "已导入 {count} 个游戏",
+  "@steamGamesImportedCount": {
+    "description": "显示成功导入游戏数量的消息",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "steamGamesSkippedCount": "已跳过 {count} 个",
+  "@steamGamesSkippedCount": {
+    "description": "显示导入过程中跳过游戏数量的消息",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "steamGamesErrorsLabel": "错误：",
+  "@steamGamesErrorsLabel": {
+    "description": "导入完成状态错误部分的标签"
+  },
+
+  "steamGamesImportButton": "导入选定游戏",
+  "@steamGamesImportButton": {
+    "description": "未选择游戏时导入选定游戏按钮的标签"
+  },
+
+  "steamGamesImportCountButton": "导入 {count} 个游戏",
+  "@steamGamesImportCountButton": {
+    "description": "显示数量的导入选定游戏按钮的标签",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "gamepadNavOpen": "打开",
+  "@gamepadNavOpen": {
+    "description": "游戏手柄导航栏打开操作提示"
+  },
+
+  "gamepadNavSelectCurrent": "选择当前",
+  "@gamepadNavSelectCurrent": {
+    "description": "游戏手柄导航栏选择当前目录操作提示"
+  },
+
+  "steamScannerDetecting": "正在检测 Steam 安装...",
+  "@steamScannerDetecting": {
+    "description": "Steam 扫描器检测安装时显示的消息"
+  },
+
+  "steamScannerNotFound": "未找到 Steam 安装。请手动指定路径。",
+  "@steamScannerNotFound": {
+    "description": "无法自动检测到 Steam 时的错误"
+  },
+
+  "steamScannerDetectError": "检测 Steam 时出错：{error}",
+  "@steamScannerDetectError": {
+    "description": "Steam 检测抛出异常时的错误",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "steamScannerValidating": "正在验证 Steam 路径...",
+  "@steamScannerValidating": {
+    "description": "验证手动设置的 Steam 路径时显示的消息"
+  },
+
+  "steamScannerInvalidPath": "无效的 Steam 路径。请检查路径后重试。",
+  "@steamScannerInvalidPath": {
+    "description": "用户提供的 Steam 路径无效时的错误"
+  },
+
+  "steamScannerValidateError": "验证路径时出错：{error}",
+  "@steamScannerValidateError": {
+    "description": "路径验证抛出异常时的错误",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "steamScannerNoPathSet": "未设置 Steam 路径。请先检测或指定 Steam 路径。",
+  "@steamScannerNoPathSet": {
+    "description": "未设置路径就请求扫描时的错误"
+  },
+
+  "steamScannerScanning": "正在扫描 Steam 库...",
+  "@steamScannerScanning": {
+    "description": "扫描 Steam 库时显示的消息"
+  },
+
+  "steamScannerScanError": "扫描库时出错：{error}",
+  "@steamScannerScanError": {
+    "description": "库扫描抛出异常时的错误",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "steamScannerNoExecutable": "{gameName}：未找到可执行文件",
+  "@steamScannerNoExecutable": {
+    "description": "游戏没有可执行文件时的错误详情",
+    "placeholders": {
+      "gameName": {
+        "type": "String"
+      }
+    }
+  },
+
+  "steamScannerImportError": "{gameName}：{error}",
+  "@steamScannerImportError": {
+    "description": "导入特定游戏失败时的错误详情",
+    "placeholders": {
+      "gameName": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "errorAddGameFailed": "添加游戏失败：{error}",
+  "@errorAddGameFailed": {
+    "description": "手动添加游戏失败时的错误",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "errorAddGamesFailed": "批量添加游戏失败：{error}",
+  "@errorAddGamesFailed": {
+    "description": "批量添加扫描到的游戏失败时的错误",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "errorScanFailed": "扫描失败：{error}",
+  "@errorScanFailed": {
+    "description": "后台快速扫描失败时的错误",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "errorLoadSettingsFailed": "加载设置失败：{error}",
+  "@errorLoadSettingsFailed": {
+    "description": "加载设置失败时的错误",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "errorFetchMetadataFailed": "获取元数据失败：{error}",
+  "@errorFetchMetadataFailed": {
+    "description": "获取游戏元数据失败时的错误",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "errorSearchFailed": "搜索失败：{error}",
+  "@errorSearchFailed": {
+    "description": "手动元数据搜索失败时的错误",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "errorUpdateMetadataFailed": "更新元数据失败：{error}",
+  "@errorUpdateMetadataFailed": {
+    "description": "选择元数据匹配项失败时的错误",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "errorClearMetadataFailed": "清除元数据失败：{error}",
+  "@errorClearMetadataFailed": {
+    "description": "清除元数据失败时的错误",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "gamepadTestButton": "按钮",
+  "@gamepadTestButton": {
+    "description": "输入日志按钮事件类型标签"
+  },
+
+  "gamepadTestAxis": "摇杆",
+  "@gamepadTestAxis": {
+    "description": "输入日志摇杆事件类型标签"
+  },
+
+  "gamepadTestConnect": "连接",
+  "@gamepadTestConnect": {
+    "description": "输入日志手柄连接事件类型标签"
+  },
+
+  "gamepadTestDisconnect": "断开",
+  "@gamepadTestDisconnect": {
+    "description": "输入日志手柄断开事件类型标签"
+  },
+
+  "gamepadTestPressed": "按下",
+  "@gamepadTestPressed": {
+    "description": "输入日志按钮按下动作标签"
+  },
+
+  "gamepadTestReleased": "释放",
+  "@gamepadTestReleased": {
+    "description": "输入日志按钮释放动作标签"
+  },
+
+  "gamepadTestGamepadConnected": "手柄已连接：{name}",
+  "@gamepadTestGamepadConnected": {
+    "description": "手柄连接时的日志消息",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+
+  "gamepadTestUnknown": "未知",
+  "@gamepadTestUnknown": {
+    "description": "未知手柄名称的备用标签"
+  },
+
+  "gamepadTestGamepadDisconnected": "手柄已断开",
+  "@gamepadTestGamepadDisconnected": {
+    "description": "手柄断开时的日志消息"
   }
 }

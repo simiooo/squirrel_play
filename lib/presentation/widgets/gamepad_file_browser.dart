@@ -97,6 +97,9 @@ class _GamepadFileBrowserState extends State<GamepadFileBrowser> {
 
   int? _lastFocusedItemIndex;
 
+  DateTime? _lastNavigationTime;
+  static const int _navigationThrottleMs = 120;
+
   @override
   void initState() {
     super.initState();
@@ -124,6 +127,24 @@ class _GamepadFileBrowserState extends State<GamepadFileBrowser> {
     }
     _itemFocusNodes.clear();
     _lastFocusedItemIndex = null;
+  }
+
+  bool _shouldProcessNavigation(KeyEvent event) {
+    if (event is KeyDownEvent) {
+      _lastNavigationTime = DateTime.now();
+      return true;
+    }
+    if (event is KeyRepeatEvent) {
+      final now = DateTime.now();
+      if (_lastNavigationTime == null ||
+          now.difference(_lastNavigationTime!).inMilliseconds >
+              _navigationThrottleMs) {
+        _lastNavigationTime = now;
+        return true;
+      }
+      return false;
+    }
+    return false;
   }
 
   void _onItemFocusChanged(int index) {
@@ -340,14 +361,18 @@ class _GamepadFileBrowserState extends State<GamepadFileBrowser> {
   }
 
   void _handleKeyEvent(KeyEvent event) {
-    if (event is! KeyDownEvent) return;
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) return;
 
     switch (event.logicalKey) {
       case LogicalKeyboardKey.arrowLeft:
-        _goToParent();
+        if (_shouldProcessNavigation(event)) {
+          _goToParent();
+        }
         break;
       case LogicalKeyboardKey.escape:
-        _cancel();
+        if (event is KeyDownEvent) {
+          _cancel();
+        }
         break;
     }
   }
@@ -497,61 +522,69 @@ class _GamepadFileBrowserState extends State<GamepadFileBrowser> {
         final isFocused = _itemFocusNodes[index].hasFocus;
         final isSelected = _selectedPaths.contains(item.path);
 
-        return Focus(
-          focusNode: _itemFocusNodes[index],
-          onKeyEvent: (node, event) {
-            if (event is KeyDownEvent) {
-              switch (event.logicalKey) {
-                case LogicalKeyboardKey.arrowUp:
-                  if (index > 0) {
-                    _itemFocusNodes[index - 1].requestFocus();
-                  }
-                  return KeyEventResult.handled;
-                case LogicalKeyboardKey.arrowDown:
-                  if (index < _items.length - 1) {
-                    _itemFocusNodes[index + 1].requestFocus();
-                  }
-                  return KeyEventResult.handled;
-                case LogicalKeyboardKey.arrowLeft:
-                  _goToParent();
-                  return KeyEventResult.handled;
-                case LogicalKeyboardKey.enter:
-                case LogicalKeyboardKey.select:
-                case LogicalKeyboardKey.gameButtonA:
-                  if (isDirectory) {
-                    _openItem(index);
-                  } else if (widget.mode == FileBrowserMode.file) {
-                    // File mode: select the file
-                    _saveLastPath(_currentPath);
-                    widget.onSelected([item.path]);
-                  }
-                  // In directory mode, A does nothing on files (use Select button)
-                  return KeyEventResult.handled;
-                case LogicalKeyboardKey.gameButtonX:
-                  if (widget.mode == FileBrowserMode.multiDirectory &&
-                      isDirectory && !isParentEntry) {
-                    _toggleSelection(index);
-                    return KeyEventResult.handled;
-                  }
-                  break;
-              }
-            }
-            return KeyEventResult.ignored;
+        return Actions(
+          actions: <Type, Action<Intent>>{
+            ActivateIntent: CallbackAction<ActivateIntent>(
+              onInvoke: (_) {
+                if (isDirectory) {
+                  _openItem(index);
+                } else if (widget.mode == FileBrowserMode.file) {
+                  _saveLastPath(_currentPath);
+                  widget.onSelected([item.path]);
+                }
+                // Return non-null to indicate the intent was handled
+                return true;
+              },
+            ),
           },
-          child: Actions(
-            actions: <Type, Action<Intent>>{
-              ActivateIntent: CallbackAction<ActivateIntent>(
-                onInvoke: (_) {
-                  if (isDirectory) {
-                    _openItem(index);
-                  } else if (widget.mode == FileBrowserMode.file) {
-                    _saveLastPath(_currentPath);
-                    widget.onSelected([item.path]);
-                  }
-                  // Return non-null to indicate the intent was handled
-                  return true;
-                },
-              ),
+          child: Focus(
+            focusNode: _itemFocusNodes[index],
+            onKeyEvent: (node, event) {
+              if (event is KeyDownEvent || event is KeyRepeatEvent) {
+                switch (event.logicalKey) {
+                  case LogicalKeyboardKey.arrowUp:
+                    if (_shouldProcessNavigation(event) && index > 0) {
+                      _itemFocusNodes[index - 1].requestFocus();
+                    }
+                    return KeyEventResult.handled;
+                  case LogicalKeyboardKey.arrowDown:
+                    if (_shouldProcessNavigation(event) &&
+                        index < _items.length - 1) {
+                      _itemFocusNodes[index + 1].requestFocus();
+                    }
+                    return KeyEventResult.handled;
+                  case LogicalKeyboardKey.arrowLeft:
+                    if (_shouldProcessNavigation(event)) {
+                      _goToParent();
+                    }
+                    return KeyEventResult.handled;
+                  case LogicalKeyboardKey.enter:
+                  case LogicalKeyboardKey.select:
+                  case LogicalKeyboardKey.gameButtonA:
+                    if (event is KeyDownEvent) {
+                      if (isDirectory) {
+                        _openItem(index);
+                      } else if (widget.mode == FileBrowserMode.file) {
+                        // File mode: select the file
+                        _saveLastPath(_currentPath);
+                        widget.onSelected([item.path]);
+                      }
+                      // In directory mode, A does nothing on files
+                      // (use Select button)
+                    }
+                    return KeyEventResult.handled;
+                  case LogicalKeyboardKey.gameButtonX:
+                    if (event is KeyDownEvent &&
+                        widget.mode == FileBrowserMode.multiDirectory &&
+                        isDirectory &&
+                        !isParentEntry) {
+                      _toggleSelection(index);
+                      return KeyEventResult.handled;
+                    }
+                    break;
+                }
+              }
+              return KeyEventResult.ignored;
             },
             child: GestureDetector(
               onTap: () => _openItem(index),
@@ -643,13 +676,15 @@ class _GamepadFileBrowserState extends State<GamepadFileBrowser> {
           children: [
             _buildHint(
               'A',
-              widget.mode == FileBrowserMode.file ? 'Select' : 'Open',
+              widget.mode == FileBrowserMode.file
+                  ? (l10n?.gamepadNavSelect ?? 'Select')
+                  : (l10n?.gamepadNavOpen ?? 'Open'),
             ),
             const SizedBox(width: AppSpacing.lg),
             _buildHint('B', l10n?.gamepadNavBack ?? 'Back'),
             if (widget.mode == FileBrowserMode.directory) ...[
               const SizedBox(width: AppSpacing.lg),
-              _buildHint('Select', 'Select Current'),
+              _buildHint('Select', l10n?.gamepadNavSelectCurrent ?? 'Select Current'),
             ],
             if (widget.mode == FileBrowserMode.multiDirectory) ...[
               const SizedBox(width: AppSpacing.lg),

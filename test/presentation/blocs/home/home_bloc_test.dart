@@ -152,8 +152,12 @@ void main() {
         expect: () => [
           const HomeLoading(),
           isA<HomeError>().having(
-            (s) => s.message,
-            'error message',
+            (s) => s.localizationKey,
+            'localization key',
+            'errorLoadGamesFailed',
+          ).having(
+            (s) => s.details,
+            'error details',
             contains('Database error'),
           ),
         ],

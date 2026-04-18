@@ -414,24 +414,32 @@ class FocusTraversalService {
 
   /// Handles cancel/back action.
   void _handleCancel() {
-    // If focus is inside a dialog, let the dialog handle its own close logic
-    if (_isFocusInsideDialog()) {
+    final context = WidgetsBinding.instance.focusManager.primaryFocus?.context;
+    if (context == null || !context.mounted) {
+      debugPrint('[FocusTraversalService] No context for cancel action');
       return;
     }
 
-    // Otherwise try router back navigation (GoRouter pop)
-    final context = WidgetsBinding.instance.focusManager.primaryFocus?.context;
-    if (context != null && context.mounted) {
-      final router = GoRouter.of(context);
-      if (router.canPop()) {
-        SoundService.instance.playFocusBack();
-        router.pop();
-        return;
-      }
+    final router = GoRouter.of(context);
+    final navigator = Navigator.of(context);
+
+    // 1. Try GoRouter page pop first (navigate back to previous page)
+    if (router.canPop()) {
+      SoundService.instance.playFocusBack();
+      router.pop();
+      return;
     }
 
-    // No navigation possible (e.g., on root route)
-    debugPrint('[FocusTraversalService] No route to navigate back');
+    // 2. Try Navigator pop (dismiss dialog overlays not managed by GoRouter)
+    if (navigator.canPop()) {
+      SoundService.instance.playFocusBack();
+      navigator.pop();
+      return;
+    }
+
+    // 3. Already at the top-level route — navigate to home
+    SoundService.instance.playFocusBack();
+    router.go('/');
   }
 
   /// Checks whether a focus node is an interactive element that should

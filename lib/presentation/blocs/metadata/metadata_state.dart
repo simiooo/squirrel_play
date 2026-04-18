@@ -55,17 +55,21 @@ class MetadataMatchRequired extends MetadataState {
 /// State when an error occurs during metadata fetching.
 class MetadataError extends MetadataState {
   final String gameId;
-  final String message;
+  final String? message;
+  final String? localizationKey;
+  final String? details;
   final bool isRetryable;
 
   const MetadataError({
     required this.gameId,
-    required this.message,
+    this.message,
+    this.localizationKey,
+    this.details,
     this.isRetryable = true,
   });
 
   @override
-  List<Object?> get props => [gameId, message, isRetryable];
+  List<Object?> get props => [gameId, message, localizationKey, details, isRetryable];
 }
 
 /// State showing batch fetch progress.

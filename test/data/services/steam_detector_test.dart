@@ -17,6 +17,10 @@ void main() {
     setUp(() {
       mockPlatformInfo = MockPlatformInfo();
       detector = SteamDetector(platformInfo: mockPlatformInfo);
+      // Set default platform to Linux for tests that don't specify
+      when(() => mockPlatformInfo.isWindows).thenReturn(false);
+      when(() => mockPlatformInfo.isLinux).thenReturn(true);
+      when(() => mockPlatformInfo.isMacOS).thenReturn(false);
     });
 
     group('Flatpak path detection', () {

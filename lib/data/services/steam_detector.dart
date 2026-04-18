@@ -31,7 +31,7 @@ class SteamDetector {
   ///
   /// Checks for the presence of steamapps directory.
   Future<bool> validateSteamPath(String path) async {
-    final steamappsDir = Directory('$_normalizePath(path)/steamapps');
+    final steamappsDir = Directory('${_normalizePath(path)}/steamapps');
     return await steamappsDir.exists();
   }
 

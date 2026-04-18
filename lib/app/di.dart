@@ -238,8 +238,8 @@ Future<void> configureDependencies() async {
         gamepadService: getIt<GamepadService>(),
       ));
 
-  // Factory for QuickScanBloc
-  getIt.registerFactory<QuickScanBloc>(() => QuickScanBloc(
+  // Singleton for QuickScanBloc - lives for app lifetime, handles background scans
+  getIt.registerLazySingleton<QuickScanBloc>(() => QuickScanBloc(
         gameRepository: getIt<GameRepository>(),
         scanDirectoryRepository: getIt<ScanDirectoryRepository>(),
         fileScannerService: getIt<FileScannerService>(),

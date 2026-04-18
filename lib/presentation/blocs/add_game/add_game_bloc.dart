@@ -145,7 +145,10 @@ class AddGameBloc extends Bloc<AddGameEvent, AddGameState> {
           // Success - return to initial state to close dialog
           emit(const AddGameInitial());
         } catch (e) {
-          emit(AddGameError('Failed to add game: $e'));
+          emit(AddGameError(
+            localizationKey: 'errorAddGameFailed',
+            details: e.toString(),
+          ));
         }
       }
     }
@@ -319,7 +322,10 @@ class AddGameBloc extends Bloc<AddGameEvent, AddGameState> {
         // Success - return to initial state to close dialog
         emit(const AddGameInitial());
       } catch (e) {
-        emit(AddGameError('Failed to add games: $e'));
+        emit(AddGameError(
+          localizationKey: 'errorAddGamesFailed',
+          details: e.toString(),
+        ));
       }
     }
   }

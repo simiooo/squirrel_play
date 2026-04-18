@@ -59,7 +59,10 @@ class GameLibraryBloc extends Bloc<GameLibraryEvent, GameLibraryState> {
           ));
         }
       } catch (e) {
-        emit(LibraryError('Failed to delete game: $e'));
+        emit(LibraryError(
+          localizationKey: 'errorDeleteFailed',
+          details: e.toString(),
+        ));
       }
     }
   }
@@ -89,7 +92,10 @@ class GameLibraryBloc extends Bloc<GameLibraryEvent, GameLibraryState> {
         emit(LibraryLoaded(games: games, focusedIndex: focusedIndex));
       }
     } catch (e) {
-      emit(LibraryError('Failed to load games: $e'));
+      emit(LibraryError(
+        localizationKey: 'errorLoadGames',
+        details: e.toString(),
+      ));
     }
   }
 

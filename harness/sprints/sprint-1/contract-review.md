@@ -4,52 +4,59 @@
 
 ## Scope Coverage
 
-The proposed scope is tightly aligned with the spec's Sprint 1 definition: **Foundation — Database, Entity & Process Tracking**. It correctly limits itself to:
+The contract is tightly aligned with the Sprint 1 scope defined in the spec. It correctly limits itself to:
+- Fixing A-key/Enter activation on file/directory items inside `GamepadFileBrowser`
+- Fixing B-key cancellation inside `GamepadFileBrowser`
+- Preserving existing focus traversal behavior
+- Ensuring the test suite continues to pass
 
-- Database schema v4 with `launch_arguments` column and migration path
-- `Game` entity and `GameModel` updates for the new field
-- `GameRepositoryImpl` mapping updates
-- `GameLauncher` interface redesign with lifecycle methods (`stopGame`, `isGameRunning`, `runningGamesStream`, `RunningGameInfo`)
-- `GameLauncherService` reimplementation with `Map<String, Process>` tracking, non-detached `Process.start`, and stream-based state emission
-- Test updates and additions across service, repository, and bloc layers
+The contract does not overstep into Sprint 2 (PickerButton traversal) or Sprint 3 (i18n extraction), and explicitly lists these as out of scope.
 
-The contract correctly defers all UI, routing, localization, and navigation changes to Sprints 2 and 3.
+## Strengths
 
-## Success Criteria Review
+1. **Accurate root cause analysis for A-key**: The contract correctly identifies that `Actions` is a *descendant* of `Focus` in `gamepad_file_browser.dart` (lines 525–639), which causes `Actions.invoke(context, const ActivateIntent())` — walking **up** from the `Focus` widget's context — to miss the `ActivateIntent` mapping entirely. Swapping the order so `Actions` is an ancestor is the correct structural fix.
 
-| # | Criterion | Assessment |
-|---|---|---|
-| 1 | Database schema is version 4 with `launch_arguments` column | **Adequate** — specific files and verification steps listed. |
-| 2 | `Game` entity includes `launchArguments` | **Adequate** — field, `copyWith`, and `props` updates are specified. |
-| 3 | `GameModel` includes `launchArguments` with correct JSON/db mapping | **Adequate** — `fromMap`/`toMap` and code regeneration noted. |
-| 4 | `GameRepositoryImpl` round-trips `launchArguments` | **Adequate** — explicit round-trip test with non-null arguments specified. |
-| 5 | `GameLauncher` interface has new lifecycle methods | **Adequate** — all four new members (`stopGame`, `isGameRunning`, `runningGamesStream`, `RunningGameInfo`) are listed. |
-| 6 | `GameLauncherService` tracks processes in memory | **Adequate** — real process launch/stop/isRunning cycle is testable. |
-| 7 | `GameLauncherService` emits running games on stream | **Adequate** — stream emission after launch and after stop/exit are both specified. |
-| 8 | `GameLauncherService` parses and passes launch arguments | **Adequate** — argument splitting and forwarding to `Process.start` is testable. |
-| 9 | Existing `launchStatusStream` behavior is preserved | **Adequate** — backward compatibility is explicitly required. |
-| 10 | All tests pass | **Adequate** — zero failures required. |
-| 11 | Static analysis passes | **Adequate** — zero issues required. |
+2. **Accurate root cause analysis for B-key**: The contract correctly identifies that `FocusTraversalService._handleCancel()` returns early when `_isFocusInsideDialog()` is true, and that `GamepadFileBrowser._handleKeyEvent()` only handles `LogicalKeyboardKey.escape`, not gamepad B (`GamepadAction.cancel`). The proposed fix to pop the dialog via `Navigator.of(context).pop()` from the focused node's context is sound.
 
-## Suggested Changes
+3. **Testable success criteria**: Each criterion is specific, verifiable, and maps directly to user-facing behavior (A selects files, A opens directories, B cancels, no exceptions, keyboard nav preserved, tests pass).
 
-None. The contract is well-structured and ready for implementation.
+4. **Good risk documentation**: The risks table covers widget reorder breakage, accidental dialog closing, `Actions.invoke` edge cases, test regressions, and platform-specific gamepad mappings.
 
-One minor note for the Generator to keep in mind during implementation (not blocking):
-- The contract mentions regenerating `game_model.g.dart`, while the spec notes it "uses manual fromMap/toMap" and that `*.g.dart` is "not needed for GameModel." Regenerating is harmless if the model still carries `@JsonSerializable`, but the Generator should verify whether `game_model.g.dart` is actually used before treating regeneration as a hard requirement.
+## Gaps, Risks, and Missing Details
+
+### 1. Verify `_isFocusInsideDialog()` actually catches `GamepadFileBrowser`
+The contract assumes `_isFocusInsideDialog()` returns `true` for the file browser dialog. Looking at the implementation (lines 271–288), it walks up the focus tree looking for a `FocusScopeNode` whose `debugLabel` contains `'ModalScope'` or `'Dialog'`. `GamepadFileBrowser.show()` uses `showDialog<void>()`, which Flutter implements via a `_ModalScope` route whose focus scope label contains `'ModalScope'`. This *should* work, but the contract should explicitly verify this during implementation — add a debug assertion or manual log check, since if the label format changes in a future Flutter version, the B-key fix will silently regress.
+
+### 2. The "Alternative / Complementary" `KeyboardListener` suggestion is potentially confusing
+The contract suggests adding `LogicalKeyboardKey.gameButtonB` to the dialog's `KeyboardListener` as a "defensive measure." However, gamepad B events flow through `GamepadService.actions` → `_onGamepadAction()` → `_handleCancel()`, **not** through raw `KeyEvent`s that a `KeyboardListener` would see (unless `GamepadService` also synthesizes keyboard events, which is not indicated). This section should be clarified: either state that the `KeyboardListener` addition is for *keyboard* B-key mappings only, or remove it to avoid implying there are two code paths for the same gamepad action.
+
+### 3. Missing: Focus restoration after dialog dismissal
+When `Navigator.of(context).pop()` dismisses the dialog, Flutter automatically restores focus to the previously focused widget (the element that had focus before `showDialog` was called). The contract should verify this works correctly — specifically, that focus returns to the `PickerButton` or other widget that opened the file browser, and does not land on a non-interactive scope node.
+
+### 4. Missing: Verify dialog footer buttons still work
+The contract focuses on file/directory item activation but should also explicitly verify that the **Select** and **Cancel** footer buttons (`FocusableButton`s) continue to work correctly after the `Actions`/`Focus` swap. `FocusableButton` handles A/Enter in its own `onKeyEvent` (not via `Actions`), but `activateCurrentNode()` is called from `FocusTraversalService` on these buttons too. Ensure no new exceptions are introduced for footer button activation.
+
+### 5. `ActivateIntent` handling consistency
+After the swap, the `Actions` widget's `onInvoke` callback returns `true` (line 585 in current code). The contract should ensure this return value is preserved after reordering, as `Actions.invoke` returns this value and `activateCurrentNode()` checks `!= null` to determine success.
+
+## Recommendations
+
+1. **Clarify or remove the `KeyboardListener` defensive measure** in the Technical Approach section. If kept, explicitly state it targets keyboard-emulated B-button events, not `GamepadAction.cancel`.
+
+2. **Add an explicit verification step** for focus restoration: after B-key dismissal, confirm via widget test or manual testing that focus returns to the triggering `PickerButton` (or other opener).
+
+3. **Add a brief note** confirming footer button activation (`Select`, `Cancel`) is regression-tested, since they are also inside the dialog scope and interact with `FocusTraversalService`.
+
+4. **Add a debug assertion or log check** during implementation to confirm `_isFocusInsideDialog()` returns `true` when focus is inside `GamepadFileBrowser`.
 
 ## Test Plan Preview
 
-During evaluation, I will verify the following:
-
-1. **Database migration**: Inspect `database_constants.dart` and `database_helper.dart` for version 4, the `launch_arguments` column, and the `onUpgrade` migration block.
-2. **Entity/Model correctness**: Check `Game` and `GameModel` for the new nullable field, proper `copyWith`, `props`, `fromMap`, and `toMap` handling.
-3. **Repository round-trip**: Run `game_repository_impl_test.dart` and confirm a game with `launchArguments: '-windowed --fullscreen'` is persisted and retrieved correctly.
-4. **Process lifecycle**: Run `game_launcher_service_test.dart` and verify:
-   - `isGameRunning` returns `true` after launch and `false` after `stopGame`
-   - `runningGamesStream` emits the correct map on launch and empty map on stop/exit
-   - Launch arguments are correctly split and passed to `Process.start`
-   - Existing `launchStatusStream` tests still pass
-5. **BLoC compatibility**: Run `home_bloc_test.dart` and confirm mock stubs for new `GameLauncher` members compile and pass.
-6. **Static analysis & full test suite**: Run `flutter analyze` and `flutter test` — both must pass with zero issues/failures.
-7. **Code review**: Check for dead code, unused imports, and that no UI/routing files were modified.
+During evaluation, I will:
+- Launch the app on Linux desktop and open the file browser from the Add Game dialog.
+- Use keyboard/gamepad to focus a file item and press Enter/A — verify the file is selected and the dialog closes.
+- Focus a directory item and press Enter/A — verify the directory opens.
+- Press B while focus is on a file item, the Select button, and the Cancel button — verify the dialog closes in all three cases.
+- Monitor debug logs for any `ActivateIntent not handled` or similar exceptions.
+- Verify Up/Down/Left arrow navigation still works inside the file list.
+- Run `flutter test` and confirm zero failures.
+- Check that focus returns to a sensible widget after the dialog is dismissed.

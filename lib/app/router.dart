@@ -7,7 +7,6 @@ import 'package:squirrel_play/domain/repositories/metadata_repository.dart';
 import 'package:squirrel_play/domain/services/game_launcher.dart';
 import 'package:squirrel_play/presentation/blocs/game_detail/game_detail_bloc.dart';
 import 'package:squirrel_play/presentation/blocs/home/home_bloc.dart';
-import 'package:squirrel_play/presentation/blocs/quick_scan/quick_scan_bloc.dart';
 import 'package:squirrel_play/presentation/navigation/focus_traversal.dart';
 import 'package:squirrel_play/presentation/pages/game_detail_page.dart';
 import 'package:squirrel_play/presentation/pages/gamepad_test_page.dart';
@@ -331,14 +330,11 @@ class _ShellWithFocusScopeState extends State<_ShellWithFocusScope> {
         child: Column(
           children: [
             // TopBar - persistent across navigation (not recreated on page change)
-            // Wrapped with QuickScanBloc for refresh functionality
+            // QuickScanBloc is provided at app root level as singleton
             // Also wrapped in FocusScope for automatic focus containment
             FocusScope(
               node: _topBarScopeNode,
-              child: BlocProvider(
-                create: (context) => getIt<QuickScanBloc>(),
-                child: const TopBar(),
-              ),
+              child: const TopBar(),
             ),
             // Page content - changes during navigation with transition animation
             Expanded(child: widget.content),

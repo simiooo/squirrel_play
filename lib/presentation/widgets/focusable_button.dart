@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:squirrel_play/core/theme/design_tokens.dart';
 import 'package:squirrel_play/data/services/sound_service.dart';
@@ -131,54 +132,68 @@ class _FocusableButtonState extends State<FocusableButton> {
       button: true,
       label: widget.label,
       hint: widget.hint,
-      child: AnimatedContainer(
-        duration: isFocused
-            ? const Duration(milliseconds: 150)
-            : const Duration(milliseconds: 100),
-        curve: isFocused
-            ? AppAnimationCurves.focusIn
-            : AppAnimationCurves.focusOut,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(AppRadii.medium),
-          border: isFocused
-              ? const Border(
-                  bottom: BorderSide(
-                    color: AppColors.primaryAccent,
-                    width: 2,
-                  ),
-                )
-              : null,
-        ),
-        child: TextButton(
-          focusNode: widget.focusNode,
-          onPressed: _handlePress,
-          style: TextButton.styleFrom(
-            minimumSize: const Size(48, 48),
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.sm,
-            ),
+      child: Focus(
+        canRequestFocus: false,
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent || event is KeyRepeatEvent) {
+            if (event.logicalKey == LogicalKeyboardKey.gameButtonA ||
+                event.logicalKey == LogicalKeyboardKey.enter ||
+                event.logicalKey == LogicalKeyboardKey.select) {
+              _handlePress();
+              return KeyEventResult.handled;
+            }
+          }
+          return KeyEventResult.ignored;
+        },
+        child: AnimatedContainer(
+          duration: isFocused
+              ? const Duration(milliseconds: 150)
+              : const Duration(milliseconds: 100),
+          curve: isFocused
+              ? AppAnimationCurves.focusIn
+              : AppAnimationCurves.focusOut,
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(AppRadii.medium),
+            border: isFocused
+                ? const Border(
+                    bottom: BorderSide(
+                      color: AppColors.primaryAccent,
+                      width: 2,
+                    ),
+                  )
+                : null,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (widget.icon != null) ...[
-                Icon(
-                  widget.icon,
-                  color: textColor,
-                  size: 20,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-              ],
-              Text(
-                widget.label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: textColor,
-                  fontWeight: fontWeight,
-                ),
+          child: TextButton(
+            focusNode: widget.focusNode,
+            onPressed: _handlePress,
+            style: TextButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.sm,
               ),
-            ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (widget.icon != null) ...[
+                  Icon(
+                    widget.icon,
+                    color: textColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                ],
+                Text(
+                  widget.label,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: textColor,
+                    fontWeight: fontWeight,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

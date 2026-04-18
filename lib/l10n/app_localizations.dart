@@ -1039,6 +1039,402 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to update game'**
   String get errorUpdateFailed;
+
+  /// Label for the executable file picker in manual add tab
+  ///
+  /// In en, this message translates to:
+  /// **'Executable File'**
+  String get manualAddExecutableLabel;
+
+  /// Button label to browse for executable file
+  ///
+  /// In en, this message translates to:
+  /// **'Browse...'**
+  String get manualAddBrowseButton;
+
+  /// Placeholder text when no file is selected
+  ///
+  /// In en, this message translates to:
+  /// **'No file selected'**
+  String get manualAddNoFileSelected;
+
+  /// Error message for invalid executable file
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid file'**
+  String get manualAddInvalidFileError;
+
+  /// Label for the game name input field
+  ///
+  /// In en, this message translates to:
+  /// **'Game Name'**
+  String get manualAddGameNameLabel;
+
+  /// Hint text for the game name input field
+  ///
+  /// In en, this message translates to:
+  /// **'Enter game name'**
+  String get manualAddGameNameHint;
+
+  /// Error message for invalid game name
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid name'**
+  String get manualAddInvalidNameError;
+
+  /// Button label to confirm adding a game manually
+  ///
+  /// In en, this message translates to:
+  /// **'Add Game'**
+  String get manualAddConfirmButton;
+
+  /// Button label to add a directory for scanning
+  ///
+  /// In en, this message translates to:
+  /// **'Add Directory'**
+  String get scanDirectoryAddDirectoryButton;
+
+  /// Button label to start scanning directories
+  ///
+  /// In en, this message translates to:
+  /// **'Start Scan'**
+  String get scanDirectoryStartScanButton;
+
+  /// Status text showing found and selected executable counts
+  ///
+  /// In en, this message translates to:
+  /// **'Found {totalCount} executables ({selectedCount} selected)'**
+  String scanDirectoryFoundExecutables(int totalCount, int selectedCount);
+
+  /// Button label to select all discovered executables
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get scanDirectorySelectAllButton;
+
+  /// Button label to deselect all discovered executables
+  ///
+  /// In en, this message translates to:
+  /// **'Select None'**
+  String get scanDirectorySelectNoneButton;
+
+  /// Button label to add selected games
+  ///
+  /// In en, this message translates to:
+  /// **'Add {count} Games'**
+  String scanDirectoryAddGamesButton(int count);
+
+  /// Title shown when no executables are found during scan
+  ///
+  /// In en, this message translates to:
+  /// **'No executables found'**
+  String get scanDirectoryNoExecutablesTitle;
+
+  /// Subtitle suggesting actions when no executables are found
+  ///
+  /// In en, this message translates to:
+  /// **'Try selecting a different directory or check that .exe files exist.'**
+  String get scanDirectoryNoExecutablesSubtitle;
+
+  /// Button label to choose different directories after empty scan
+  ///
+  /// In en, this message translates to:
+  /// **'Select Different Directories'**
+  String get scanDirectorySelectDifferentDirectories;
+
+  /// Message shown while adding discovered games
+  ///
+  /// In en, this message translates to:
+  /// **'Adding games...'**
+  String get scanDirectoryAddingGames;
+
+  /// Message shown while initializing Steam scanner
+  ///
+  /// In en, this message translates to:
+  /// **'Initializing...'**
+  String get steamGamesInitializing;
+
+  /// Label showing the default Steam installation path
+  ///
+  /// In en, this message translates to:
+  /// **'Default: {path}'**
+  String steamGamesDefaultPath(String path);
+
+  /// Button label to browse for Steam installation folder
+  ///
+  /// In en, this message translates to:
+  /// **'Browse for Steam Folder'**
+  String get steamGamesBrowseSteamFolder;
+
+  /// Label for the current Steam path display
+  ///
+  /// In en, this message translates to:
+  /// **'Steam Path:'**
+  String get steamGamesSteamPathLabel;
+
+  /// Button label to select all available Steam games
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get steamGamesSelectAllButton;
+
+  /// Button label to deselect all Steam games
+  ///
+  /// In en, this message translates to:
+  /// **'Select None'**
+  String get steamGamesSelectNoneButton;
+
+  /// Status text showing found Steam games and already added count
+  ///
+  /// In en, this message translates to:
+  /// **'Found {count} games ({alreadyAddedCount} already added)'**
+  String steamGamesFoundGames(int count, int alreadyAddedCount);
+
+  /// Message shown when no Steam games are detected
+  ///
+  /// In en, this message translates to:
+  /// **'No Steam games found'**
+  String get steamGamesNoGamesFound;
+
+  /// Label showing the Steam application ID
+  ///
+  /// In en, this message translates to:
+  /// **'App ID: {appId}'**
+  String steamGamesAppId(String appId);
+
+  /// Badge label shown for games already in the library
+  ///
+  /// In en, this message translates to:
+  /// **'Already Added'**
+  String get steamGamesAlreadyAdded;
+
+  /// Message shown while importing Steam games
+  ///
+  /// In en, this message translates to:
+  /// **'Importing games...'**
+  String get steamGamesImporting;
+
+  /// Progress text showing completed and total imports
+  ///
+  /// In en, this message translates to:
+  /// **'{completed} of {total}'**
+  String steamGamesImportProgress(int completed, int total);
+
+  /// Title shown when Steam game import is complete
+  ///
+  /// In en, this message translates to:
+  /// **'Import Complete!'**
+  String get steamGamesImportComplete;
+
+  /// Message showing number of successfully imported games
+  ///
+  /// In en, this message translates to:
+  /// **'{count} games imported'**
+  String steamGamesImportedCount(int count);
+
+  /// Message showing number of skipped games during import
+  ///
+  /// In en, this message translates to:
+  /// **'{count} skipped'**
+  String steamGamesSkippedCount(int count);
+
+  /// Label for the errors section in import complete state
+  ///
+  /// In en, this message translates to:
+  /// **'Errors:'**
+  String get steamGamesErrorsLabel;
+
+  /// Button label to import selected Steam games when none selected
+  ///
+  /// In en, this message translates to:
+  /// **'Import Selected Games'**
+  String get steamGamesImportButton;
+
+  /// Button label to import selected Steam games with count
+  ///
+  /// In en, this message translates to:
+  /// **'Import {count} Games'**
+  String steamGamesImportCountButton(int count);
+
+  /// Gamepad nav bar hint for open action
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get gamepadNavOpen;
+
+  /// Gamepad nav bar hint for select current directory action
+  ///
+  /// In en, this message translates to:
+  /// **'Select Current'**
+  String get gamepadNavSelectCurrent;
+
+  /// Message shown while detecting Steam installation
+  ///
+  /// In en, this message translates to:
+  /// **'Detecting Steam installation...'**
+  String get steamScannerDetecting;
+
+  /// Error when Steam cannot be auto-detected
+  ///
+  /// In en, this message translates to:
+  /// **'Steam installation not found. Please specify the path manually.'**
+  String get steamScannerNotFound;
+
+  /// Error when Steam detection throws an exception
+  ///
+  /// In en, this message translates to:
+  /// **'Error detecting Steam: {error}'**
+  String steamScannerDetectError(String error);
+
+  /// Message shown while validating a manually-set Steam path
+  ///
+  /// In en, this message translates to:
+  /// **'Validating Steam path...'**
+  String get steamScannerValidating;
+
+  /// Error when user-provided Steam path is invalid
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid Steam path. Please check the path and try again.'**
+  String get steamScannerInvalidPath;
+
+  /// Error when path validation throws an exception
+  ///
+  /// In en, this message translates to:
+  /// **'Error validating path: {error}'**
+  String steamScannerValidateError(String error);
+
+  /// Error when scan is requested before setting a path
+  ///
+  /// In en, this message translates to:
+  /// **'No Steam path set. Please detect or specify Steam path first.'**
+  String get steamScannerNoPathSet;
+
+  /// Message shown while scanning Steam libraries
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning Steam libraries...'**
+  String get steamScannerScanning;
+
+  /// Error when library scan throws an exception
+  ///
+  /// In en, this message translates to:
+  /// **'Error scanning library: {error}'**
+  String steamScannerScanError(String error);
+
+  /// Error detail for a game with no executable
+  ///
+  /// In en, this message translates to:
+  /// **'{gameName}: No executable found'**
+  String steamScannerNoExecutable(String gameName);
+
+  /// Error detail when importing a specific game fails
+  ///
+  /// In en, this message translates to:
+  /// **'{gameName}: {error}'**
+  String steamScannerImportError(String gameName, String error);
+
+  /// Error when manual game addition fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to add game: {error}'**
+  String errorAddGameFailed(String error);
+
+  /// Error when batch-adding scanned games fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to add games: {error}'**
+  String errorAddGamesFailed(String error);
+
+  /// Error when the background quick scan fails
+  ///
+  /// In en, this message translates to:
+  /// **'Scan failed: {error}'**
+  String errorScanFailed(String error);
+
+  /// Error when loading settings fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load settings: {error}'**
+  String errorLoadSettingsFailed(String error);
+
+  /// Error when fetching game metadata fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to fetch metadata: {error}'**
+  String errorFetchMetadataFailed(String error);
+
+  /// Error when manual metadata search fails
+  ///
+  /// In en, this message translates to:
+  /// **'Search failed: {error}'**
+  String errorSearchFailed(String error);
+
+  /// Error when selecting a metadata match fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update metadata: {error}'**
+  String errorUpdateMetadataFailed(String error);
+
+  /// Error when clearing metadata fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to clear metadata: {error}'**
+  String errorClearMetadataFailed(String error);
+
+  /// Input log type label for button events
+  ///
+  /// In en, this message translates to:
+  /// **'BUTTON'**
+  String get gamepadTestButton;
+
+  /// Input log type label for axis events
+  ///
+  /// In en, this message translates to:
+  /// **'AXIS'**
+  String get gamepadTestAxis;
+
+  /// Input log type label for gamepad connection events
+  ///
+  /// In en, this message translates to:
+  /// **'CONNECT'**
+  String get gamepadTestConnect;
+
+  /// Input log type label for gamepad disconnection events
+  ///
+  /// In en, this message translates to:
+  /// **'DISCONNECT'**
+  String get gamepadTestDisconnect;
+
+  /// Label for a button press action in input log
+  ///
+  /// In en, this message translates to:
+  /// **'pressed'**
+  String get gamepadTestPressed;
+
+  /// Label for a button release action in input log
+  ///
+  /// In en, this message translates to:
+  /// **'released'**
+  String get gamepadTestReleased;
+
+  /// Log message when a gamepad is connected
+  ///
+  /// In en, this message translates to:
+  /// **'Gamepad connected: {name}'**
+  String gamepadTestGamepadConnected(String name);
+
+  /// Fallback label for unknown gamepad name
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get gamepadTestUnknown;
+
+  /// Log message when a gamepad is disconnected
+  ///
+  /// In en, this message translates to:
+  /// **'Gamepad disconnected'**
+  String get gamepadTestGamepadDisconnected;
 }
 
 class _AppLocalizationsDelegate

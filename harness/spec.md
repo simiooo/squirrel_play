@@ -1,192 +1,151 @@
-# Product Specification: Squirrel Play — Game Detail & Process Lifecycle
+# Product Specification: Squirrel Play — Gamepad Navigation & i18n Bug Fixes
 
 ## Overview
 
-Squirrel Play is a Steam Big Picture-inspired game management desktop application designed for couch gaming with full gamepad support. Currently, users browse their game library on a Home page (Netflix-style hero layout) and a Library page (responsive grid), but interacting with a game is limited — pressing A on a game card immediately launches the game with no intermediate screen. There is no way to inspect a game's details, edit its metadata, or manage a running process.
+Squirrel Play is a Steam Big Picture-inspired game management desktop app built with Flutter, designed for couch gaming with full gamepad support. This specification addresses five critical bugs that break the core user experience when navigating with a gamepad: two focus/activation issues in the `GamepadFileBrowser` dialog, two focus traversal issues with `PickerButton` widgets in the Add Game dialog, and a large set of hardcoded English strings that need internationalization (i18n) support.
 
-This specification introduces a **Game Detail Page** that becomes the central hub for per-game interaction. Pressing A on any game card navigates to this detail page, where users can launch the game, edit its metadata and launch arguments, delete its library entry, or stop a running process. The launch/stop system is rebuilt from a fire-and-forget model to a **full lifecycle process tracking** model, enabling users to see which games are running and terminate them directly from the UI.
+These bugs directly impact the primary input method (gamepad) and the app's accessibility for non-English users. All fixes must preserve the existing `FocusScope`-based architecture, maintain the existing test suite (370 tests), and follow the project's established patterns for package imports, code generation, and localization.
 
-This transforms Squirrel Play from a simple launcher into a true game library manager with process supervision.
+## Core Features (Bugs to Fix)
 
-## Core Features
+### 1. GamepadFileBrowser A-Key Activation (ActivateIntent)
 
-### 1. Game Detail Page
+**Problem**: When focus is on a file/directory item inside `GamepadFileBrowser`, pressing the gamepad A button (or Enter) triggers `FocusTraversalService.activateCurrentNode()`, which calls `Actions.invoke(context, const ActivateIntent())`. This call fails with an exception because the `Actions` widget is a *descendant* of the `Focus` widget — `Actions.invoke` walks UP the tree from the `Focus` widget's context and never finds the `Actions` mapping.
 
-A dedicated page reachable by pressing A (confirm) on any game card in the Home or Library pages. It displays rich game information and provides action buttons for game management.
+**User story**: As a user browsing for a game executable with a gamepad, I can press A to open a directory or select a file.
 
-- **User stories**:
-  - As a user, I can press A on a game card to open its detail page.
-  - As a user, I can see the game's title, description, cover/hero artwork, play count, last played date, and favorite status on the detail page.
-  - As a user, I can navigate back from the detail page to the previous screen (Home or Library) using B (cancel).
-  - As a user, I can navigate between action buttons on the detail page using the D-pad or left stick.
+**Acceptance criteria**:
+- Pressing A/Enter on a focused file item in `GamepadFileBrowser` selects the file and closes the dialog (in `file` mode).
+- Pressing A/Enter on a focused directory item opens that directory.
+- No `ActivateIntent not handled` exception appears in the logs.
+- Existing keyboard arrow navigation (Up/Down/Left for parent) continues to work.
 
-- **Acceptance criteria**:
-  - A new route `/game/:id` exists and is registered in the app router.
-  - Pressing A on a game card in `HomePage` navigates to `/game/{id}` instead of launching the game.
-  - Pressing A on a game card in `LibraryPage` navigates to `/game/{id}`.
-  - The detail page displays the game's metadata (fetched from `MetadataRepository`) and play statistics.
-  - The detail page uses the existing `AppShell` layout with the persistent `TopBar`.
-  - B button or Escape key navigates back to the previous page.
-  - Focus is automatically set to the first action button when the page loads.
+### 2. GamepadFileBrowser B-Key Cancellation
 
-### 2. Launch & Stop with Full Lifecycle Tracking
+**Problem**: Pressing the gamepad B button inside `GamepadFileBrowser` does nothing. `FocusTraversalService._handleCancel()` detects that focus is inside a dialog scope and returns early without performing any action. The dialog's own `KeyboardListener` only handles `LogicalKeyboardKey.escape`, not the gamepad B button.
 
-The game launching system is upgraded from fire-and-forget to full process lifecycle tracking. Each launched game is monitored until exit, and users can stop running games from the detail page.
+**User story**: As a user browsing files with a gamepad, I can press B to cancel and close the file browser dialog.
 
-- **User stories**:
-  - As a user, I can press A on "启动游戏" (Launch Game) in the detail page to start the game.
-  - As a user, I can see visual feedback while the game is launching.
-  - As a user, I can see when a game is currently running from within its detail page.
-  - As a user, I can press A on "停止" (Stop) to forcefully terminate a running game process.
-  - As a user, I can launch multiple games simultaneously (no artificial limit), and each is tracked independently.
+**Acceptance criteria**:
+- Pressing B inside `GamepadFileBrowser` closes the dialog and returns to the Add Game dialog.
+- The cancel action works regardless of which element (file item, Select button, or Cancel button) currently has focus.
+- No exception is thrown on cancel.
 
-- **Acceptance criteria**:
-  - `GameLauncher` interface is extended to support: `launchGame(Game)`, `stopGame(String gameId)`, `isGameRunning(String gameId)`, and a `Stream<Map<String, RunningGameInfo>>` of running games.
-  - `GameLauncherService` uses `Process.start` (non-detached) to capture the `Process` object, stores it in a `Map<String, Process>`, and listens for process exit to clean up state.
-  - The service is a singleton (already registered as such in DI) and tracks all running processes centrally.
-  - Launching a game passes the game's `launchArguments` (if any) to the process.
-  - Stopping a game sends `process.kill()` and removes the entry from the tracking map.
-  - The detail page UI reacts to running state changes in real-time via stream subscription.
-  - When a game is running, its detail page shows "停止" (Stop) instead of "启动游戏" (Launch).
-  - Play count increments and `lastPlayedDate` updates only when a launch succeeds (process starts), not when it exits.
+### 3. Manual Add Tab — PickerButton Focus Traversal
 
-### 3. Edit Game Settings
+**Problem**: In the "Manual Add" tab of the Add Game dialog, the "Browse..." button (a `PickerButton`) cannot be reached via directional focus traversal (D-pad Up/Down). Users navigating with a gamepad can focus the game name text field but cannot move focus to the Browse button.
 
-From the detail page, users can open an edit dialog to modify a game's metadata, executable path, and launch arguments.
+**User story**: As a user filling out the manual add form with a gamepad, I can navigate from the game name field down to the Browse button, and from the Browse button to the Add Game button.
 
-- **User stories**:
-  - As a user, I can select "设置" (Settings) from the detail page action buttons to open an edit dialog.
-  - As a user, I can edit the game's display title.
-  - As a user, I can change the game's executable path using the existing gamepad-friendly file browser.
-  - As a user, I can add, edit, or remove command-line launch arguments (e.g., `-windowed`, `--fullscreen`).
-  - As a user, I can save changes and return to the detail page, which immediately reflects the updates.
+**Acceptance criteria**:
+- D-pad Down from the game name `FocusableTextField` moves focus to the `PickerButton` (Browse...).
+- D-pad Down from the `PickerButton` moves focus to the `FocusableButton` (Add Game).
+- D-pad Up from the `FocusableButton` moves focus back to the `PickerButton`.
+- D-pad Up from the `PickerButton` moves focus back to the `FocusableTextField`.
+- Pressing A on the focused `PickerButton` opens the `GamepadFileBrowser` dialog.
 
-- **Acceptance criteria**:
-  - An `EditGameDialog` widget exists, styled consistently with `AddGameDialog`.
-  - The dialog contains focusable fields: title text input, executable path with browse button, and launch arguments text input.
-  - The file browser (`GamepadFileBrowser`) is reused for selecting a new executable.
-  - Launch arguments are stored as a single nullable string in the database (`launch_arguments` column).
-  - The `Game` entity and `GameModel` include a `launchArguments` field.
-  - Saving updates the game in the repository and refreshes the detail page state.
-  - Canceling discards changes and closes the dialog.
+### 4. Scan Directory Tab — PickerButton Focus Traversal
 
-### 4. Delete Game from Detail Page
+**Problem**: In the "Scan Directory" tab, the "Add Directory" button (a `PickerButton`) cannot be reached via directional focus traversal. This prevents users from adding directories without switching to mouse/keyboard.
 
-Users can remove a game from their library directly from the detail page. This deletes only the database metadata, preserving the actual game files.
+**User story**: As a user on the Scan Directory tab with a gamepad, I can navigate to and activate the Add Directory button.
 
-- **User stories**:
-  - As a user, I can select "删除" (Delete) from the detail page action buttons.
-  - As a user, I must confirm deletion in a dialog to prevent accidental removal.
-  - As a user, after confirming deletion, I am returned to the Home page (or Library page if that was the source).
-  - As a user, I know that deleting only removes the library entry, not the game files on disk.
+**Acceptance criteria**:
+- D-pad Down from the top of the tab content moves focus to the "Add Directory" `PickerButton`.
+- D-pad Down from the `PickerButton` moves focus into the `ManageDirectoriesSection` list (if directories exist) or to the "Start Scan" button.
+- D-pad Up from below returns focus to the `PickerButton`.
+- Pressing A on the focused `PickerButton` opens the directory browser dialog.
 
-- **Acceptance criteria**:
-  - The existing `DeleteGameDialog` is reused (or adapted) for confirmation.
-  - Delete is only visible when the game is NOT running (mutual exclusion with Stop).
-  - Deleting calls `GameRepository.deleteGame(id)` and notifies `HomeRepository` for reactive updates.
-  - After deletion, the user is navigated back to the previous page (`context.pop()` or equivalent).
-  - The deleted game's process is NOT affected (if it was running, it keeps running — but this scenario is prevented by UI mutual exclusion).
+### 5. Internationalization (i18n) of Hardcoded Strings
 
-### 5. Action Button Mutual Exclusion
+**Problem**: The following files contain numerous hardcoded English UI strings that are not extracted to the ARB localization files, making the app partially untranslated for Chinese users:
+- `lib/presentation/widgets/manual_add_tab.dart`
+- `lib/presentation/widgets/scan_directory_tab.dart`
+- `lib/presentation/widgets/steam_games_tab.dart`
+- `lib/presentation/widgets/gamepad_file_browser.dart`
 
-The detail page action buttons adapt their visibility based on whether the game is currently running.
+**User story**: As a Chinese-language user, all visible text in the Add Game dialog and file browser appears in Chinese.
 
-- **User stories**:
-  - As a user, when a game is not running, I see: "启动游戏", "设置", "删除".
-  - As a user, when a game is running, I see: "停止", "设置".
-  - As a user, I never see "启动游戏" and "停止" at the same time for the same game.
-
-- **Acceptance criteria**:
-  - When `isGameRunning(gameId) == false`, the detail page renders Launch, Settings, and Delete buttons.
-  - When `isGameRunning(gameId) == true`, the detail page renders Stop and Settings buttons only.
-  - The button layout animates smoothly between states (crossfade or simple visibility toggle with focus reset).
-  - Focus is managed correctly when buttons appear/disappear — if the focused button is hidden, focus moves to the next available button.
-
-## AI Integration
-
-No new AI integration is required for this feature set. The existing metadata fetching (RAWG API, Steam Store) continues to work as-is. The detail page will display whatever metadata was previously fetched or cached.
+**Acceptance criteria**:
+- All user-visible strings in the four listed files are replaced with `AppLocalizations.of(context)!.<key>` lookups (with null-safe fallback patterns where appropriate).
+- Every new English string is added to `lib/l10n/app_en.arb` with a `@description` metadata entry.
+- Every new English string has a corresponding Chinese translation in `lib/l10n/app_zh.arb`.
+- `flutter gen-l10n` runs successfully and generates updated localization code.
+- The app displays Chinese text when the system locale is set to Chinese.
 
 ## Technical Architecture
 
-- **Frontend**: Flutter desktop (Linux primary), GoRouter for navigation, BLoC pattern for state management, FocusScope for gamepad navigation.
-- **Backend/Data**: SQLite via `sqflite_common_ffi`, manual DI with `get_it`.
-- **Key patterns**:
-  - Extend existing `GameLauncher` interface rather than replacing it outright — this minimizes blast radius in `HomeBloc` and other consumers.
-  - Use `Process` object retention (non-detached `Process.start`) for lifecycle tracking. The process runs independently of Flutter but we hold a reference to it.
-  - Singleton `GameLauncherService` is the natural place for central process tracking.
-  - Database migration: version 3 → 4, adding `launch_arguments TEXT` to the `games` table.
+- **Frontend**: Flutter desktop (Linux primary, Windows/macOS secondary)
+- **State Management**: BLoC pattern with `flutter_bloc`
+- **Navigation**: GoRouter with `FocusScopeNode` containers for TopBar, Content, and BottomNav
+- **Focus System**: Flutter native `FocusScope` architecture with `FocusTraversalService` handling cross-scope wrapping and row/grid navigation
+- **Localization**: Flutter `gen-l10n` with ARB files (`app_en.arb`, `app_zh.arb`)
+- **DI**: `get_it` with manual registration in `lib/app/di.dart`
 
-## Visual Design Direction
-
-- **Aesthetic**: Consistent with existing Steam Big Picture-inspired dark UI. Immersive, full-viewport feel.
-- **Color palette**: Uses existing design tokens (`AppColors.background`, `AppColors.surface`, `AppColors.primaryAccent`).
-- **Detail page layout**:
-  - Top 60%: Full-width hero image background with a left-to-right gradient overlay for text readability. Game title, description, and stats overlaid on the left.
-  - Bottom 40%: Dark surface area with a horizontal row of large, focusable action buttons (Launch/Stop, Settings, Delete).
-  - Button styling uses the existing `FocusableButton` family with large padding for couch readability.
-- **Typography**: Same as existing — geometric sans-serif, consistent with `design_tokens.dart`.
-- **Transitions**: Use the existing fade + slide page transitions (300ms enter, 200ms exit) when navigating to/from the detail page.
+### Key Patterns to Preserve
+- `always_use_package_imports` — no relative imports
+- `require_trailing_commas` enforced
+- Focus widgets must use state-level `FocusNode` fields with proper `dispose()`
+- Dialog content wrapped in `FocusScope` for automatic focus trapping
+- All interactive widgets use `Focus` or `FocusableButton`/`FocusableTextField`/`PickerButton`
+- Sound effects via `SoundService.instance` on focus changes and selections
 
 ## Sprint Breakdown
 
-### Sprint 1: Foundation — Database, Entity & Process Tracking
-- **Scope**: Extend the data layer to support launch arguments and rebuild the launcher service for process lifecycle tracking.
-- **Dependencies**: None (builds on existing codebase).
-- **Delivers**:
-  - Database schema v4 with `launch_arguments` column.
-  - `Game` entity and `GameModel` updated with `launchArguments` field.
-  - `GameRepository` and `GameRepositoryImpl` updated to persist/fetch the new field.
-  - `GameLauncher` interface redesigned: adds `stopGame()`, `isGameRunning()`, `runningGamesStream`.
-  - `GameLauncherService` reimplemented with `Map<String, Process>` tracking, non-detached process start, exit listeners.
-  - All generated code rebuilt (`*.g.dart` not needed for GameModel since it uses manual `fromMap`/`toMap`, but verify).
+### Sprint 1: Fix GamepadFileBrowser A-Key and B-Key Actions
+- **Scope**: Fix activation and cancellation inside `GamepadFileBrowser`
+- **Dependencies**: None
+- **Delivers**: A working file browser dialog that can be fully operated with gamepad A and B buttons
+- **Files to modify**:
+  - `lib/presentation/widgets/gamepad_file_browser.dart` (primary)
+  - `lib/presentation/navigation/focus_traversal.dart` (may need cancel handling adjustment)
 - **Acceptance criteria**:
-  - `flutter analyze` passes.
-  - `flutter test` passes (including updated `game_launcher_service_test.dart` and `game_repository_impl_test.dart`).
-  - A unit test can launch a dummy long-running process, verify `isGameRunning` returns true, stop it, and verify it returns false.
+  1. Gamepad A/Enter on a file item selects the file and invokes `onSelected`.
+  2. Gamepad A/Enter on a directory item opens that directory.
+  3. Gamepad B/Escape closes the `GamepadFileBrowser` dialog from any focused element.
+  4. No `ActivateIntent not handled` exceptions in debug logs during file browser usage.
+  5. All existing tests pass (`flutter test`).
 
-### Sprint 2: Game Detail Page — UI, Routing & Navigation
-- **Scope**: Create the detail page, wire it into the router, and change Home/Library navigation to use it.
-- **Dependencies**: Sprint 1 (process tracking not strictly needed for UI, but the page design assumes it).
-- **Delivers**:
-  - New route `/game/:id` in `router.dart`.
-  - `GameDetailPage` widget with hero background, game info overlay, and action button row.
-  - `GameDetailBloc` with states (`GameDetailLoading`, `GameDetailLoaded`, `GameDetailError`) and events (`GameDetailLoadRequested`, `GameDetailRunningStateChanged`).
-  - `HomePage` updated: `onCardSelected` now navigates to `/game/{id}` instead of launching.
-  - `LibraryPage` updated: `onGameSelected` navigates to `/game/{id}`.
-  - Focus management on the detail page: action buttons wrapped in `FocusScope`, automatic focus to first button.
-  - B button / Escape pops back to the previous page.
+### Sprint 2: Fix Focus Traversal for PickerButton Widgets
+- **Scope**: Fix directional focus traversal to `PickerButton` widgets in Manual Add and Scan Directory tabs
+- **Dependencies**: Sprint 1 (to verify browser opens from the fixed buttons)
+- **Delivers**: Gamepad-navigable Add Game dialog with full traversal through all interactive elements
+- **Files to modify**:
+  - `lib/presentation/widgets/picker_button.dart` (primary — fix focus node architecture)
+  - `lib/presentation/widgets/manual_add_tab.dart` (verify traversal order)
+  - `lib/presentation/widgets/scan_directory_tab.dart` (verify traversal order)
 - **Acceptance criteria**:
-  - Pressing A on a game card in Home or Library navigates to the detail page.
-  - The detail page displays the correct game's title, metadata, and stats.
-  - The detail page action buttons are focusable via D-pad.
-  - B button returns to the previous page.
-  - `flutter test` passes, including new widget tests for `GameDetailPage`.
+  1. In Manual Add tab: D-pad Up/Down navigates between Name input → Browse button → Add Game button.
+  2. In Scan Directory tab: D-pad Up/Down navigates between Add Directory button → directory list → Start Scan button.
+  3. Pressing A on a focused `PickerButton` opens the appropriate file browser.
+  4. Focus visual feedback (border/background) correctly appears on `PickerButton` when focused.
+  5. All existing tests pass.
 
-### Sprint 3: Detail Page Actions — Launch, Stop, Delete, Edit
-- **Scope**: Implement all interactive actions on the detail page and add localization.
-- **Dependencies**: Sprint 1 and Sprint 2.
-- **Delivers**:
-  - Launch action: pressing A on "启动游戏" calls `GameLauncher.launchGame()`, increments play count, updates `lastPlayedDate`.
-  - Stop action: pressing A on "停止" calls `GameLauncher.stopGame()`, cleans up state.
-  - Mutual exclusion: Stop hides Launch/Delete; running state streamed to `GameDetailBloc`.
-  - Delete action: pressing A on "删除" shows `DeleteGameDialog`, then deletes and pops back.
-  - Edit action: pressing A on "设置" opens `EditGameDialog` with title, executable path (with file browser), and launch arguments fields.
-  - Localization strings added to `app_en.arb` and `app_zh.arb` for all new UI text, then `flutter gen-l10n` run.
-  - Gamepad hint bar updates on the detail page to show relevant actions (e.g., "A: Confirm", "B: Back").
+### Sprint 3: Extract and Localize All Hardcoded Strings
+- **Scope**: Extract every hardcoded English string from the four target files into ARB files with English and Chinese translations
+- **Dependencies**: Sprint 1 and Sprint 2 (strings in those files may shift slightly)
+- **Delivers**: Fully bilingual Add Game dialog and file browser
+- **Files to modify**:
+  - `lib/l10n/app_en.arb`
+  - `lib/l10n/app_zh.arb`
+  - `lib/presentation/widgets/manual_add_tab.dart`
+  - `lib/presentation/widgets/scan_directory_tab.dart`
+  - `lib/presentation/widgets/steam_games_tab.dart`
+  - `lib/presentation/widgets/gamepad_file_browser.dart`
 - **Acceptance criteria**:
-  - Launching a game from the detail page starts the process and the button changes to "停止" within 1 second.
-  - Stopping a running game terminates the process and the button changes back to "启动游戏".
-  - Deleting a game removes it from the library and returns to the previous page; the game no longer appears in Home/Library.
-  - Editing a game and saving updates the detail page immediately.
-  - All new strings appear correctly in both English and Chinese.
-  - `flutter analyze` and `flutter test` pass.
+  1. Zero hardcoded English user-facing strings remain in the four widget files.
+  2. `app_en.arb` contains all new keys with proper `@description` metadata.
+  3. `app_zh.arb` contains accurate Chinese translations for all new keys.
+  4. `flutter gen-l10n` completes without errors.
+  5. Running the app in Chinese locale (`zh`) displays all text in Chinese.
+  6. Running the app in English locale (`en`) displays all text in English.
+  7. All existing tests pass.
 
 ## Out of Scope
 
-- **Cloud sync or online save states**: The detail page is purely local.
-- **In-game overlay or Steam-style overlay UI**: We only track the external process.
-- **Automatic screenshot capture on launch/stop**: Not requested.
-- **Play time tracking (hours played)**: We track play count and last played date only; total hours is not in scope.
-- **Batch operations (multi-select delete/launch)**: Detail page is single-game only.
-- **Achievement or progress tracking**: No integration with game internals.
-- **Changing the global app launch behavior from Home page hero section**: The hero info overlay's direct-launch behavior is replaced by navigation to detail page. No separate "quick launch" mode is retained.
+- Adding new languages beyond English and Chinese.
+- Refactoring the broader focus architecture beyond the specific bugs listed.
+- Adding new UI features, animations, or pages.
+- Changing the gamepad input mapping (A/B/X/Y assignments).
+- Modifying the `FocusTraversalService` API surface beyond minimal fixes needed for the B-key cancel behavior.
+- Rewriting existing tests or adding comprehensive new test suites (existing 370 tests must pass, but new tests are optional).

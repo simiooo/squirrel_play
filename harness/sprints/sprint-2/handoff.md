@@ -3,47 +3,34 @@
 ## Status: Ready for QA
 
 ## What to Test
+1. **PickerButton focus traversal in Manual Add tab**:
+   - Open the Add Game dialog → "Manual Add" tab.
+   - Use D-pad Down from the Name `FocusableTextField` — focus should move to the Browse... `PickerButton`.
+   - D-pad Down again — focus should move to the Add Game `FocusableButton`.
+   - D-pad Up should reverse the order.
 
-### 1. Navigation from HomePage
-- Launch the app
-- Press A (Enter) on any game card in the home page card row
-- Verify the app navigates to `/game/{id}` (check URL in debug output or browser address bar)
-- Verify the detail page shows the selected game's title, description (if available), and stats
+2. **PickerButton focus traversal in Scan Directory tab**:
+   - Open the Add Game dialog → "Scan Directory" tab.
+   - Use D-pad Down from the top — focus should move to the Add Directory `PickerButton`.
+   - If directories exist, D-pad Down should move into the `ManageDirectoriesSection` list, then to the Start Scan `FocusableButton`.
+   - D-pad Up should reverse the order.
 
-### 2. Navigation from LibraryPage
-- Navigate to Library page
-- Press A (Enter) on any game card in the grid
-- Verify the app navigates to `/game/{id}`
+3. **Activation still works**:
+   - With focus on any `PickerButton` or `FocusableButton`, press gamepad A (or Enter/Space) — the button action should fire.
+   - For `PickerButton`, this should open the file/directory browser dialog.
+   - For `FocusableButton`, the respective action (Add Game, Start Scan, etc.) should execute.
 
-### 3. Detail Page States
-- **Loading**: Briefly shows a `CircularProgressIndicator` before content loads
-- **Loaded**: Shows game title, description, developer (if metadata exists), play count, last played date, favorite status
-- **Error**: If game ID doesn't exist, shows error message with red icon
+4. **Visual feedback**:
+   - When a `PickerButton` is focused, it should show a full `AppColors.primaryAccent` border and shift to `AppColors.surface` background.
+   - When a `FocusableButton` is focused, it should show the bottom `AppColors.primaryAccent` border and shift to `AppColors.surfaceElevated` background (or `AppColors.primaryAccent` if `isPrimary` is true).
 
-### 4. Focus Behavior
-- When the detail page loads, the first action button ("启动游戏") should automatically have focus (orange/elevated background)
-- Use D-pad left/right or arrow keys to navigate between the three action buttons
-- Focus should move horizontally: Launch → Settings → Delete → Settings → Launch
-
-### 5. Back Navigation
-- Press B (Escape) on the detail page
-- Verify the app pops back to the previous page (Home or Library)
-- This is handled automatically by `FocusTraversalService._handleCancel()` — no custom back handler was added
-
-### 6. Action Buttons (Stubs)
-- Three buttons are visible: "启动游戏", "设置", "删除"
-- Pressing A on any of them logs to console but does not perform the actual action (Sprint 3 scope)
+5. **Regression checks**:
+   - `GamepadFileBrowser` (fixed in Sprint 1) should still work correctly when opened from the Browse... button.
+   - Focus traversal on the Home page (game rows, grid) should be unaffected.
 
 ## Running the Application
-
 - Command: `flutter run -d linux`
-- The app starts on the Home page. Navigate to a game card and press A to open the detail page.
+- The app launches on Linux desktop. Use keyboard arrow keys to simulate D-pad, or connect a gamepad.
 
 ## Known Gaps
-
-- **Launch/Stop actions**: "启动游戏" and "停止" buttons are present but non-functional. Sprint 3 wires these to `GameLauncher.launchGame()` and `GameLauncher.stopGame()`.
-- **Edit dialog**: "设置" button does not open `EditGameDialog`. Sprint 3 scope.
-- **Delete dialog**: "删除" button does not open `DeleteGameDialog`. Sprint 3 scope.
-- **Process lifecycle tracking**: `GameDetailRunningStateChanged` event exists but is stubbed. Sprint 3 subscribes to `GameLauncher.runningGamesStream`.
-- **Action button mutual exclusion**: All three buttons are always visible. Dynamic hiding based on `isRunning` is Sprint 3 scope.
-- **Localization**: Button labels are hardcoded in Chinese. Sprint 3 adds ARB entries and runs `flutter gen-l10n`.
+None. All success criteria have been implemented and verified by static analysis and the existing test suite.

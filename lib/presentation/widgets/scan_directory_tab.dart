@@ -7,6 +7,7 @@ import 'package:squirrel_play/app/di.dart';
 import 'package:squirrel_play/core/theme/design_tokens.dart';
 import 'package:squirrel_play/data/models/discovered_executable_model.dart';
 import 'package:squirrel_play/data/services/file_scanner_service.dart';
+import 'package:squirrel_play/l10n/app_localizations.dart';
 import 'package:squirrel_play/data/services/sound_service.dart';
 import 'package:squirrel_play/domain/repositories/game_repository.dart';
 import 'package:squirrel_play/domain/repositories/scan_directory_repository.dart';
@@ -204,7 +205,7 @@ class _ScanDirectoryTabState extends State<ScanDirectoryTab> {
 
   Future<void> _onScanComplete(List<DiscoveredExecutableModel> executables) async {
     // Check which executables are already in the library
-    final gameRepository = context.read<GameRepository>();
+    final gameRepository = getIt<GameRepository>();
     final checkedExecutables = <DiscoveredExecutableModel>[];
 
     for (final exe in executables) {
@@ -284,7 +285,7 @@ class _ScanDirectoryTabState extends State<ScanDirectoryTab> {
         // Add directory button
         PickerButton(
           focusNode: _addDirectoryFocusNode,
-          label: 'Add Directory',
+          label: AppLocalizations.of(context)?.scanDirectoryAddDirectoryButton ?? 'Add Directory',
           icon: Icons.folder_open,
           onPressed: _addDirectory,
         ),
@@ -315,7 +316,7 @@ class _ScanDirectoryTabState extends State<ScanDirectoryTab> {
           width: double.infinity,
           child: FocusableButton(
             focusNode: _startScanFocusNode,
-            label: 'Start Scan',
+            label: AppLocalizations.of(context)?.scanDirectoryStartScanButton ?? 'Start Scan',
             isPrimary: state.canStartScan,
             onPressed: state.canStartScan ? _startScan : () {},
           ),
@@ -338,7 +339,7 @@ class _ScanDirectoryTabState extends State<ScanDirectoryTab> {
           width: double.infinity,
           child: FocusableButton(
             focusNode: _cancelScanFocusNode,
-            label: 'Cancel',
+            label: AppLocalizations.of(context)?.buttonCancel ?? 'Cancel',
             onPressed: _cancelScan,
           ),
         ),
@@ -351,7 +352,7 @@ class _ScanDirectoryTabState extends State<ScanDirectoryTab> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Found ${state.totalCount} executables (${state.selectedCount} selected)',
+          AppLocalizations.of(context)?.scanDirectoryFoundExecutables(state.totalCount, state.selectedCount) ?? 'Found ${state.totalCount} executables (${state.selectedCount} selected)',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: AppColors.textSecondary,
           ),
@@ -364,7 +365,7 @@ class _ScanDirectoryTabState extends State<ScanDirectoryTab> {
             Expanded(
               child: FocusableButton(
                 focusNode: _selectAllFocusNode,
-                label: 'Select All',
+                label: AppLocalizations.of(context)?.scanDirectorySelectAllButton ?? 'Select All',
                 onPressed: _selectAll,
               ),
             ),
@@ -372,7 +373,7 @@ class _ScanDirectoryTabState extends State<ScanDirectoryTab> {
             Expanded(
               child: FocusableButton(
                 focusNode: _selectNoneFocusNode,
-                label: 'Select None',
+                label: AppLocalizations.of(context)?.scanDirectorySelectNoneButton ?? 'Select None',
                 onPressed: _selectNone,
               ),
             ),
@@ -396,7 +397,7 @@ class _ScanDirectoryTabState extends State<ScanDirectoryTab> {
           width: double.infinity,
           child: FocusableButton(
             focusNode: _confirmFocusNode,
-            label: 'Add ${state.selectedCount} Games',
+            label: AppLocalizations.of(context)?.scanDirectoryAddGamesButton(state.selectedCount) ?? 'Add ${state.selectedCount} Games',
             isPrimary: state.selectedCount > 0,
             onPressed: state.selectedCount > 0 ? _confirmSelection : () {},
           ),
@@ -417,14 +418,14 @@ class _ScanDirectoryTabState extends State<ScanDirectoryTab> {
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
-            'No executables found',
+            AppLocalizations.of(context)?.scanDirectoryNoExecutablesTitle ?? 'No executables found',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Try selecting a different directory or check that .exe files exist.',
+            AppLocalizations.of(context)?.scanDirectoryNoExecutablesSubtitle ?? 'Try selecting a different directory or check that .exe files exist.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: AppColors.textMuted,
             ),
@@ -433,7 +434,7 @@ class _ScanDirectoryTabState extends State<ScanDirectoryTab> {
           const SizedBox(height: AppSpacing.lg),
           FocusableButton(
             focusNode: _addDirectoryFocusNode,
-            label: 'Select Different Directories',
+            label: AppLocalizations.of(context)?.scanDirectorySelectDifferentDirectories ?? 'Select Different Directories',
             onPressed: () {
               context.read<AddGameBloc>().add(const StartScanFlow());
             },
@@ -444,15 +445,15 @@ class _ScanDirectoryTabState extends State<ScanDirectoryTab> {
   }
 
   Widget _buildAdding() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(),
-          SizedBox(height: AppSpacing.lg),
+          const CircularProgressIndicator(),
+          const SizedBox(height: AppSpacing.lg),
           Text(
-            'Adding games...',
-            style: TextStyle(color: AppColors.textSecondary),
+            AppLocalizations.of(context)?.scanDirectoryAddingGames ?? 'Adding games...',
+            style: const TextStyle(color: AppColors.textSecondary),
           ),
         ],
       ),

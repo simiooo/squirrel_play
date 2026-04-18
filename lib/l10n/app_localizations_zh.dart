@@ -506,4 +506,249 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get errorUpdateFailed => '更新游戏失败';
+
+  @override
+  String get manualAddExecutableLabel => '可执行文件';
+
+  @override
+  String get manualAddBrowseButton => '浏览...';
+
+  @override
+  String get manualAddNoFileSelected => '未选择文件';
+
+  @override
+  String get manualAddInvalidFileError => '无效文件';
+
+  @override
+  String get manualAddGameNameLabel => '游戏名称';
+
+  @override
+  String get manualAddGameNameHint => '输入游戏名称';
+
+  @override
+  String get manualAddInvalidNameError => '无效名称';
+
+  @override
+  String get manualAddConfirmButton => '添加游戏';
+
+  @override
+  String get scanDirectoryAddDirectoryButton => '添加目录';
+
+  @override
+  String get scanDirectoryStartScanButton => '开始扫描';
+
+  @override
+  String scanDirectoryFoundExecutables(int totalCount, int selectedCount) {
+    return '发现 $totalCount 个可执行文件（已选择 $selectedCount 个）';
+  }
+
+  @override
+  String get scanDirectorySelectAllButton => '全选';
+
+  @override
+  String get scanDirectorySelectNoneButton => '取消全选';
+
+  @override
+  String scanDirectoryAddGamesButton(int count) {
+    return '添加 $count 个游戏';
+  }
+
+  @override
+  String get scanDirectoryNoExecutablesTitle => '未找到可执行文件';
+
+  @override
+  String get scanDirectoryNoExecutablesSubtitle =>
+      '请尝试选择其他目录，或确认目录中存在 .exe 文件。';
+
+  @override
+  String get scanDirectorySelectDifferentDirectories => '选择其他目录';
+
+  @override
+  String get scanDirectoryAddingGames => '正在添加游戏...';
+
+  @override
+  String get steamGamesInitializing => '正在初始化...';
+
+  @override
+  String steamGamesDefaultPath(String path) {
+    return '默认：$path';
+  }
+
+  @override
+  String get steamGamesBrowseSteamFolder => '浏览 Steam 文件夹';
+
+  @override
+  String get steamGamesSteamPathLabel => 'Steam 路径：';
+
+  @override
+  String get steamGamesSelectAllButton => '全选';
+
+  @override
+  String get steamGamesSelectNoneButton => '取消全选';
+
+  @override
+  String steamGamesFoundGames(int count, int alreadyAddedCount) {
+    return '发现 $count 个游戏（$alreadyAddedCount 个已添加）';
+  }
+
+  @override
+  String get steamGamesNoGamesFound => '未找到 Steam 游戏';
+
+  @override
+  String steamGamesAppId(String appId) {
+    return 'App ID：$appId';
+  }
+
+  @override
+  String get steamGamesAlreadyAdded => '已添加';
+
+  @override
+  String get steamGamesImporting => '正在导入游戏...';
+
+  @override
+  String steamGamesImportProgress(int completed, int total) {
+    return '$completed / $total';
+  }
+
+  @override
+  String get steamGamesImportComplete => '导入完成！';
+
+  @override
+  String steamGamesImportedCount(int count) {
+    return '已导入 $count 个游戏';
+  }
+
+  @override
+  String steamGamesSkippedCount(int count) {
+    return '已跳过 $count 个';
+  }
+
+  @override
+  String get steamGamesErrorsLabel => '错误：';
+
+  @override
+  String get steamGamesImportButton => '导入选定游戏';
+
+  @override
+  String steamGamesImportCountButton(int count) {
+    return '导入 $count 个游戏';
+  }
+
+  @override
+  String get gamepadNavOpen => '打开';
+
+  @override
+  String get gamepadNavSelectCurrent => '选择当前';
+
+  @override
+  String get steamScannerDetecting => '正在检测 Steam 安装...';
+
+  @override
+  String get steamScannerNotFound => '未找到 Steam 安装。请手动指定路径。';
+
+  @override
+  String steamScannerDetectError(String error) {
+    return '检测 Steam 时出错：$error';
+  }
+
+  @override
+  String get steamScannerValidating => '正在验证 Steam 路径...';
+
+  @override
+  String get steamScannerInvalidPath => '无效的 Steam 路径。请检查路径后重试。';
+
+  @override
+  String steamScannerValidateError(String error) {
+    return '验证路径时出错：$error';
+  }
+
+  @override
+  String get steamScannerNoPathSet => '未设置 Steam 路径。请先检测或指定 Steam 路径。';
+
+  @override
+  String get steamScannerScanning => '正在扫描 Steam 库...';
+
+  @override
+  String steamScannerScanError(String error) {
+    return '扫描库时出错：$error';
+  }
+
+  @override
+  String steamScannerNoExecutable(String gameName) {
+    return '$gameName：未找到可执行文件';
+  }
+
+  @override
+  String steamScannerImportError(String gameName, String error) {
+    return '$gameName：$error';
+  }
+
+  @override
+  String errorAddGameFailed(String error) {
+    return '添加游戏失败：$error';
+  }
+
+  @override
+  String errorAddGamesFailed(String error) {
+    return '批量添加游戏失败：$error';
+  }
+
+  @override
+  String errorScanFailed(String error) {
+    return '扫描失败：$error';
+  }
+
+  @override
+  String errorLoadSettingsFailed(String error) {
+    return '加载设置失败：$error';
+  }
+
+  @override
+  String errorFetchMetadataFailed(String error) {
+    return '获取元数据失败：$error';
+  }
+
+  @override
+  String errorSearchFailed(String error) {
+    return '搜索失败：$error';
+  }
+
+  @override
+  String errorUpdateMetadataFailed(String error) {
+    return '更新元数据失败：$error';
+  }
+
+  @override
+  String errorClearMetadataFailed(String error) {
+    return '清除元数据失败：$error';
+  }
+
+  @override
+  String get gamepadTestButton => '按钮';
+
+  @override
+  String get gamepadTestAxis => '摇杆';
+
+  @override
+  String get gamepadTestConnect => '连接';
+
+  @override
+  String get gamepadTestDisconnect => '断开';
+
+  @override
+  String get gamepadTestPressed => '按下';
+
+  @override
+  String get gamepadTestReleased => '释放';
+
+  @override
+  String gamepadTestGamepadConnected(String name) {
+    return '手柄已连接：$name';
+  }
+
+  @override
+  String get gamepadTestUnknown => '未知';
+
+  @override
+  String get gamepadTestGamepadDisconnected => '手柄已断开';
 }

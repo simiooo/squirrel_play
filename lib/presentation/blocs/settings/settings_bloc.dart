@@ -31,7 +31,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         languageCode: 'en',
       ));
     } catch (e) {
-      emit(SettingsError('Failed to load settings: $e'));
+      emit(SettingsError(
+        localizationKey: 'errorLoadSettingsFailed',
+        details: e.toString(),
+      ));
     }
   }
 

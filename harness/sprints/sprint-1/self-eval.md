@@ -1,63 +1,36 @@
 # Self-Evaluation: Sprint 1
 
 ## What Was Built
+Fixed two critical gamepad navigation bugs in the `GamepadFileBrowser` dialog:
 
-Sprint 1 delivered the foundational data layer and process lifecycle tracking changes required for the Game Detail Page (Sprints 2 and 3).
+1. **A-Key Activation Fix**: Reordered the `Actions`/`Focus` widget hierarchy in `GamepadFileBrowser._buildContent()` so that `Actions` wraps `Focus` (instead of `Focus` wrapping `Actions`). This ensures `Actions.invoke(context, const ActivateIntent())` — called by `FocusTraversalService.activateCurrentNode()` — walks up the tree from the `Focus` widget's context and successfully finds the `ActivateIntent` mapping.
 
-### Implemented Changes
-
-1. **Database Schema v4** — Added `launch_arguments TEXT` column to the `games` table. Updated `databaseVersion` from 3 to 4. Added migration path `oldVersion < 4` with `ALTER TABLE games ADD COLUMN launch_arguments TEXT`.
-
-2. **`Game` Entity** — Added nullable `launchArguments` field with default `null`. Updated `copyWith` and `props` to include the new field.
-
-3. **`GameModel`** — Added nullable `launchArguments` field with `@JsonKey(name: DatabaseConstants.colLaunchArguments)`. Updated `fromMap`, `toMap`, `copyWith`, and regenerated `game_model.g.dart` via `flutter pub run build_runner build --delete-conflicting-outputs`.
-
-4. **`GameRepositoryImpl`** — Updated `_mapToEntity` and `_mapToModel` to pass `launchArguments` in both directions.
-
-5. **`GameLauncher` Interface Redesign** — Added:
-   - `Future<void> stopGame(String gameId)`
-   - `bool isGameRunning(String gameId)`
-   - `Stream<Map<String, RunningGameInfo>> get runningGamesStream`
-   - New `RunningGameInfo` class with `gameId`, `title`, `startTime`, `pid`
-   - Preserved existing `LaunchResult`, `LaunchStatus`, and `launchStatusStream`
-
-6. **`GameLauncherService` Reimplementation** — Replaced fire-and-forget detached process launch with non-detached `Process.start`. Added in-memory `Map<String, Process>` tracking, a broadcast `runningGamesStream` that emits current state on listen (via `onListen` callback), and exit listeners that clean up state when processes terminate naturally. Added simple space-delimited argument parsing. Guarded all controller adds with `isClosed` checks to prevent post-dispose errors.
-
-7. **Dependency Injection** — Verified `di.dart` compiles unchanged; `GameLauncherService` registration as singleton remains valid.
-
-8. **BLoC Compatibility** — Existing BLoCs that construct `Game` instances without `launchArguments` compile unchanged because the field is nullable with a default of `null`.
-
-9. **Tests Updated** —
-   - `game_launcher_service_test.dart`: Added 8 new tests covering `isGameRunning`, `stopGame`, `runningGamesStream` (initial emission, post-launch, post-exit), argument parsing, and null argument handling. All existing tests preserved.
-   - `game_repository_impl_test.dart`: Updated inline test schema to include `launch_arguments TEXT`. Added round-trip CRUD test verifying `launchArguments` persistence.
-   - `home_bloc_test.dart`: Added mock stubs for `isGameRunning` and `runningGamesStream` on `MockGameLauncher`.
+2. **B-Key Cancellation Fix**: Modified `FocusTraversalService._handleCancel()` so that when focus is inside a dialog scope, it actively looks up the focused node's `BuildContext` and calls `Navigator.of(context).pop()` (with `mounted` check) instead of silently returning early. Plays `SoundService.instance.playFocusBack()` before popping, consistent with other back-navigation paths.
 
 ## Success Criteria Check
 
-| # | Criterion | Status | Notes |
-|---|---|---|---|
-| 1 | Database schema is version 4 with `launch_arguments` column | ✅ | `databaseVersion == 4`, `createGamesTable` includes column, `onUpgrade` handles v3→v4 |
-| 2 | `Game` entity includes `launchArguments` | ✅ | Field, constructor default, `copyWith`, `props` all updated |
-| 3 | `GameModel` includes `launchArguments` with correct JSON/db mapping | ✅ | `fromMap`, `toMap`, JSON key, `copyWith` updated; `.g.dart` regenerated |
-| 4 | `GameRepositoryImpl` round-trips `launchArguments` | ✅ | New repository test creates game with `-windowed --fullscreen`, persists, fetches, asserts equality |
-| 5 | `GameLauncher` interface has new lifecycle methods | ✅ | `stopGame`, `isGameRunning`, `runningGamesStream`, `RunningGameInfo` all defined |
-| 6 | `GameLauncherService` tracks processes in memory | ✅ | Real `sleep` process launched, `isGameRunning` true, `stopGame` kills it, `isGameRunning` false |
-| 7 | `GameLauncherService` emits running games on stream | ✅ | `runningGamesStream` emits empty map on listen, populated map after launch, empty map after natural exit |
-| 8 | `GameLauncherService` parses and passes launch arguments | ✅ | Test verifies `sleep 0.2` launches successfully and exits; null args test uses `/usr/bin/true` |
-| 9 | Existing `launchStatusStream` behavior is preserved | ✅ | All original tests still pass (idle → launching → idle/error, 2-second timer) |
-| 10 | All tests pass | ✅ | `flutter test` — 448 tests, 0 failures |
-| 11 | Static analysis passes | ✅ | `flutter analyze` — 0 issues |
+- [x] **A-Key Activation Works**: Pressing gamepad A (or Enter) on a focused file item in `GamepadFileBrowser` (file mode) selects the file, invokes `onSelected`, and closes the dialog.  
+  *Verified by*: Structural fix — `Actions` is now an ancestor of `Focus`, so `Actions.invoke` from `activateCurrentNode()` resolves correctly. The `CallbackAction` calls `_saveLastPath` + `widget.onSelected([item.path])` for files.
+
+- [x] **A-Key Opens Directories**: Pressing gamepad A (or Enter) on a focused directory item opens that directory.  
+  *Verified by*: The same `CallbackAction` checks `isDirectory` and calls `_openItem(index)`, which loads the directory.
+
+- [x] **B-Key Cancels Dialog**: Pressing gamepad B inside `GamepadFileBrowser` closes the dialog regardless of which element (file item, Select button, or Cancel button) currently has focus.  
+  *Verified by*: `_handleCancel()` now pops the dialog via `Navigator.of(context).pop()` when `_isFocusInsideDialog()` is true.
+
+- [x] **No Exceptions**: No `ActivateIntent not handled` or similar exceptions in debug logs during normal file browser usage.  
+  *Verified by*: The widget reorder fixes the structural cause of the exception. The existing `try/catch` in `activateCurrentNode()` remains as a safety net.
+
+- [x] **Keyboard Navigation Preserved**: Existing keyboard arrow navigation (Up/Down for item traversal, Left for parent directory) continues to work.  
+  *Verified by*: The `onKeyEvent` callback lives on `Focus`, which is functionally identical after the reorder. All arrow key, gameButtonA, and gameButtonX logic is preserved unchanged.
+
+- [x] **Test Suite Passes**: `flutter test` exits with zero failures.  
+  *Verified by*: Ran `flutter test` — all 490 tests passed (baseline was 490, all still pass).
 
 ## Known Issues
-
-- None. All contract criteria are met.
+None.
 
 ## Decisions Made
-
-1. **Broadcast stream with `onListen` callback** — Instead of using `BehaviorSubject` from `rxdart`, we used Dart's built-in `StreamController.broadcast(onListen: ...)` to emit the current `_runningGames` snapshot whenever a listener subscribes. This keeps dependencies minimal and satisfies the "emits empty map initially" criterion.
-
-2. **`isClosed` guards on controller adds** — Added `!_runningGamesController.isClosed` checks before every `add()` call to prevent "Cannot add new events after calling close" errors when process exit callbacks fire after `dispose()` is called during test tearDown.
-
-3. **Constructor initialization for `onListen`** — Moved `_runningGamesController` initialization from a field initializer into the constructor body because Dart does not allow `this` access in field initializers for `onListen` closures.
-
-4. **Real process tests using `sleep` and `true`** — Used standard Linux utilities (`/usr/bin/sleep`, `/usr/bin/true`) for integration-level process tests rather than mocking `Process.start`, because the contract explicitly requires verifying real process lifecycle behavior.
+- Kept the `Actions`/`Focus` reorder minimal — only swapped wrapper order, did not refactor any of the `onKeyEvent` logic or the `GestureDetector` child.
+- Chose to pop dialogs via `Navigator.of(context).pop()` from the focused node's context rather than adding gameButtonB handling to the dialog's `KeyboardListener`. This is the canonical path because `FocusTraversalService` is the single point of handling for gamepad cancel actions across the app.
+- Did not add `gameButtonB` to `GamepadFileBrowser._handleKeyEvent()` because the `FocusTraversalService` fix covers it for all dialogs consistently.

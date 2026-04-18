@@ -79,14 +79,18 @@ class HomeEmpty extends HomeState {
 
 /// Error state when loading fails.
 class HomeError extends HomeState {
-  final String message;
+  final String? message;
+  final String? localizationKey;
+  final String? details;
   final VoidCallback? onRetry;
 
   const HomeError({
-    required this.message,
+    this.message,
+    this.localizationKey,
+    this.details,
     this.onRetry,
   });
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, localizationKey, details];
 }

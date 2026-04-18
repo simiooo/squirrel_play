@@ -10,6 +10,7 @@ import 'package:squirrel_play/presentation/blocs/game_library/game_library_bloc.
 import 'package:squirrel_play/presentation/widgets/add_game_dialog.dart';
 import 'package:squirrel_play/presentation/widgets/delete_game_dialog.dart';
 import 'package:squirrel_play/presentation/widgets/empty_state_widget.dart';
+import 'package:squirrel_play/presentation/widgets/error_localizer.dart';
 import 'package:squirrel_play/presentation/widgets/error_state_widget.dart';
 import 'package:squirrel_play/presentation/widgets/game_grid.dart';
 
@@ -94,7 +95,11 @@ class _LibraryPageContentState extends State<_LibraryPageContent> {
                   );
                 } else if (state is LibraryError) {
                   return ErrorStateWidget(
-                    message: state.message,
+                    message: localizeError(
+                      l10n,
+                      state.localizationKey ?? '',
+                      details: state.details,
+                    ),
                     onRetry: () {
                       context.read<GameLibraryBloc>().add(const RetryLoad());
                     },

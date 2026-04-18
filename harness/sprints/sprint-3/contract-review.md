@@ -1,29 +1,52 @@
-# Contract Review: Sprint 3
+# Contract Review: Sprint 3 — Round 2
 
 ## Assessment: APPROVED
 
-## Scope Coverage
-The proposed scope aligns well with the spec's Sprint 3 definition. It covers all required interactive actions on the `GameDetailPage`: Launch, Stop, Delete, and Edit. It also includes running-state streaming, mutual exclusion logic, localization, and contextual gamepad hints — all matching the spec's deliverables. The contract explicitly builds on Sprint 1 (process tracking) and Sprint 2 (detail page UI/routing) without duplicating prior work.
+The Generator has addressed all issues raised in the previous review. The contract is now complete, internally consistent, and ready for implementation.
 
-## Success Criteria Review
-- **Criterion 1 (Launch action)**: Adequate — specifies mock verification for `launchGame()`, `incrementPlayCount()`, `updateLastPlayed()`, and state transition to `isRunning: true`.
-- **Criterion 2 (Stop action)**: Adequate — specifies mock verification for `stopGame()` and state transition to `isRunning: false`.
-- **Criterion 3 (Mutual exclusion)**: Adequate — explicitly tests button counts and labels for both running and non-running states.
-- **Criterion 4 (Delete action)**: Adequate — covers dialog confirmation, mock verification, and navigation pop.
-- **Criterion 5 (Edit action)**: Adequate — covers dialog interaction, `onSave` callback verification, and detail page refresh via bloc.
-- **Criterion 6 (Localization)**: Adequate — requires `flutter gen-l10n` success and no hardcoded strings in affected widgets.
-- **Criterion 7 (Gamepad hints)**: Adequate — specifies contextual hint behavior for detail page and dialog states.
-- **Criterion 8 (Focus management)**: Adequate — requires widget test simulating state change and asserting focus lands correctly.
-- **Criterion 9 (Code quality)**: Adequate — standard `flutter analyze` and `flutter test` gates.
+---
 
-## Suggested Changes
-None. The contract is clear, specific, and testable.
+## Issue Resolution Checklist
 
-## Test Plan Preview
-- **Launch/Stop**: Run the app, navigate to a game's detail page, launch a dummy long-running executable, verify the button changes to "停止", then stop it and verify it reverts to "启动游戏". Check that play count increments.
-- **Mutual exclusion**: With a running game, confirm only Stop and Settings are visible. With a non-running game, confirm Launch, Settings, and Delete are visible.
-- **Delete**: Select Delete, confirm in dialog, verify navigation pops and the game disappears from Home/Library.
-- **Edit**: Open Settings, change title/executable/arguments, save, and verify immediate reflection on the detail page.
-- **Localization**: Switch system locale between English and Chinese and verify all new strings translate correctly.
-- **Focus**: Use keyboard/gamepad navigation to verify focus moves correctly when buttons appear/disappear.
-- **Regression**: Run `flutter test` to ensure no existing tests break.
+### 1. Missing 'Browse...' in `manual_add_tab.dart`
+**Status: FIXED**
+The revised contract now includes the `"Browse..."` string in the `manual_add_tab.dart` catalog (line 29) with the key `manualAddBrowseButton`.
+
+### 2. Missing import button labels in `steam_games_tab.dart`
+**Status: FIXED**
+Both import button variants are now catalogued (lines 73–74):
+- `"Import Selected Games"` → `steamGamesImportButton` (zero-selection state)
+- `"Import {count} Games"` → `steamGamesImportCountButton` (placeholder: `count` int)
+
+### 3. Truncated string for `scanDirectoryNoExecutablesSubtitle`
+**Status: FIXED**
+The catalog entry now lists the full literal string (line 48):
+> `"Try selecting a different directory or check that .exe files exist."`
+
+### 4. Contradiction between Success Criteria 1 and 7
+**Status: FIXED**
+Success Criterion 1 has been reworded (line 109) to acknowledge null-safe fallback patterns:
+> "All user-visible strings are looked up via `AppLocalizations.of(context)` (with null-safe fallbacks where appropriate). No user-facing string is rendered directly from a hardcoded literal without first attempting an l10n lookup."
+
+This aligns Criterion 1 with Criterion 7 and with the spec's explicit allowance for fallback strings.
+
+### 5. BLoC state strings not acknowledged (bonus issue from Round 1)
+**Status: FIXED**
+The Out of Scope section (line 127) now explicitly notes that dynamic messages originating from BLoC states are not covered by this sprint because their source strings reside outside the four target widget files.
+
+---
+
+## Remaining Concerns
+
+None. The contract is comprehensive and consistent.
+
+---
+
+## Test Plan Preview (unchanged from Round 1)
+
+1. **String completeness audit:** Search each target file for all quoted string literals. Verify every user-facing literal either (a) has an ARB key or (b) is an allowed exception (hardware button labels, path separators, BLoC-sourced messages).
+2. **ARB key verification:** Run `flutter gen-l10n`, then inspect the generated `app_localizations.dart` for every new key. Ensure all keys compile.
+3. **ZH translation spot-check:** Verify that `app_zh.arb` contains matching keys for every new `app_en.arb` entry and that translations are non-empty.
+4. **UI regression:** Launch the app, open the Add Game dialog (all three tabs), and confirm no English text appears when the system locale is set to Chinese.
+5. **Test suite:** Run `flutter analyze` and `flutter test` to confirm zero regressions.
+6. **Placeholder validation:** Verify dynamic strings (`Found X executables`, `Import X Games`, etc.) render numbers correctly in both EN and ZH.

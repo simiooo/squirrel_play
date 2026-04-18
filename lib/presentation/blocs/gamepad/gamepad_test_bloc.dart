@@ -75,15 +75,17 @@ class InputLogEntry extends Equatable {
   const InputLogEntry({
     required this.timestamp,
     required this.type,
-    required this.description,
+    this.description,
+    this.params,
   });
 
   final DateTime timestamp;
   final String type;
-  final String description;
+  final String? description;
+  final Map<String, dynamic>? params;
 
   @override
-  List<Object?> get props => [timestamp, type, description];
+  List<Object?> get props => [timestamp, type, description, params];
 }
 
 // =============================================================================
@@ -238,6 +240,10 @@ class GamepadTestBloc extends Bloc<GamepadTestEvent, GamepadTestState> {
       timestamp: DateTime.now(),
       type: 'BUTTON',
       description: '${event.button.name} ${event.pressed ? 'pressed' : 'released'}',
+      params: {
+        'buttonName': event.button.name,
+        'pressed': event.pressed,
+      },
     );
     final updatedLog = _addToLog(state.inputLog, logEntry);
 
@@ -264,6 +270,10 @@ class GamepadTestBloc extends Bloc<GamepadTestEvent, GamepadTestState> {
         timestamp: DateTime.now(),
         type: 'AXIS',
         description: '${event.axis.name}: ${event.value.toStringAsFixed(2)}',
+        params: {
+          'axisName': event.axis.name,
+          'axisValue': event.value,
+        },
       );
       updatedLog = _addToLog(state.inputLog, logEntry);
     }
@@ -282,6 +292,9 @@ class GamepadTestBloc extends Bloc<GamepadTestEvent, GamepadTestState> {
       timestamp: DateTime.now(),
       type: 'CONNECT',
       description: 'Gamepad connected: ${event.gamepadName ?? 'Unknown'}',
+      params: {
+        'gamepadName': event.gamepadName,
+      },
     );
     final updatedLog = _addToLog(state.inputLog, logEntry);
 
@@ -300,6 +313,7 @@ class GamepadTestBloc extends Bloc<GamepadTestEvent, GamepadTestState> {
       timestamp: DateTime.now(),
       type: 'DISCONNECT',
       description: 'Gamepad disconnected',
+      params: const {},
     );
     final updatedLog = _addToLog(state.inputLog, logEntry);
 

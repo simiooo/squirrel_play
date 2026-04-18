@@ -11,6 +11,8 @@ import 'package:squirrel_play/presentation/blocs/home/home_bloc.dart';
 import 'package:squirrel_play/presentation/widgets/add_game_dialog.dart';
 import 'package:squirrel_play/presentation/widgets/home/dynamic_background.dart';
 import 'package:squirrel_play/presentation/widgets/home/empty_home_state.dart';
+import 'package:squirrel_play/l10n/app_localizations.dart';
+import 'package:squirrel_play/presentation/widgets/error_localizer.dart';
 import 'package:squirrel_play/presentation/widgets/home/error_home_state.dart';
 import 'package:squirrel_play/presentation/widgets/home/game_card_row.dart';
 import 'package:squirrel_play/presentation/widgets/home/game_info_overlay.dart';
@@ -95,7 +97,11 @@ class _HomePageState extends State<HomePage> {
 
     if (state is HomeError) {
       return ErrorHomeState(
-        message: state.message,
+        message: localizeError(
+          AppLocalizations.of(context),
+          state.localizationKey ?? '',
+          details: state.details,
+        ),
         onRetry: _handleRetry,
       );
     }

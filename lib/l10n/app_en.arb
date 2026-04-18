@@ -856,5 +856,462 @@
   "errorUpdateFailed": "Failed to update game",
   "@errorUpdateFailed": {
     "description": "Error message when updating game fails"
+  },
+
+  "manualAddExecutableLabel": "Executable File",
+  "@manualAddExecutableLabel": {
+    "description": "Label for the executable file picker in manual add tab"
+  },
+
+  "manualAddBrowseButton": "Browse...",
+  "@manualAddBrowseButton": {
+    "description": "Button label to browse for executable file"
+  },
+
+  "manualAddNoFileSelected": "No file selected",
+  "@manualAddNoFileSelected": {
+    "description": "Placeholder text when no file is selected"
+  },
+
+  "manualAddInvalidFileError": "Invalid file",
+  "@manualAddInvalidFileError": {
+    "description": "Error message for invalid executable file"
+  },
+
+  "manualAddGameNameLabel": "Game Name",
+  "@manualAddGameNameLabel": {
+    "description": "Label for the game name input field"
+  },
+
+  "manualAddGameNameHint": "Enter game name",
+  "@manualAddGameNameHint": {
+    "description": "Hint text for the game name input field"
+  },
+
+  "manualAddInvalidNameError": "Invalid name",
+  "@manualAddInvalidNameError": {
+    "description": "Error message for invalid game name"
+  },
+
+  "manualAddConfirmButton": "Add Game",
+  "@manualAddConfirmButton": {
+    "description": "Button label to confirm adding a game manually"
+  },
+
+  "scanDirectoryAddDirectoryButton": "Add Directory",
+  "@scanDirectoryAddDirectoryButton": {
+    "description": "Button label to add a directory for scanning"
+  },
+
+  "scanDirectoryStartScanButton": "Start Scan",
+  "@scanDirectoryStartScanButton": {
+    "description": "Button label to start scanning directories"
+  },
+
+  "scanDirectoryFoundExecutables": "Found {totalCount} executables ({selectedCount} selected)",
+  "@scanDirectoryFoundExecutables": {
+    "description": "Status text showing found and selected executable counts",
+    "placeholders": {
+      "totalCount": {
+        "type": "int"
+      },
+      "selectedCount": {
+        "type": "int"
+      }
+    }
+  },
+
+  "scanDirectorySelectAllButton": "Select All",
+  "@scanDirectorySelectAllButton": {
+    "description": "Button label to select all discovered executables"
+  },
+
+  "scanDirectorySelectNoneButton": "Select None",
+  "@scanDirectorySelectNoneButton": {
+    "description": "Button label to deselect all discovered executables"
+  },
+
+  "scanDirectoryAddGamesButton": "Add {count} Games",
+  "@scanDirectoryAddGamesButton": {
+    "description": "Button label to add selected games",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "scanDirectoryNoExecutablesTitle": "No executables found",
+  "@scanDirectoryNoExecutablesTitle": {
+    "description": "Title shown when no executables are found during scan"
+  },
+
+  "scanDirectoryNoExecutablesSubtitle": "Try selecting a different directory or check that .exe files exist.",
+  "@scanDirectoryNoExecutablesSubtitle": {
+    "description": "Subtitle suggesting actions when no executables are found"
+  },
+
+  "scanDirectorySelectDifferentDirectories": "Select Different Directories",
+  "@scanDirectorySelectDifferentDirectories": {
+    "description": "Button label to choose different directories after empty scan"
+  },
+
+  "scanDirectoryAddingGames": "Adding games...",
+  "@scanDirectoryAddingGames": {
+    "description": "Message shown while adding discovered games"
+  },
+
+  "steamGamesInitializing": "Initializing...",
+  "@steamGamesInitializing": {
+    "description": "Message shown while initializing Steam scanner"
+  },
+
+  "steamGamesDefaultPath": "Default: {path}",
+  "@steamGamesDefaultPath": {
+    "description": "Label showing the default Steam installation path",
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+
+  "steamGamesBrowseSteamFolder": "Browse for Steam Folder",
+  "@steamGamesBrowseSteamFolder": {
+    "description": "Button label to browse for Steam installation folder"
+  },
+
+  "steamGamesSteamPathLabel": "Steam Path:",
+  "@steamGamesSteamPathLabel": {
+    "description": "Label for the current Steam path display"
+  },
+
+  "steamGamesSelectAllButton": "Select All",
+  "@steamGamesSelectAllButton": {
+    "description": "Button label to select all available Steam games"
+  },
+
+  "steamGamesSelectNoneButton": "Select None",
+  "@steamGamesSelectNoneButton": {
+    "description": "Button label to deselect all Steam games"
+  },
+
+  "steamGamesFoundGames": "Found {count} games ({alreadyAddedCount} already added)",
+  "@steamGamesFoundGames": {
+    "description": "Status text showing found Steam games and already added count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "alreadyAddedCount": {
+        "type": "int"
+      }
+    }
+  },
+
+  "steamGamesNoGamesFound": "No Steam games found",
+  "@steamGamesNoGamesFound": {
+    "description": "Message shown when no Steam games are detected"
+  },
+
+  "steamGamesAppId": "App ID: {appId}",
+  "@steamGamesAppId": {
+    "description": "Label showing the Steam application ID",
+    "placeholders": {
+      "appId": {
+        "type": "String"
+      }
+    }
+  },
+
+  "steamGamesAlreadyAdded": "Already Added",
+  "@steamGamesAlreadyAdded": {
+    "description": "Badge label shown for games already in the library"
+  },
+
+  "steamGamesImporting": "Importing games...",
+  "@steamGamesImporting": {
+    "description": "Message shown while importing Steam games"
+  },
+
+  "steamGamesImportProgress": "{completed} of {total}",
+  "@steamGamesImportProgress": {
+    "description": "Progress text showing completed and total imports",
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+
+  "steamGamesImportComplete": "Import Complete!",
+  "@steamGamesImportComplete": {
+    "description": "Title shown when Steam game import is complete"
+  },
+
+  "steamGamesImportedCount": "{count} games imported",
+  "@steamGamesImportedCount": {
+    "description": "Message showing number of successfully imported games",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "steamGamesSkippedCount": "{count} skipped",
+  "@steamGamesSkippedCount": {
+    "description": "Message showing number of skipped games during import",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "steamGamesErrorsLabel": "Errors:",
+  "@steamGamesErrorsLabel": {
+    "description": "Label for the errors section in import complete state"
+  },
+
+  "steamGamesImportButton": "Import Selected Games",
+  "@steamGamesImportButton": {
+    "description": "Button label to import selected Steam games when none selected"
+  },
+
+  "steamGamesImportCountButton": "Import {count} Games",
+  "@steamGamesImportCountButton": {
+    "description": "Button label to import selected Steam games with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "gamepadNavOpen": "Open",
+  "@gamepadNavOpen": {
+    "description": "Gamepad nav bar hint for open action"
+  },
+
+  "gamepadNavSelectCurrent": "Select Current",
+  "@gamepadNavSelectCurrent": {
+    "description": "Gamepad nav bar hint for select current directory action"
+  },
+
+  "steamScannerDetecting": "Detecting Steam installation...",
+  "@steamScannerDetecting": {
+    "description": "Message shown while detecting Steam installation"
+  },
+
+  "steamScannerNotFound": "Steam installation not found. Please specify the path manually.",
+  "@steamScannerNotFound": {
+    "description": "Error when Steam cannot be auto-detected"
+  },
+
+  "steamScannerDetectError": "Error detecting Steam: {error}",
+  "@steamScannerDetectError": {
+    "description": "Error when Steam detection throws an exception",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "steamScannerValidating": "Validating Steam path...",
+  "@steamScannerValidating": {
+    "description": "Message shown while validating a manually-set Steam path"
+  },
+
+  "steamScannerInvalidPath": "Invalid Steam path. Please check the path and try again.",
+  "@steamScannerInvalidPath": {
+    "description": "Error when user-provided Steam path is invalid"
+  },
+
+  "steamScannerValidateError": "Error validating path: {error}",
+  "@steamScannerValidateError": {
+    "description": "Error when path validation throws an exception",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "steamScannerNoPathSet": "No Steam path set. Please detect or specify Steam path first.",
+  "@steamScannerNoPathSet": {
+    "description": "Error when scan is requested before setting a path"
+  },
+
+  "steamScannerScanning": "Scanning Steam libraries...",
+  "@steamScannerScanning": {
+    "description": "Message shown while scanning Steam libraries"
+  },
+
+  "steamScannerScanError": "Error scanning library: {error}",
+  "@steamScannerScanError": {
+    "description": "Error when library scan throws an exception",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "steamScannerNoExecutable": "{gameName}: No executable found",
+  "@steamScannerNoExecutable": {
+    "description": "Error detail for a game with no executable",
+    "placeholders": {
+      "gameName": {
+        "type": "String"
+      }
+    }
+  },
+
+  "steamScannerImportError": "{gameName}: {error}",
+  "@steamScannerImportError": {
+    "description": "Error detail when importing a specific game fails",
+    "placeholders": {
+      "gameName": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "errorAddGameFailed": "Failed to add game: {error}",
+  "@errorAddGameFailed": {
+    "description": "Error when manual game addition fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "errorAddGamesFailed": "Failed to add games: {error}",
+  "@errorAddGamesFailed": {
+    "description": "Error when batch-adding scanned games fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "errorScanFailed": "Scan failed: {error}",
+  "@errorScanFailed": {
+    "description": "Error when the background quick scan fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "errorLoadSettingsFailed": "Failed to load settings: {error}",
+  "@errorLoadSettingsFailed": {
+    "description": "Error when loading settings fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "errorFetchMetadataFailed": "Failed to fetch metadata: {error}",
+  "@errorFetchMetadataFailed": {
+    "description": "Error when fetching game metadata fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "errorSearchFailed": "Search failed: {error}",
+  "@errorSearchFailed": {
+    "description": "Error when manual metadata search fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "errorUpdateMetadataFailed": "Failed to update metadata: {error}",
+  "@errorUpdateMetadataFailed": {
+    "description": "Error when selecting a metadata match fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "errorClearMetadataFailed": "Failed to clear metadata: {error}",
+  "@errorClearMetadataFailed": {
+    "description": "Error when clearing metadata fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "gamepadTestButton": "BUTTON",
+  "@gamepadTestButton": {
+    "description": "Input log type label for button events"
+  },
+
+  "gamepadTestAxis": "AXIS",
+  "@gamepadTestAxis": {
+    "description": "Input log type label for axis events"
+  },
+
+  "gamepadTestConnect": "CONNECT",
+  "@gamepadTestConnect": {
+    "description": "Input log type label for gamepad connection events"
+  },
+
+  "gamepadTestDisconnect": "DISCONNECT",
+  "@gamepadTestDisconnect": {
+    "description": "Input log type label for gamepad disconnection events"
+  },
+
+  "gamepadTestPressed": "pressed",
+  "@gamepadTestPressed": {
+    "description": "Label for a button press action in input log"
+  },
+
+  "gamepadTestReleased": "released",
+  "@gamepadTestReleased": {
+    "description": "Label for a button release action in input log"
+  },
+
+  "gamepadTestGamepadConnected": "Gamepad connected: {name}",
+  "@gamepadTestGamepadConnected": {
+    "description": "Log message when a gamepad is connected",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+
+  "gamepadTestUnknown": "Unknown",
+  "@gamepadTestUnknown": {
+    "description": "Fallback label for unknown gamepad name"
+  },
+
+  "gamepadTestGamepadDisconnected": "Gamepad disconnected",
+  "@gamepadTestGamepadDisconnected": {
+    "description": "Log message when a gamepad is disconnected"
   }
 }

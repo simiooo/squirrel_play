@@ -739,6 +739,50 @@ class _GamepadTestPageContentState extends State<_GamepadTestPageContent> {
     );
   }
 
+  String _getLocalizedLogType(AppLocalizations? l10n, String type) {
+    switch (type) {
+      case 'BUTTON':
+        return l10n?.gamepadTestButton ?? 'BUTTON';
+      case 'AXIS':
+        return l10n?.gamepadTestAxis ?? 'AXIS';
+      case 'CONNECT':
+        return l10n?.gamepadTestConnect ?? 'CONNECT';
+      case 'DISCONNECT':
+        return l10n?.gamepadTestDisconnect ?? 'DISCONNECT';
+      default:
+        return type;
+    }
+  }
+
+  String _getLocalizedLogDescription(
+    AppLocalizations? l10n,
+    InputLogEntry entry,
+  ) {
+    final params = entry.params;
+    switch (entry.type) {
+      case 'BUTTON':
+        final buttonName = params?['buttonName'] as String? ?? '';
+        final pressed = params?['pressed'] as bool? ?? false;
+        final action = pressed
+            ? (l10n?.gamepadTestPressed ?? 'pressed')
+            : (l10n?.gamepadTestReleased ?? 'released');
+        return '$buttonName $action';
+      case 'AXIS':
+        final axisName = params?['axisName'] as String? ?? '';
+        final axisValue = (params?['axisValue'] as double?)?.toStringAsFixed(2) ?? '0.00';
+        return '$axisName: $axisValue';
+      case 'CONNECT':
+        final name = params?['gamepadName'] as String? ??
+            (l10n?.gamepadTestUnknown ?? 'Unknown');
+        return l10n?.gamepadTestGamepadConnected(name) ??
+            'Gamepad connected: $name';
+      case 'DISCONNECT':
+        return l10n?.gamepadTestGamepadDisconnected ?? 'Gamepad disconnected';
+      default:
+        return entry.description ?? '';
+    }
+  }
+
   Widget _buildInputLog(
     BuildContext context,
     GamepadTestState state,
@@ -771,6 +815,9 @@ class _GamepadTestPageContentState extends State<_GamepadTestPageContent> {
                 final entry = state.inputLog[state.inputLog.length - 1 - index];
                 final timeStr =
                     '${entry.timestamp.hour.toString().padLeft(2, '0')}:${entry.timestamp.minute.toString().padLeft(2, '0')}:${entry.timestamp.second.toString().padLeft(2, '0')}';
+
+                final localizedType = _getLocalizedLogType(l10n, entry.type);
+                final localizedDesc = _getLocalizedLogDescription(l10n, entry);
 
                 Color typeColor;
                 switch (entry.type) {
@@ -812,7 +859,7 @@ class _GamepadTestPageContentState extends State<_GamepadTestPageContent> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          entry.type,
+                          localizedType,
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: typeColor,
@@ -823,7 +870,7 @@ class _GamepadTestPageContentState extends State<_GamepadTestPageContent> {
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Text(
-                          entry.description,
+                          localizedDesc,
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.textSecondary,

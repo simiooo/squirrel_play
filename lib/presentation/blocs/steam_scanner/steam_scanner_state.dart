@@ -38,6 +38,60 @@ class SteamGameViewModel extends Equatable {
   List<Object?> get props => [data.appId, isSelected, isAlreadyAdded];
 }
 
+/// Types of loading states for the Steam scanner.
+enum SteamScannerLoadingType {
+  /// Detecting Steam installation automatically.
+  detecting,
+
+  /// Validating a manually specified Steam path.
+  validating,
+
+  /// Scanning Steam libraries for games.
+  scanning,
+}
+
+/// Types of errors that can occur during Steam scanning.
+enum SteamScannerErrorType {
+  /// Steam installation was not found automatically.
+  notFound,
+
+  /// An error occurred while detecting Steam.
+  detectError,
+
+  /// The manually specified Steam path is invalid.
+  invalidPath,
+
+  /// An error occurred while validating the path.
+  validateError,
+
+  /// No Steam path is set when scanning is requested.
+  noPathSet,
+
+  /// An error occurred while scanning the library.
+  scanError,
+}
+
+/// Represents an error that occurred while importing a specific Steam game.
+class SteamImportError extends Equatable {
+  /// The name of the game that failed to import.
+  final String gameName;
+
+  /// The error message, if any.
+  final String? error;
+
+  /// Whether the error was due to no executable being found.
+  final bool noExecutable;
+
+  const SteamImportError({
+    required this.gameName,
+    this.error,
+    this.noExecutable = false,
+  });
+
+  @override
+  List<Object?> get props => [gameName, error, noExecutable];
+}
+
 /// Base class for Steam scanner states.
 abstract class SteamScannerState extends Equatable {
   const SteamScannerState();
@@ -53,12 +107,12 @@ class SteamScannerInitial extends SteamScannerState {
 
 /// Loading state while detecting or scanning Steam.
 class SteamScannerLoading extends SteamScannerState {
-  final String message;
+  final SteamScannerLoadingType type;
 
-  const SteamScannerLoading({this.message = 'Detecting Steam...'});
+  const SteamScannerLoading({required this.type});
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [type];
 }
 
 /// Loaded state with list of games.
@@ -93,16 +147,18 @@ class SteamScannerLoaded extends SteamScannerState {
 
 /// Error state when Steam is not found or permission error.
 class SteamScannerError extends SteamScannerState {
-  final String message;
+  final SteamScannerErrorType type;
+  final String? details;
   final String? currentPath;
 
   const SteamScannerError({
-    required this.message,
+    required this.type,
+    this.details,
     this.currentPath,
   });
 
   @override
-  List<Object?> get props => [message, currentPath];
+  List<Object?> get props => [type, details, currentPath];
 }
 
 /// Importing state with progress.
@@ -127,7 +183,7 @@ class SteamScannerImporting extends SteamScannerState {
 class SteamScannerImportComplete extends SteamScannerState {
   final int importedCount;
   final int skippedCount;
-  final List<String> errors;
+  final List<SteamImportError> errors;
 
   const SteamScannerImportComplete({
     required this.importedCount,

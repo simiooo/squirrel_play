@@ -76,11 +76,13 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
 
   Widget _buildContent(BuildContext context, SteamScannerState state, AppLocalizations? l10n) {
     if (state is SteamScannerInitial) {
-      return _buildLoadingState('Initializing...');
+      return _buildLoadingState(
+        l10n?.steamGamesInitializing ?? 'Initializing...',
+      );
     }
 
     if (state is SteamScannerLoading) {
-      return _buildLoadingState(state.message);
+      return _buildLoadingState(_getLoadingMessage(l10n, state.type));
     }
 
     if (state is SteamScannerError) {
@@ -100,6 +102,40 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
     }
 
     return const SizedBox.shrink();
+  }
+
+  String _getLoadingMessage(AppLocalizations? l10n, SteamScannerLoadingType type) {
+    switch (type) {
+      case SteamScannerLoadingType.detecting:
+        return l10n?.steamScannerDetecting ?? 'Detecting Steam installation...';
+      case SteamScannerLoadingType.validating:
+        return l10n?.steamScannerValidating ?? 'Validating Steam path...';
+      case SteamScannerLoadingType.scanning:
+        return l10n?.steamScannerScanning ?? 'Scanning Steam libraries...';
+    }
+  }
+
+  String _getErrorMessage(AppLocalizations? l10n, SteamScannerError state) {
+    switch (state.type) {
+      case SteamScannerErrorType.notFound:
+        return l10n?.steamScannerNotFound ??
+            'Steam installation not found. Please specify the path manually.';
+      case SteamScannerErrorType.detectError:
+        return l10n?.steamScannerDetectError(state.details ?? '') ??
+            'Error detecting Steam: ${state.details}';
+      case SteamScannerErrorType.invalidPath:
+        return l10n?.steamScannerInvalidPath ??
+            'Invalid Steam path. Please check the path and try again.';
+      case SteamScannerErrorType.validateError:
+        return l10n?.steamScannerValidateError(state.details ?? '') ??
+            'Error validating path: ${state.details}';
+      case SteamScannerErrorType.noPathSet:
+        return l10n?.steamScannerNoPathSet ??
+            'No Steam path set. Please detect or specify Steam path first.';
+      case SteamScannerErrorType.scanError:
+        return l10n?.steamScannerScanError(state.details ?? '') ??
+            'Error scanning library: ${state.details}';
+    }
   }
 
   Widget _buildLoadingState(String message) {
@@ -140,7 +176,7 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            state.message,
+            _getErrorMessage(l10n, state),
             style: const TextStyle(
               color: AppColors.textPrimary,
               fontSize: 16,
@@ -149,7 +185,8 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
-            'Default: ${_getDefaultSteamPath()}',
+            l10n?.steamGamesDefaultPath(_getDefaultSteamPath()) ??
+                'Default: ${_getDefaultSteamPath()}',
             style: const TextStyle(
               color: AppColors.textMuted,
               fontSize: 12,
@@ -159,7 +196,7 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
           const SizedBox(height: AppSpacing.md),
           PickerButton(
             focusNode: _browseFocusNode,
-            label: 'Browse for Steam Folder',
+            label: l10n?.steamGamesBrowseSteamFolder ?? 'Browse for Steam Folder',
             icon: Icons.folder_open,
             onPressed: () async {
               SoundService.instance.playFocusSelect();
@@ -216,9 +253,9 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Steam Path:',
-                      style: TextStyle(
+                    Text(
+                      l10n?.steamGamesSteamPathLabel ?? 'Steam Path:',
+                      style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12,
                       ),
@@ -238,7 +275,7 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
               const SizedBox(width: AppSpacing.md),
               FocusableButton(
                 focusNode: _buttonFocusNodes[0],
-                label: 'Select All',
+                label: l10n?.steamGamesSelectAllButton ?? 'Select All',
                 onPressed: availableGames.isNotEmpty
                     ? () {
                         context.read<SteamScannerBloc>().add(const SelectAll());
@@ -249,7 +286,7 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
               const SizedBox(width: AppSpacing.sm),
               FocusableButton(
                 focusNode: _buttonFocusNodes[1],
-                label: 'Select None',
+                label: l10n?.steamGamesSelectNoneButton ?? 'Select None',
                 onPressed: selectedCount > 0
                     ? () {
                         context.read<SteamScannerBloc>().add(const SelectNone());
@@ -260,7 +297,7 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
               const SizedBox(width: AppSpacing.sm),
               FocusableButton(
                 focusNode: _buttonFocusNodes[2],
-                label: 'Rescan',
+                label: l10n?.topBarRescan ?? 'Rescan',
                 onPressed: () {
                   context.read<SteamScannerBloc>().add(const ScanLibrary());
                   SoundService.instance.playFocusSelect();
@@ -273,7 +310,11 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
 
         // Games count info
         Text(
-          'Found ${state.games.length} games (${state.games.where((g) => g.isAlreadyAdded).length} already added)',
+          l10n?.steamGamesFoundGames(
+                state.games.length,
+                state.games.where((g) => g.isAlreadyAdded).length,
+              ) ??
+              'Found ${state.games.length} games (${state.games.where((g) => g.isAlreadyAdded).length} already added)',
           style: const TextStyle(
             color: AppColors.textSecondary,
             fontSize: 13,
@@ -284,10 +325,10 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
         // Games list
         Expanded(
           child: state.games.isEmpty
-              ? const Center(
+              ? Center(
                   child: Text(
-                    'No Steam games found',
-                    style: TextStyle(
+                    l10n?.steamGamesNoGamesFound ?? 'No Steam games found',
+                    style: const TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 16,
                     ),
@@ -308,8 +349,9 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
         FocusableButton(
           focusNode: _buttonFocusNodes[3],
           label: selectedCount > 0
-              ? 'Import $selectedCount Games'
-              : 'Import Selected Games',
+              ? (l10n?.steamGamesImportCountButton(selectedCount) ??
+                  'Import $selectedCount Games')
+              : (l10n?.steamGamesImportButton ?? 'Import Selected Games'),
           onPressed: selectedCount > 0
               ? () {
                   context.read<SteamScannerBloc>().add(const ImportSelectedGames());
@@ -384,7 +426,8 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'App ID: ${game.data.appId}',
+                      AppLocalizations.of(context)?.steamGamesAppId(game.data.appId) ??
+                          'App ID: ${game.data.appId}',
                       style: const TextStyle(
                         color: AppColors.textMuted,
                         fontSize: 11,
@@ -403,9 +446,10 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
                     color: AppColors.surfaceElevated,
                     borderRadius: BorderRadius.circular(AppRadii.small),
                   ),
-                  child: const Text(
-                    'Already Added',
-                    style: TextStyle(
+                  child: Text(
+                    AppLocalizations.of(context)?.steamGamesAlreadyAdded ??
+                        'Already Added',
+                    style: const TextStyle(
                       color: AppColors.textMuted,
                       fontSize: 11,
                     ),
@@ -428,16 +472,19 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
             valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryAccent),
           ),
           const SizedBox(height: AppSpacing.lg),
-          const Text(
-            'Importing games...',
-            style: TextStyle(
+          Text(
+            AppLocalizations.of(context)?.steamGamesImporting ??
+                'Importing games...',
+            style: const TextStyle(
               color: AppColors.textPrimary,
               fontSize: 16,
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            '${state.completed} of ${state.total}',
+            AppLocalizations.of(context)
+                    ?.steamGamesImportProgress(state.completed, state.total) ??
+                '${state.completed} of ${state.total}',
             style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 14,
@@ -474,9 +521,9 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
             size: 48,
           ),
           const SizedBox(height: AppSpacing.lg),
-          const Text(
-            'Import Complete!',
-            style: TextStyle(
+          Text(
+            l10n?.steamGamesImportComplete ?? 'Import Complete!',
+            style: const TextStyle(
               color: AppColors.textPrimary,
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -484,7 +531,8 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            '${state.importedCount} games imported',
+            l10n?.steamGamesImportedCount(state.importedCount) ??
+                '${state.importedCount} games imported',
             style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 14,
@@ -492,7 +540,8 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
           ),
           if (state.skippedCount > 0)
             Text(
-              '${state.skippedCount} skipped',
+              l10n?.steamGamesSkippedCount(state.skippedCount) ??
+                  '${state.skippedCount} skipped',
               style: const TextStyle(
                 color: AppColors.textMuted,
                 fontSize: 13,
@@ -509,22 +558,32 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Errors:',
-                    style: TextStyle(
+                  Text(
+                    l10n?.steamGamesErrorsLabel ?? 'Errors:',
+                    style: const TextStyle(
                       color: AppColors.error,
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xs),
-                  ...state.errors.map((error) => Text(
-                        error,
-                        style: const TextStyle(
-                          color: AppColors.error,
-                          fontSize: 12,
-                        ),
-                      )),
+                  ...state.errors.map((error) {
+                    final message = error.noExecutable
+                        ? (l10n?.steamScannerNoExecutable(error.gameName) ??
+                            '${error.gameName}: No executable found')
+                        : (l10n?.steamScannerImportError(
+                                error.gameName,
+                                error.error ?? '',
+                              ) ??
+                            '${error.gameName}: ${error.error}');
+                    return Text(
+                      message,
+                      style: const TextStyle(
+                        color: AppColors.error,
+                        fontSize: 12,
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),
@@ -532,7 +591,7 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
           const SizedBox(height: AppSpacing.lg),
           FocusableButton(
             focusNode: _closeFocusNode,
-            label: 'Close',
+            label: l10n?.dialogClose ?? 'Close',
             onPressed: () {
               // Reset and close
               context.read<SteamScannerBloc>().add(const ResetScanner());

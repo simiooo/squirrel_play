@@ -148,7 +148,10 @@ class QuickScanBloc extends Bloc<QuickScanEvent, QuickScanState> {
         await SoundService.instance.playScanComplete();
       }
     } catch (e) {
-      emit(QuickScanError(message: 'Scan failed: $e'));
+      emit(QuickScanError(
+        localizationKey: 'errorScanFailed',
+        details: e.toString(),
+      ));
       await SoundService.instance.playScanError();
     }
   }

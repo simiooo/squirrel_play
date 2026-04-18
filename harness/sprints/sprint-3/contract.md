@@ -1,122 +1,127 @@
-# Sprint Contract: Detail Page Actions — Launch, Stop, Delete, Edit
+# Sprint Contract: Sprint 3 — Extract and Localize All Hardcoded Strings
 
 ## Scope
 
-This sprint wires all interactive actions on the `GameDetailPage` and adds localization for all new UI text. Building on Sprint 1 (process tracking, `GameLauncher` lifecycle) and Sprint 2 (detail page UI, routing, `GameDetailBloc`), we now implement:
+Extract every user-visible hardcoded English string from the four target widget files and replace them with `AppLocalizations` lookups, adding corresponding English and Chinese entries to the ARB files.
 
-1. **Launch action**: pressing A on "启动游戏" starts the game process, increments play count, updates `lastPlayedDate`.
-2. **Stop action**: pressing A on "停止" terminates the running game process.
-3. **Running-state streaming**: `GameDetailBloc` subscribes to `GameLauncher.runningGamesStream` and emits `GameDetailRunningStateChanged` so the UI reacts in real time.
-4. **Mutual exclusion**: when a game is running, the detail page shows only **Stop** and **Settings** buttons; when not running, it shows **Launch**, **Settings**, and **Delete**. Focus is managed correctly across state transitions.
-5. **Delete action**: pressing A on "删除" shows the existing `DeleteGameDialog` (adapted for localization), then calls `GameRepository.deleteGame(id)`, notifies `HomeRepository`, and pops back to the previous page.
-6. **Edit action**: pressing A on "设置" opens a new `EditGameDialog` with focusable fields for title, executable path (with `GamepadFileBrowser`), and launch arguments. Saving calls `GameRepository.updateGame(game)` and refreshes the detail page.
-7. **Localization**: all new UI strings are added to `app_en.arb` and `app_zh.arb`, then `flutter gen-l10n` is run.
-8. **Gamepad hint bar**: the `GamepadHintProvider` shows contextually relevant hints on the detail page (A: Confirm/Play/Stop, B: Back).
-9. **Quality gates**: `flutter analyze` passes with zero issues; `flutter test` passes all 370+ tests.
+**Target files:**
+- `lib/presentation/widgets/manual_add_tab.dart`
+- `lib/presentation/widgets/scan_directory_tab.dart`
+- `lib/presentation/widgets/steam_games_tab.dart`
+- `lib/presentation/widgets/gamepad_file_browser.dart`
+
+**ARB files:**
+- `lib/l10n/app_en.arb`
+- `lib/l10n/app_zh.arb`
+
+---
 
 ## Implementation Plan
 
-### Architecture Decisions
+### 1. Catalog and Extract Strings
 
-- **BLoC responsibility**: `GameDetailBloc` owns the running-state subscription. It receives `GameDetailLaunchRequested`, `GameDetailStopRequested`, `GameDetailDeleteRequested`, and `GameDetailEditSaved` events, coordinates with repositories and `GameLauncher`, and emits updated `GameDetailLoaded` states.
-- **GameLauncher injection**: `GameDetailBloc` receives `GameLauncher` via constructor (registered in `di.dart`). It calls `launchGame()`, `stopGame()`, and subscribes to `runningGamesStream`.
-- **Play-count / last-played updates**: after a successful `launchGame()` result, the bloc calls `GameRepository.incrementPlayCount(id)` and `updateLastPlayed(id, DateTime.now())`, then reloads the game to reflect updated stats in the UI.
-- **Edit dialog as self-contained widget**: `EditGameDialog` is a `StatefulWidget` that manages its own `TextEditingController`s and focus nodes, similar to `AddGameDialog`. It takes a `Game` and an `onSave` callback. No separate BLoC is required for the dialog; it delegates save to the parent page's bloc.
-- **Delete flow**: `DeleteGameDialog.show(context, game)` is reused. After confirmation, the page's bloc handles deletion and navigation pop.
-- **Focus management during mutual exclusion**: when buttons appear/disappear due to running-state changes, the page uses `WidgetsBinding.instance.addPostFrameCallback` to request focus on the first visible button if the previously focused button was removed.
+For each of the four widget files, identify all user-visible hardcoded strings (labels, hints, button text, error messages, empty-state text, dynamic status text) and replace them with `AppLocalizations.of(context)!.key` or `AppLocalizations.of(context)?.key ?? 'fallback'`.
 
-### Component Structure
-
-```
-lib/presentation/pages/game_detail_page.dart          (MODIFY)
-  ├─ Launch/Stop button (mutually exclusive)
-  ├─ Settings button → opens EditGameDialog
-  ├─ Delete button (hidden when running)
-  └─ Running-state reactive rebuild via BlocBuilder
-
-lib/presentation/blocs/game_detail/
-  ├─ game_detail_bloc.dart     (MODIFY)
-  ├─ game_detail_event.dart    (MODIFY)
-  └─ game_detail_state.dart    (MODIFY — add running state to existing states)
-
-lib/presentation/widgets/edit_game_dialog.dart        (NEW)
-  ├─ FocusScope for focus trapping
-  ├─ FocusableTextField (title)
-  ├─ FocusableTextField (executable path) + browse button → GamepadFileBrowser
-  ├─ FocusableTextField (launch arguments)
-  └─ Save / Cancel FocusableButtons
-
-lib/presentation/widgets/delete_game_dialog.dart      (MODIFY)
-  └─ Replace hardcoded strings with l10n keys
-
-lib/presentation/navigation/gamepad_hint_provider.dart (MODIFY)
-  └─ Refine /game/:id hints (A: Confirm/Play/Stop, B: Back)
-
-lib/l10n/app_en.arb                                   (MODIFY)
-lib/l10n/app_zh.arb                                   (MODIFY)
-
-lib/app/di.dart                                       (MODIFY)
-  └─ Inject GameLauncher into GameDetailBloc factory
-
-test/presentation/pages/game_detail_page_test.dart    (MODIFY)
-test/presentation/blocs/game_detail/
-  ├─ game_detail_bloc_test.dart                       (NEW)
-test/presentation/widgets/edit_game_dialog_test.dart  (NEW)
-```
-
-### Event Additions to GameDetailBloc
-
-| Event | Handler Behavior |
+#### manual_add_tab.dart
+| Hardcoded String | ARB Key |
 |---|---|
-| `GameDetailLaunchRequested` | Calls `gameLauncher.launchGame(game)`. On success: `incrementPlayCount`, `updateLastPlayed`, reload game entity. |
-| `GameDetailStopRequested` | Calls `gameLauncher.stopGame(gameId)`. |
-| `GameDetailDeleteRequested` | Calls `gameRepository.deleteGame(gameId)`, notifies home repo, then triggers navigation pop via state flag or callback. |
-| `GameDetailGameUpdated(Game game)` | Emitted after save; replaces current game in `GameDetailLoaded` state. |
+| "Executable File" | `manualAddExecutableLabel` |
+| "Browse..." | `manualAddBrowseButton` |
+| "No file selected" | `manualAddNoFileSelected` |
+| "Invalid file" | `manualAddInvalidFileError` |
+| "Game Name" | `manualAddGameNameLabel` |
+| "Enter game name" | `manualAddGameNameHint` |
+| "Invalid name" | `manualAddInvalidNameError` |
+| "Add Game" | `manualAddConfirmButton` |
 
-### Running-State Subscription
+#### scan_directory_tab.dart
+| Hardcoded String | ARB Key | Notes |
+|---|---|---|
+| "Add Directory" | `scanDirectoryAddDirectoryButton` | |
+| "Start Scan" | `scanDirectoryStartScanButton` | |
+| "Cancel" | `buttonCancel` | **Reuse** existing generic key |
+| "Found X executables (Y selected)" | `scanDirectoryFoundExecutables` | Placeholders: `totalCount` (int), `selectedCount` (int) |
+| "Select All" | `scanDirectorySelectAllButton` | |
+| "Select None" | `scanDirectorySelectNoneButton` | |
+| "Add X Games" | `scanDirectoryAddGamesButton` | Placeholder: `count` (int) |
+| "No executables found" | `scanDirectoryNoExecutablesTitle` | |
+| "Try selecting a different directory or check that .exe files exist." | `scanDirectoryNoExecutablesSubtitle` | |
+| "Select Different Directories" | `scanDirectorySelectDifferentDirectories` | |
+| "Adding games..." | `scanDirectoryAddingGames` | |
 
-In `GameDetailBloc.initState` (constructor `on` registration), subscribe to `gameLauncher.runningGamesStream`. On each emission, if the current state's game ID is present in the map, emit `GameDetailRunningStateChanged(isRunning: true)`, else `isRunning: false`. Cancel the subscription in `close()`.
+#### steam_games_tab.dart
+| Hardcoded String | ARB Key | Notes |
+|---|---|---|
+| "Initializing..." | `steamGamesInitializing` | |
+| "Default: {path}" | `steamGamesDefaultPath` | Placeholder: `path` (String) |
+| "Browse for Steam Folder" | `steamGamesBrowseSteamFolder` | |
+| "Steam Path:" | `steamGamesSteamPathLabel` | |
+| "Select All" | `steamGamesSelectAllButton` | |
+| "Select None" | `steamGamesSelectNoneButton` | |
+| "Rescan" | `topBarRescan` | **Reuse** existing generic key |
+| "Found X games (Y already added)" | `steamGamesFoundGames` | Placeholders: `count` (int), `alreadyAddedCount` (int) |
+| "No Steam games found" | `steamGamesNoGamesFound` | |
+| "App ID: {appId}" | `steamGamesAppId` | Placeholder: `appId` (String) |
+| "Already Added" | `steamGamesAlreadyAdded` | |
+| "Importing games..." | `steamGamesImporting` | |
+| "X of Y" | `steamGamesImportProgress` | Placeholders: `completed` (int), `total` (int) |
+| "Import Complete!" | `steamGamesImportComplete` | |
+| "X games imported" | `steamGamesImportedCount` | Placeholder: `count` (int) |
+| "X skipped" | `steamGamesSkippedCount` | Placeholder: `count` (int) |
+| "Errors:" | `steamGamesErrorsLabel` | |
+| "Close" | `dialogClose` | **Reuse** existing generic key |
+| "Import Selected Games" | `steamGamesImportButton` | Zero-selection state |
+| "Import {count} Games" | `steamGamesImportCountButton` | Placeholder: `count` (int) |
+
+#### gamepad_file_browser.dart
+| Hardcoded String | ARB Key | Notes |
+|---|---|---|
+| "Select" (A button hint, file mode) | `gamepadNavSelect` | **Reuse** existing key; replace hardcoded fallback usage |
+| "Open" (A button hint, directory mode) | `gamepadNavOpen` | **New key** |
+| "Back" (B button hint) | `gamepadNavBack` | Already uses l10n with fallback; verify no hardcode remains |
+| "Select Current" (Select button hint) | `gamepadNavSelectCurrent` | **New key** |
+| "Toggle" (X button hint) | `gamepadNavToggle` | Already uses l10n with fallback; verify no hardcode remains |
+
+The fallback strings `'Select File'` (title) and `'No items'` (empty state) already have l10n fallbacks using existing keys (`fileBrowserTitle`, `fileBrowserNoItems`). These will be verified but are expected to require no changes.
+
+Gamepad button identifiers (`'A'`, `'B'`, `'X'`, `'Select'`) passed to `GamepadButtonIcon` are hardware labels and will **not** be localized.
+
+### 2. Add English Strings to `app_en.arb`
+
+Append all new keys to `lib/l10n/app_en.arb` with proper `@description` metadata for each entry. Dynamic strings will include `placeholders` definitions with appropriate types (`int` or `String`).
+
+### 3. Add Chinese Translations to `app_zh.arb`
+
+Append matching keys to `lib/l10n/app_zh.arb` with accurate Simplified Chinese translations and identical `@description` metadata (descriptions may be translated for consistency with existing `app_zh.arb` style).
+
+### 4. Regenerate Localization Code
+
+Run `flutter gen-l10n` to generate updated `app_localizations.dart` and language-specific delegates.
+
+### 5. Verify Analysis and Tests
+
+Run `flutter analyze` and `flutter test` to ensure no regressions.
+
+---
 
 ## Success Criteria
 
-1. **Launch action works end-to-end**: Given a game detail page for a non-running game, pressing A on "启动游戏" calls `GameLauncher.launchGame()`, increments the play count in the database, updates `lastPlayedDate`, and the button changes to "停止" within 1 second via the running-games stream.
-   - *Verify*: Unit test in `game_detail_bloc_test.dart` mocks `GameLauncher` and `GameRepository`, verifies `launchGame()` is called, then `incrementPlayCount()` and `updateLastPlayed()` are called, and state transitions to `isRunning: true`.
+1. **All user-visible strings are looked up via `AppLocalizations.of(context)`** (with null-safe fallbacks where appropriate). No user-facing string is rendered directly from a hardcoded literal without first attempting an l10n lookup. Hardware button identifiers (`'A'` / `'B'` / `'X'` / `'Select'`) are the only allowed exceptions.
+2. **`app_en.arb` contains all new keys** with proper `@description` metadata and `placeholders` definitions for dynamic strings.
+3. **`app_zh.arb` contains accurate Chinese translations** for all new keys.
+4. **`flutter gen-l10n` completes without errors** and the generated `AppLocalizations` class contains all new keys.
+5. **`flutter analyze` passes** with zero issues in the modified files.
+6. **All 370 existing tests pass** (`flutter test`).
+7. **Null-safe fallback pattern** is used where appropriate (`AppLocalizations.of(context)?.key ?? 'fallback'`), especially in dialog contexts where localization might not be immediately available.
 
-2. **Stop action works end-to-end**: Given a running game on the detail page, pressing A on "停止" calls `GameLauncher.stopGame()`, the process terminates, and the button changes back to "启动游戏".
-   - *Verify*: Unit test mocks `GameLauncher.stopGame()` and streams a `{}` running-games map, verifying state transitions to `isRunning: false`.
-
-3. **Mutual exclusion is correct**: 
-   - When `isRunning == false`: buttons rendered are "启动游戏", "设置", "删除" (3 buttons).
-   - When `isRunning == true`: buttons rendered are "停止", "设置" (2 buttons).
-   - *Verify*: Widget test in `game_detail_page_test.dart` pumps `GameDetailLoaded` with `isRunning: true` and asserts only 2 `FocusableButton`s exist, with labels "停止" and "设置".
-
-4. **Delete action removes game and pops**: Pressing A on "删除" shows `DeleteGameDialog`. Confirming deletion calls `GameRepository.deleteGame(id)`, and the page pops back.
-   - *Verify*: Widget test taps delete button, confirms dialog, verifies `deleteGame` mock is called. Bloc unit test verifies deletion event results in a `GameDetailDeleted` state or equivalent signal.
-
-5. **Edit action updates game**: Pressing A on "设置" opens `EditGameDialog`. Changing title, executable path, or launch arguments and pressing Save calls `GameRepository.updateGame()`, and the detail page immediately reflects the new data.
-   - *Verify*: Widget test for `EditGameDialog` enters text, taps Save, verifies `onSave` callback receives updated `Game`. Page widget test verifies bloc receives update event and re-emits `GameDetailLoaded` with new game data.
-
-6. **All new UI text is localized**: Every user-visible string added in this sprint exists in both `app_en.arb` and `app_zh.arb` with descriptions, and `flutter gen-l10n` produces valid Dart code.
-   - *Verify*: `flutter gen-l10n` completes without errors; no hardcoded strings remain in `GameDetailPage`, `EditGameDialog`, or `DeleteGameDialog`.
-
-7. **Gamepad hints are contextual on detail page**: When on `/game/:id`, the bottom hint bar shows relevant actions. When a dialog is open, hints show Confirm/Cancel. When on the detail page itself, hints show A: Confirm (or Play/Stop), B: Back.
-   - *Verify*: Inspect `GamepadHintProvider._resolveHints` behavior; widget test if feasible.
-
-8. **Focus management is robust**: When the running state changes and the currently focused button disappears (e.g., Launch is replaced by Stop), focus automatically moves to the first available button in the action row without throwing or getting lost.
-   - *Verify*: Widget test simulates state change from `isRunning: false` to `isRunning: true` and asserts focus lands on the Stop button.
-
-9. **Code quality gates pass**:
-   - `flutter analyze` returns zero issues.
-   - `flutter test` passes all existing and new tests.
+---
 
 ## Out of Scope for This Sprint
 
-- **Re-launching a game immediately after it exits naturally**: The UI will correctly show "启动游戏" when the process exits, but automatic re-launch is not in scope.
-- **Advanced edit fields**: Editing cover art, description, favorite status, or other metadata fields is not in scope — only title, executable path, and launch arguments.
-- **Batch operations**: Editing or deleting multiple games at once is not supported.
-- **Play time tracking (hours played)**: Only play count and last played date are updated on launch.
-- **In-game overlay or process monitoring UI beyond Start/Stop**: No process logs, CPU usage, or other telemetry.
-- **Hero image editing**: The edit dialog does not allow changing the game's background/cover image.
-- **Confirmation dialog for Stop**: Stopping a game is immediate without a confirmation dialog (as per spec acceptance criteria).
-- **New BLoC for EditGameDialog**: The dialog uses local state and callbacks; no separate `EditGameBloc` is created.
-- **Navigation to detail page from other contexts**: Only Home and Library navigation (already done in Sprint 2) is assumed.
+- Adding new languages beyond English and Chinese.
+- Localizing strings in files outside the four listed target files.
+- Changing gamepad button identifier labels (`A`, `B`, `X`, `Select`) — these are hardware conventions.
+- Refactoring widget logic or focus behavior (Sprints 1 and 2 scope).
+- Adding new UI features or tests.
+- Localizing file system conventions like `'..'` (parent directory) or `'/'` (root path separator).
+- Dynamic messages originating from BLoC states (e.g., `SteamScannerLoading.message`, `ScanDirectoryForm.errorMessage`) are not covered by this sprint because their source strings reside outside the four target widget files.

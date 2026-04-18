@@ -1,221 +1,56 @@
-# Sprint Contract: Game Detail Page — UI, Routing & Navigation
+# Sprint Contract: Fix Focus Traversal for PickerButton Widgets
 
 ## Scope
-
-This sprint creates the **Game Detail Page** (`/game/:id`) as the central hub for per-game interaction. It transforms the app from a direct-launch model to a navigation-first model where pressing A on any game card opens the detail page instead of immediately launching the game.
-
-### Deliverables
-
-1. **New Route** (`/game/:id`) registered in `lib/app/router.dart` with fade + slide transitions (300ms enter, 200ms exit), consistent with existing routes.
-
-2. **`GameDetailBloc`** (`lib/presentation/blocs/game_detail/`) managing detail page state:
-   - States: `GameDetailLoading`, `GameDetailLoaded`, `GameDetailError`
-   - Events: `GameDetailLoadRequested(gameId)`, `GameDetailRunningStateChanged(isRunning)`
-   - DI registration: `getIt.registerFactory<GameDetailBloc>(...)` in `lib/app/di.dart`
-
-3. **`GameDetailPage`** (`lib/presentation/pages/game_detail_page.dart`) with:
-   - Top 60%: Full-width hero image background with left-to-right gradient overlay for text readability.
-   - Game info overlay on the left: title, description, play count, last played date, favorite status.
-   - Bottom 40%: Dark surface area with a horizontal row of large `FocusableButton` action buttons.
-   - `BlocProvider<GameDetailBloc>` injected via router (not inside the page widget tree).
-   - Uses existing `AppShell` layout (inherited from ShellRoute).
-
-4. **Action button row** on the detail page:
-   - Uses `FocusScope` (via a `FocusScopeNode` with debugLabel `DetailActionScope`) to contain focus within the button row.
-   - Buttons are `FocusableButton` instances with large padding for couch readability.
-   - For Sprint 2, action buttons are **visually present but non-functional stubs** (onPressed does nothing or logs). Functional wiring (launch, stop, edit, delete) is Sprint 3 scope.
-   - Button labels: "启动游戏" (Launch Game), "设置" (Settings), "删除" (Delete).
-
-5. **HomePage update** (`lib/presentation/pages/home_page.dart`):
-   - `onCardSelected` in `GameCardRow` now calls `context.go('/game/${game.id}')` instead of `_handleGameLaunched()`.
-   - Remove or deprecate `_handleGameLaunched` from `_HomePageState`.
-
-6. **LibraryPage update** (`lib/presentation/pages/library_page.dart`):
-   - `_handleGameSelected` now calls `context.go('/game/${game.id}')` instead of `debugPrint`.
-
-7. **Focus management**:
-    - Button `FocusNode`s are `late final` state fields in `_GameDetailPageState`, created in `initState` and disposed in `dispose`, then passed to each `FocusableButton` via its `focusNode` parameter.
-    - On page load, automatic focus is set to the first action button via `WidgetsBinding.instance.addPostFrameCallback`.
-    - Action buttons wrapped in a `FocusScope` for automatic focus containment.
-    - D-pad/arrow keys navigate between action buttons horizontally.
-    - No manual `registerContentNode` / `registerTopBarNode` calls.
-
-8. **Back navigation**:
-   - B button (gamepad cancel) and Escape key pop back to the previous page via existing `FocusTraversalService._handleCancel()` → `GoRouter.pop()`.
-   - No custom back handler needed — the existing service handles this automatically since the detail page is a routable page inside the ShellRoute.
-
-9. **Widget tests** for `GameDetailPage`:
-   - `test/presentation/pages/game_detail_page_test.dart`
-   - Tests: loading state, loaded state with correct title, error state, action button visibility, focus presence on first button after settle.
-
-10. **All existing tests continue to pass**, including updated Home/Library tests if their selection behavior is tested.
+Fix directional focus traversal (D-pad Up/Down / keyboard arrow keys) to `PickerButton` widgets in the Add Game dialog's "Manual Add" and "Scan Directory" tabs. The root cause is that both `PickerButton` and `FocusableButton` have an outer `Focus` widget (added to intercept gamepad A-key events) that creates an unintended focusable node, interfering with `FocusScope`'s default traversal algorithm.
 
 ## Implementation Plan
 
-### Key Technical Decisions
+### 1. Fix `PickerButton` Focus Architecture
+- **File**: `lib/presentation/widgets/picker_button.dart`
+- **Change**: Add `canRequestFocus: false` to the outer `Focus` widget (line 125)
+- **Rationale**: The outer `Focus` widget must intercept `KeyEvent`s (gamepad A / Enter) but must NOT be a focusable node itself. The inner `TextButton` already owns the user-provided `focusNode` (`widget.focusNode`) and is the actual focus target. Without `canRequestFocus: false`, `FocusScope.traversalDescendants` sees two nodes where there should be one, breaking directional traversal.
 
-- **BLoC pattern**: `GameDetailBloc` follows the existing pattern (Equatable states/events, `on<Event>()` handlers in constructor, `part` files for state/event).
-- **Router integration**: The `/game/:id` route is a sibling to `/library` and `/settings` inside the `ShellRoute`, so it inherits the persistent `TopBar` and `AppShell` gradient background automatically.
-- **BlocProvider in router**: Following the existing Home route pattern, `BlocProvider` is created in `router.dart`'s `pageBuilder`, not inside `GameDetailPage`.
-- **FocusScope for action buttons**: A local `FocusScopeNode` (debugLabel: `DetailActionScope`) wraps the action button row. Button `FocusNode`s are `late final` state fields in `_GameDetailPageState`, created in `initState` and disposed in `dispose`, and passed to each `FocusableButton`. This is a local containment scope, not registered with `FocusTraversalService` (which only tracks TopBar, Content, BottomNav scopes). D-pad left/right uses Flutter's native `focusInDirection` within the scope.
-- **No process tracking in Sprint 2**: The `GameDetailRunningStateChanged` event exists as a stub (always `isRunning: false`) so the UI can render the button layout. Sprint 3 wires the real stream.
+### 2. Fix `FocusableButton` Focus Architecture
+- **File**: `lib/presentation/widgets/focusable_button.dart`
+- **Change**: Add `canRequestFocus: false` to the outer `Focus` widget (line 135)
+- **Rationale**: Same pattern as `PickerButton`. The outer `Focus` is for key-event interception only; the inner `TextButton` owns the real focus node.
 
-### BLoC Dependencies
+### 3. Verify Manual Add Tab Traversal
+- **File**: `lib/presentation/widgets/manual_add_tab.dart`
+- **Verify**: Within the `ContentScope` FocusScope, the traversal order is:
+  1. `FocusableTextField` (Name input, `_nameInputFocusNode`)
+  2. `PickerButton` (Browse..., `_filePickerFocusNode`)
+  3. `FocusableButton` (Add Game, `_confirmFocusNode`)
+- **Check**: D-pad Down from Name input → Browse button → Add Game button. D-pad Up reverses the order. No manual `registerContentNode` calls needed — `FocusScope` handles this automatically once the extra focus nodes are eliminated.
 
-`GameDetailBloc` requires two repositories, injected via constructor:
+### 4. Verify Scan Directory Tab Traversal
+- **File**: `lib/presentation/widgets/scan_directory_tab.dart`
+- **Verify**: In the `_buildScanForm` state, the traversal order is:
+  1. `PickerButton` (Add Directory, `_addDirectoryFocusNode`)
+  2. `ManageDirectoriesSection` list items (if directories exist)
+  3. `FocusableButton` (Start Scan, `_startScanFocusNode`)
+- **Check**: D-pad Down from top of tab → Add Directory button → directory list → Start Scan button. D-pad Up reverses.
 
-```dart
-class GameDetailBloc extends Bloc<GameDetailEvent, GameDetailState> {
-  GameDetailBloc({
-    required GameRepository gameRepository,
-    required MetadataRepository metadataRepository,
-  })  : _gameRepository = gameRepository,
-        _metadataRepository = metadataRepository,
-        super(GameDetailLoading()) {
-    on<GameDetailLoadRequested>(_onLoadRequested);
-    on<GameDetailRunningStateChanged>(_onRunningStateChanged);
-  }
-  // ...
-}
-```
-
-DI registration in `di.dart`:
-```dart
-getIt.registerFactory<GameDetailBloc>(
-  () => GameDetailBloc(
-    gameRepository: getIt<GameRepository>(),
-    metadataRepository: getIt<MetadataRepository>(),
-  ),
-);
-```
-
-### Router-to-BLoC Parameter Passing
-
-In `router.dart`, the `/game/:id` route's `pageBuilder` extracts the game ID from GoRouter state and passes it to the BLoC when it is created:
-
-```dart
-GoRoute(
-  path: '/game/:id',
-  pageBuilder: (context, state) {
-    final gameId = state.pathParameters['id']!;
-    return MaterialPage(
-      child: BlocProvider(
-        create: (_) => getIt<GameDetailBloc>()
-          ..add(GameDetailLoadRequested(gameId)),
-        child: const GameDetailPage(),
-      ),
-    );
-  },
-)
-```
-
-`GameDetailLoadRequested(gameId)` triggers the BLoC to fetch the game and metadata.
-
-### Component Structure
-
-```
-lib/
-├── app/
-│   ├── router.dart              # MODIFIED: Add /game/:id route
-│   └── di.dart                  # MODIFIED: Register GameDetailBloc factory
-├── presentation/
-│   ├── blocs/
-│   │   └── game_detail/
-│   │       ├── game_detail_bloc.dart    # NEW
-│   │       ├── game_detail_state.dart   # NEW
-│   │       └── game_detail_event.dart   # NEW
-│   └── pages/
-│       └── game_detail_page.dart        # NEW
-└── l10n/
-    ├── app_en.arb               # UNMODIFIED (localization is Sprint 3)
-    └── app_zh.arb               # UNMODIFIED (localization is Sprint 3)
-```
-
-### State/Event Design
-
-**States:**
-```dart
-abstract class GameDetailState extends Equatable { ... }
-
-class GameDetailLoading extends GameDetailState { ... }
-
-class GameDetailLoaded extends GameDetailState {
-  final Game game;
-  final GameMetadata? metadata;
-  final bool isRunning; // Stubbed to false in Sprint 2
-  // ...
-}
-
-class GameDetailError extends GameDetailState {
-  final String message;
-  // ...
-}
-```
-
-**Events:**
-```dart
-abstract class GameDetailEvent extends Equatable { ... }
-
-class GameDetailLoadRequested extends GameDetailEvent {
-  final String gameId;
-  // ...
-}
-
-class GameDetailRunningStateChanged extends GameDetailEvent {
-  final bool isRunning;
-  // ...
-}
-```
-
-### UI Layout Details
-
-- **Hero background**: Reuses `DynamicBackground` or a simplified `Container` with `BoxDecoration` using the game's cached cover image (fallback to gradient).
-- **Gradient overlay**: Same pattern as HomePage — `LinearGradient` from left (`AppColors.background.withAlpha(242)`) to right (`Colors.transparent`).
-- **Action button row**: `Row` with `mainAxisAlignment: MainAxisAlignment.start`, spacing `AppSpacing.md` between buttons. Each button is `FocusableButton` with `isPrimary: true` for the first button (Launch/Stop).
-- **Focus initialization**: Button `FocusNode`s are created as `late final` state fields in `_GameDetailPageState`, initialized in `initState`, and disposed in `dispose`. They are passed to each `FocusableButton` via the required `focusNode` parameter. In `initState`, after the frame builds via `WidgetsBinding.instance.addPostFrameCallback`, focus is requested on the first button's `FocusNode`.
+### 5. Regression Testing
+- Run `flutter analyze` — must pass with zero issues.
+- Run `flutter test` — all 370 existing tests must pass.
+- No new tests required (contract scope is bug fix + verification), but existing widget tests using `FocusableButton` (e.g., `edit_game_dialog_test.dart`) must continue to pass.
 
 ## Success Criteria
-
-1. **Route exists and navigates**: Pressing A on a game card in `HomePage` navigates to `/game/{id}`. The URL in the browser/address bar reflects `/game/{id}`.
-   - *Verify*: Widget test tapping a game card in `HomePage` and asserting `GoRouter.of(context).routeInformationProvider` reports `/game/{id}`.
-
-2. **Detail page displays correct game data**: When navigating to `/game/{id}`, the page shows the game's title, description, play count, last played date, and favorite status.
-   - *Verify*: Widget test pumping `GameDetailPage` with a mocked `GameDetailBloc` emitting `GameDetailLoaded` and asserting text finders match the game data.
-
-3. **Loading and error states**: `GameDetailBloc` emits `GameDetailLoading` initially, then `GameDetailLoaded` on success, or `GameDetailError` if the game is not found.
-   - *Verify*: BLoC tests for each state transition.
-
-4. **Focus on first action button**: After the detail page renders, the first action button has focus.
-   - *Verify*: Widget test using `tester.binding.focusManager.primaryFocus` and checking it equals the first button's focus node after `pumpAndSettle`.
-
-5. **D-pad navigates action buttons**: Focus moves horizontally between action buttons using left/right arrow keys or gamepad D-pad.
-   - *Verify*: Widget test sending `LogicalKeyboardKey.arrowRight` and asserting focus moved to the next button.
-
-6. **B/Escape pops back**: Pressing Escape or triggering gamepad cancel navigates back to the previous page (Home or Library).
-   - *Verify*: Widget test pumping `GameDetailPage` inside a `MaterialApp.router` with the app router config, navigating to `/game/test-id`, simulating `LogicalKeyboardKey.escape` via `tester.sendKeyEvent`, and asserting the reported route is no longer `/game/test-id` (e.g., by inspecting `GoRouter.of(context).routeInformationProvider.value.uri.path`).
-
-7. **HomePage no longer launches on A press**: `onCardSelected` in `HomePage` calls `context.go('/game/${game.id}')` and does not call `_gameLauncher.launchGame()`.
-   - *Verify*: Unit test of `_HomePageState` behavior or widget test mocking the navigation.
-
-8. **LibraryPage navigates on select**: `onGameSelected` in `LibraryPage` calls `context.go('/game/${game.id}')`.
-   - *Verify*: Widget test or code inspection.
-
-9. **All tests pass**: `flutter test` passes with zero failures.
-   - *Verify*: Run `flutter test`.
-
-10. **Static analysis passes**: `flutter analyze` reports zero issues.
-    - *Verify*: Run `flutter analyze`.
+1. **PickerButton outer Focus is non-focusable**: `PickerButton`'s outer `Focus` widget has `canRequestFocus: false` set. Verified by code review.
+2. **FocusableButton outer Focus is non-focusable**: `FocusableButton`'s outer `Focus` widget has `canRequestFocus: false` set. Verified by code review.
+3. **Manual Add tab traversal works**: In the Add Game dialog's Manual Add tab, D-pad Down from the Name `FocusableTextField` moves focus to the Browse `PickerButton`, and D-pad Down from the Browse button moves focus to the Add Game `FocusableButton`. D-pad Up reverses the order. Verified by interactive testing.
+4. **Scan Directory tab traversal works**: In the Scan Directory tab, D-pad Down from the top moves focus to the Add Directory `PickerButton`, then into the directory list (if any), then to the Start Scan `FocusableButton`. D-pad Up reverses. Verified by interactive testing.
+5. **PickerButton activation still works**: Pressing A/Enter on a focused `PickerButton` still opens the file/directory browser dialog. The outer `Focus` widget must continue to intercept the key event and trigger `onPressed`. Verified by interactive testing.
+6. **FocusableButton activation still works**: Pressing A/Enter on a focused `FocusableButton` still triggers `onPressed`. Verified by interactive testing.
+7. **Focus visual feedback preserved**: Both `PickerButton` and `FocusableButton` continue to show the correct focus border/background colors when focused. Verified by interactive testing.
+8. **All existing tests pass**: `flutter test` reports 0 failures. Verified by CI/test run.
+9. **Static analysis passes**: `flutter analyze` reports zero issues. Verified by CI/analysis run.
 
 ## Out of Scope for This Sprint
-
-The following are explicitly **NOT** part of Sprint 2 and will be built in Sprint 3:
-
-- **Launch/Stop actions**: The "启动游戏" and "停止" buttons are present but do not call `GameLauncher.launchGame()` or `GameLauncher.stopGame()`.
-- **Edit dialog**: The "设置" button does not open `EditGameDialog`.
-- **Delete dialog**: The "删除" button does not open `DeleteGameDialog` or call `GameRepository.deleteGame()`.
-- **Process lifecycle tracking**: `GameDetailRunningStateChanged` is stubbed; no subscription to `GameLauncher.runningGamesStream`.
-- **Action button mutual exclusion**: All three buttons (Launch, Settings, Delete) are always visible. Dynamic hiding based on `isRunning` is Sprint 3.
-- **Localization for new strings**: Strings are hardcoded in Sprint 2; ARB file updates and `flutter gen-l10n` are Sprint 3.
-- **Play count / last played updates on launch**: These remain in `HomeBloc` for now; Sprint 3 moves launch responsibility to `GameDetailBloc`.
-- **Hero image metadata fetching**: The detail page uses whatever metadata is already cached; no new metadata fetch is triggered.
-- **Gamepad hint bar updates**: The bottom hint bar continues to show generic hints; Sprint 3 updates it for detail-page-specific actions.
+- Refactoring the broader focus architecture beyond adding `canRequestFocus: false` to the two buttons.
+- Adding new widget tests for `PickerButton` or `FocusableButton` (no existing tests; new tests are optional and out of scope).
+- Changing `FocusTraversalService` API or behavior.
+- Fixing any i18n / hardcoded string issues (deferred to Sprint 3).
+- Any changes to `GamepadFileBrowser` (already fixed in Sprint 1).
+- Changes to `FocusableTextField`, `ManageDirectoriesSection`, or other widgets.

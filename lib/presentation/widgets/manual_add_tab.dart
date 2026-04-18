@@ -5,6 +5,7 @@ import 'package:squirrel_play/core/theme/design_tokens.dart';
 import 'package:squirrel_play/data/services/sound_service.dart';
 import 'package:squirrel_play/domain/validators/executable_path_input.dart';
 import 'package:squirrel_play/domain/validators/game_name_input.dart';
+import 'package:squirrel_play/l10n/app_localizations.dart';
 import 'package:squirrel_play/presentation/blocs/add_game/add_game_bloc.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_button.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_text_field.dart';
@@ -106,6 +107,8 @@ class _ManualAddTabState extends State<ManualAddTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return BlocListener<AddGameBloc, AddGameState>(
       listener: (context, state) {
         if (state is ManualAddForm) {
@@ -122,7 +125,7 @@ class _ManualAddTabState extends State<ManualAddTab> {
         children: [
           // File picker section
           Text(
-            'Executable File',
+            l10n?.manualAddExecutableLabel ?? 'Executable File',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -144,7 +147,7 @@ class _ManualAddTabState extends State<ManualAddTab> {
                   ),
                   child: Text(
                     _pathInput.value.isEmpty
-                        ? 'No file selected'
+                        ? (l10n?.manualAddNoFileSelected ?? 'No file selected')
                         : _pathInput.value,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: _pathInput.value.isEmpty
@@ -158,7 +161,7 @@ class _ManualAddTabState extends State<ManualAddTab> {
               const SizedBox(width: AppSpacing.sm),
               PickerButton(
                 focusNode: _filePickerFocusNode,
-                label: 'Browse...',
+                label: l10n?.manualAddBrowseButton ?? 'Browse...',
                 icon: Icons.file_open,
                 onPressed: _pickFile,
               ),
@@ -168,7 +171,7 @@ class _ManualAddTabState extends State<ManualAddTab> {
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.xs),
               child: Text(
-                _pathInput.errorMessage ?? 'Invalid file',
+                _pathInput.errorMessage ?? (l10n?.manualAddInvalidFileError ?? 'Invalid file'),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.error,
                 ),
@@ -179,7 +182,7 @@ class _ManualAddTabState extends State<ManualAddTab> {
 
           // Game name input section
           Text(
-            'Game Name',
+            l10n?.manualAddGameNameLabel ?? 'Game Name',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -188,9 +191,9 @@ class _ManualAddTabState extends State<ManualAddTab> {
           FocusableTextField(
             focusNode: _nameInputFocusNode,
             controller: _nameController,
-            hintText: 'Enter game name',
+            hintText: l10n?.manualAddGameNameHint ?? 'Enter game name',
             errorText: _nameInput.isNotValid && !_nameInput.isPure
-                ? (_nameInput.errorMessage ?? 'Invalid name')
+                ? (_nameInput.errorMessage ?? (l10n?.manualAddInvalidNameError ?? 'Invalid name'))
                 : null,
             onChanged: _onNameChanged,
             onSubmitted: (_) => _confirmAdd(),
@@ -203,7 +206,7 @@ class _ManualAddTabState extends State<ManualAddTab> {
             width: double.infinity,
             child: FocusableButton(
               focusNode: _confirmFocusNode,
-              label: 'Add Game',
+              label: l10n?.manualAddConfirmButton ?? 'Add Game',
               isPrimary: (_nameInput.isValid && _pathInput.isValid),
               onPressed: (_nameInput.isValid && _pathInput.isValid)
                   ? _confirmAdd

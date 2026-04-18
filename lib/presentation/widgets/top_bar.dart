@@ -9,6 +9,7 @@ import 'package:squirrel_play/data/services/sound_service.dart';
 import 'package:squirrel_play/l10n/app_localizations.dart';
 import 'package:squirrel_play/presentation/blocs/quick_scan/quick_scan_bloc.dart';
 import 'package:squirrel_play/presentation/widgets/add_game_dialog.dart';
+import 'package:squirrel_play/presentation/widgets/error_localizer.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_button.dart';
 import 'package:squirrel_play/presentation/widgets/scan_notification.dart';
 
@@ -179,6 +180,9 @@ class _TopBarState extends State<TopBar> {
                       const SizedBox(width: AppSpacing.sm),
                       // Refresh icon button
                       _buildRefreshButton(context, isScanning),
+                      const SizedBox(width: AppSpacing.sm),
+                      // Scan status indicator
+                      _buildScanStatusIndicator(isScanning, l10n),
                     ],
                   ),
                 ],
@@ -261,6 +265,7 @@ class _TopBarState extends State<TopBar> {
 
   Widget _buildScanNotification(QuickScanState state) {
     final visible = state is! QuickScanIdle;
+    final l10n = AppLocalizations.of(context);
 
     return ScanNotification(
       visible: visible,
@@ -271,8 +276,61 @@ class _TopBarState extends State<TopBar> {
           : null,
       noDirectoriesConfigured:
           state is QuickScanNoNewGames ? state.noDirectoriesConfigured : false,
-      errorMessage: state is QuickScanError ? state.message : null,
+      errorMessage: state is QuickScanError
+          ? localizeError(
+              l10n,
+              state.localizationKey ?? '',
+              details: state.details,
+            )
+          : null,
       onDismiss: () => _handleDismissNotification(context),
+    );
+  }
+
+  /// Builds a compact scan status indicator shown on the right side of the top bar.
+  /// Only visible when a scan is in progress.
+  Widget _buildScanStatusIndicator(bool isScanning, AppLocalizations? l10n) {
+    if (!isScanning) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surface.withAlpha(128),
+        borderRadius: BorderRadius.circular(AppRadii.small),
+        border: Border.all(
+          color: AppColors.success.withAlpha(77),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(
+            width: 10,
+            height: 10,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                AppColors.success,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Text(
+            l10n?.topBarScanning ?? 'Scanning',
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: AppTypography.captionSize,
+              fontWeight: AppTypography.regular,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
