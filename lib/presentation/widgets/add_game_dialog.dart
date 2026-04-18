@@ -8,7 +8,6 @@ import 'package:squirrel_play/data/services/sound_service.dart';
 import 'package:squirrel_play/l10n/app_localizations.dart';
 import 'package:squirrel_play/presentation/blocs/add_game/add_game_bloc.dart';
 import 'package:squirrel_play/presentation/blocs/steam_scanner/steam_scanner_bloc.dart';
-import 'package:squirrel_play/presentation/navigation/focus_traversal.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_button.dart';
 import 'package:squirrel_play/presentation/widgets/manual_add_tab.dart';
 import 'package:squirrel_play/presentation/widgets/scan_directory_tab.dart';
@@ -22,7 +21,7 @@ import 'package:squirrel_play/presentation/widgets/steam_games_tab.dart';
 /// - Scan directory: directory picker, recursive scan, checkbox list
 /// - Steam Games: auto-detect Steam, scan library, import games
 /// - Gamepad-navigable tab switching (left/right arrows)
-/// - Focus trapping while dialog is open
+/// - Focus trapping while dialog is open via [FocusScope]
 /// - Sound hooks on open/close
 class AddGameDialog extends StatefulWidget {
   /// Creates the Add Game dialog.
@@ -78,8 +77,8 @@ class _AddGameDialogState extends State<AddGameDialog>
     with SingleTickerProviderStateMixin {
   int _selectedTabIndex = 0;
   final List<FocusNode> _tabFocusNodes = [];
-  final List<FocusNode> _dialogFocusNodes = [];
-  FocusNode? _triggerNode;
+  final FocusNode _closeButtonFocusNode = FocusNode(debugLabel: 'CloseButton');
+  late FocusNode _keyboardListenerFocusNode;
 
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
@@ -110,22 +109,13 @@ class _AddGameDialogState extends State<AddGameDialog>
       FocusNode(debugLabel: 'SteamGamesTab'),
     ]);
 
-    // Create focus nodes for dialog elements
-    _dialogFocusNodes.addAll([
-      FocusNode(debugLabel: 'CloseButton'),
-    ]);
+    _keyboardListenerFocusNode = FocusNode(
+      debugLabel: 'DialogKeyboardListener',
+      canRequestFocus: false,
+    );
 
-    // Store the trigger node (what opened the dialog)
-    _triggerNode = FocusManager.instance.primaryFocus;
-
-    // Enter dialog focus mode and start open animation
+    // Start open animation and focus first tab after frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusTraversalService.instance.enterDialogMode(
-        'addGameDialog',
-        [..._tabFocusNodes, ..._dialogFocusNodes],
-        _triggerNode,
-        onCancel: _closeDialog,
-      );
       // Focus the first tab
       _tabFocusNodes[_selectedTabIndex].requestFocus();
       // Start open animation
@@ -139,9 +129,8 @@ class _AddGameDialogState extends State<AddGameDialog>
     for (final node in _tabFocusNodes) {
       node.dispose();
     }
-    for (final node in _dialogFocusNodes) {
-      node.dispose();
-    }
+    _closeButtonFocusNode.dispose();
+    _keyboardListenerFocusNode.dispose();
     super.dispose();
   }
 
@@ -151,7 +140,7 @@ class _AddGameDialogState extends State<AddGameDialog>
         _selectedTabIndex = index;
       });
       _tabFocusNodes[index].requestFocus();
-      SoundService.instance.playFocusMove();
+      // Sound is played by onFocusChange in the FocusableActionDetector wrapper
 
       // Notify BLoC of tab switch (only for first 2 tabs, Steam tab handles itself)
       if (index < 2) {
@@ -162,7 +151,6 @@ class _AddGameDialogState extends State<AddGameDialog>
 
   void _closeDialog() {
     SoundService.instance.playFocusBack();
-    FocusTraversalService.instance.exitDialogMode();
 
     // Animate close (scale down) then pop
     _animationController.reverse().then((_) {
@@ -183,100 +171,108 @@ class _AddGameDialogState extends State<AddGameDialog>
           _closeDialog();
         }
       },
-      child: KeyboardListener(
-        focusNode: FocusNode(debugLabel: 'DialogKeyboardListener'),
-        onKeyEvent: (event) {
-          if (event is KeyDownEvent) {
-            switch (event.logicalKey) {
-              case LogicalKeyboardKey.arrowLeft:
-                if (_selectedTabIndex > 0) {
-                  _switchTab(_selectedTabIndex - 1);
-                }
-                return;
-              case LogicalKeyboardKey.arrowRight:
-                if (_selectedTabIndex < _tabFocusNodes.length - 1) {
-                  _switchTab(_selectedTabIndex + 1);
-                }
-                return;
-              case LogicalKeyboardKey.escape:
-                _closeDialog();
-                return;
-            }
-          }
+      child: AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: child,
+          );
         },
-        child: AnimatedBuilder(
-          animation: _scaleAnimation,
-          builder: (context, child) {
-            return Transform.scale(
-              scale: _scaleAnimation.value,
-              child: child,
-            );
-          },
-          child: AlertDialog(
-            backgroundColor: AppColors.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.large),
+        child: AlertDialog(
+          backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.large),
+          ),
+          title: Text(
+            l10n?.dialogAddGameTitle ?? 'Add Game',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: AppColors.textPrimary,
             ),
-            title: Text(
-              l10n?.dialogAddGameTitle ?? 'Add Game',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: AppColors.textPrimary,
-              ),
-            ),
-            content: SizedBox(
-              width: 600,
-              height: 450,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Tab bar
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.circular(AppRadii.medium),
+          ),
+          content: FocusScope(
+            autofocus: true,
+            child: KeyboardListener(
+              focusNode: _keyboardListenerFocusNode,
+              onKeyEvent: (event) {
+                if (event is KeyDownEvent) {
+                  switch (event.logicalKey) {
+                    case LogicalKeyboardKey.arrowLeft:
+                      if (_selectedTabIndex > 0) {
+                        _switchTab(_selectedTabIndex - 1);
+                      }
+                      return;
+                    case LogicalKeyboardKey.arrowRight:
+                      if (_selectedTabIndex < _tabFocusNodes.length - 1) {
+                        _switchTab(_selectedTabIndex + 1);
+                      }
+                      return;
+                    case LogicalKeyboardKey.escape:
+                      _closeDialog();
+                      return;
+                  }
+                }
+              },
+              child: SizedBox(
+                width: 600,
+                height: 450,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Tab bar
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(AppRadii.medium),
+                      ),
+                      padding: const EdgeInsets.all(AppSpacing.xs),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildTab(
+                              index: 0,
+                              label: l10n?.dialogAddGameManualTab ?? 'Manual Add',
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: _buildTab(
+                              index: 1,
+                              label: l10n?.dialogAddGameScanTab ?? 'Scan Directory',
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: _buildTab(
+                              index: 2,
+                              label: l10n?.dialogAddGameSteamTab ?? 'Steam Games',
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    padding: const EdgeInsets.all(AppSpacing.xs),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _buildTab(
-                            index: 0,
-                            label: l10n?.dialogAddGameManualTab ?? 'Manual Add',
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: _buildTab(
-                            index: 1,
-                            label: l10n?.dialogAddGameScanTab ?? 'Scan Directory',
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: _buildTab(
-                            index: 2,
-                            label: l10n?.dialogAddGameSteamTab ?? 'Steam Games',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: AppSpacing.lg),
 
-                  // Tab content
-                  Expanded(
-                    child: _buildTabContent(),
-                  ),
-                ],
+                    // Tab content
+                    Expanded(
+                      child: _buildTabContent(),
+                    ),
+
+                    const SizedBox(height: AppSpacing.lg),
+
+                    // Close button
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: FocusableButton(
+                        focusNode: _closeButtonFocusNode,
+                        label: l10n?.dialogClose ?? 'Close',
+                        onPressed: _closeDialog,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            actions: [
-              FocusableButton(
-                focusNode: _dialogFocusNodes[0],
-                label: l10n?.dialogClose ?? 'Close',
-                onPressed: _closeDialog,
-              ),
-            ],
           ),
         ),
       ),
@@ -285,36 +281,64 @@ class _AddGameDialogState extends State<AddGameDialog>
 
   Widget _buildTab({required int index, required String label}) {
     final isSelected = _selectedTabIndex == index;
-    final isFocused = _tabFocusNodes[index].hasFocus;
 
-    return Focus(
+    return FocusableActionDetector(
       focusNode: _tabFocusNodes[index],
-      child: GestureDetector(
-        onTap: () => _switchTab(index),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOut,
-          decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.primaryAccent
-                : (isFocused ? AppColors.surfaceElevated : Colors.transparent),
-            borderRadius: BorderRadius.circular(AppRadii.small),
-          ),
-          padding: const EdgeInsets.symmetric(
-            vertical: AppSpacing.md,
-            horizontal: AppSpacing.lg,
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: isSelected || isFocused
-                  ? AppColors.textPrimary
-                  : AppColors.textSecondary,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
+      onFocusChange: (hasFocus) {
+        if (hasFocus) {
+          SoundService.instance.playFocusMove();
+        }
+        setState(() {});
+      },
+      actions: <Type, Action<Intent>>{
+        ActivateIntent: CallbackAction<ActivateIntent>(
+          onInvoke: (_) {
+            if (_selectedTabIndex != index) {
+              _switchTab(index);
+            }
+            return null;
+          },
         ),
+      },
+      child: Builder(
+        builder: (context) {
+          final isFocused = _tabFocusNodes[index].hasFocus;
+          return GestureDetector(
+            onTap: () => _switchTab(index),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeOut,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.primaryAccent
+                    : (isFocused
+                        ? AppColors.surfaceElevated
+                        : Colors.transparent),
+                borderRadius: BorderRadius.circular(AppRadii.small),
+                border: isFocused
+                    ? Border.all(
+                        color: AppColors.primaryAccent,
+                        width: 2,
+                      )
+                    : null,
+              ),
+              padding: const EdgeInsets.symmetric(
+                vertical: AppSpacing.md,
+                horizontal: AppSpacing.lg,
+              ),
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: isSelected || isFocused
+                      ? AppColors.textPrimary
+                      : AppColors.textSecondary,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -335,7 +359,9 @@ class _AddGameDialogState extends State<AddGameDialog>
       case 0:
         return const ManualAddTab();
       case 1:
-        return ScanDirectoryTab(isRescan: widget.isRescan);
+        return ScanDirectoryTab(
+          isRescan: widget.isRescan,
+        );
       case 2:
         return BlocProvider(
           create: (_) => getIt<SteamScannerBloc>(),

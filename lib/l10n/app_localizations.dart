@@ -871,6 +871,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{years} years ago'**
   String timeAgoYears(int years);
+
+  /// Title for the file browser dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Select File'**
+  String get fileBrowserTitle;
+
+  /// Button label to confirm file selection
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get fileBrowserSelect;
+
+  /// Button label to cancel file selection
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get fileBrowserCancel;
+
+  /// Message shown when directory is empty
+  ///
+  /// In en, this message translates to:
+  /// **'No items'**
+  String get fileBrowserNoItems;
+
+  /// Label for navigating to parent directory
+  ///
+  /// In en, this message translates to:
+  /// **'Parent Directory'**
+  String get fileBrowserParentDirectory;
+
+  /// Message showing number of selected items
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String fileBrowserSelectedCount(int count);
 }
 
 class _AppLocalizationsDelegate

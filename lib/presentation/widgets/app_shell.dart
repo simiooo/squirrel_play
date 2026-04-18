@@ -7,7 +7,7 @@ import 'package:squirrel_play/presentation/navigation/focus_traversal.dart';
 ///
 /// Provides the content area with:
 /// - Gradient background
-/// - Focus node registration for [FocusTraversalService]
+/// - FocusScope for automatic focus containment
 ///
 /// Note: The TopBar is now provided by ShellRoute in router.dart and persists
 /// across navigation. This widget only wraps the page content.
@@ -26,12 +26,12 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  final _contentFocusNode = FocusNode(debugLabel: 'ContentArea');
+  final _contentFocusNode = FocusScopeNode(debugLabel: 'ContentScope');
 
   @override
   void initState() {
     super.initState();
-    // Register the content container focus node with the traversal service
+    // Register the content container focus scope node with the traversal service
     // This enables focus wrapping between top bar and content area
     FocusTraversalService.instance.setContentContainer(_contentFocusNode);
   }
@@ -55,8 +55,8 @@ class _AppShellState extends State<AppShell> {
           ],
         ),
       ),
-      child: Focus(
-        focusNode: _contentFocusNode,
+      child: FocusScope(
+        node: _contentFocusNode,
         child: widget.body,
       ),
     );

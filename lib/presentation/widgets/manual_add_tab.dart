@@ -1,13 +1,14 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:squirrel_play/core/theme/design_tokens.dart';
 import 'package:squirrel_play/data/services/sound_service.dart';
-import 'package:squirrel_play/domain/validators/game_name_input.dart';
 import 'package:squirrel_play/domain/validators/executable_path_input.dart';
+import 'package:squirrel_play/domain/validators/game_name_input.dart';
 import 'package:squirrel_play/presentation/blocs/add_game/add_game_bloc.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_button.dart';
+import 'package:squirrel_play/presentation/widgets/focusable_text_field.dart';
+import 'package:squirrel_play/presentation/widgets/gamepad_file_browser.dart';
 import 'package:squirrel_play/presentation/widgets/picker_button.dart';
 
 /// Tab content for manual game addition.
@@ -55,43 +56,38 @@ class _ManualAddTabState extends State<ManualAddTab> {
   Future<void> _pickFile() async {
     SoundService.instance.playFocusSelect();
 
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
+    await GamepadFileBrowser.show(
+      context,
+      mode: FileBrowserMode.file,
       allowedExtensions: ['exe'],
-      dialogTitle: 'Select Game Executable',
-    );
+      onSelected: (paths) {
+        if (paths.isEmpty) return;
+        final path = paths.first;
+        final fileName = path.split('/').last;
 
-    if (result != null && result.files.isNotEmpty && result.files.single.path != null) {
-      final path = result.files.single.path!;
-      final fileName = result.files.single.name;
+        if (mounted) {
+          context.read<AddGameBloc>().add(FileSelected(
+            path: path,
+            fileName: fileName,
+          ));
 
-      if (mounted) {
-        context.read<AddGameBloc>().add(FileSelected(
-          path: path,
-          fileName: fileName,
-        ));
+          setState(() {
+            _pathInput = ExecutablePathInput.dirty(path);
+          });
 
-        setState(() {
-          _pathInput = ExecutablePathInput.dirty(path);
-        });
-
-        // Auto-populate name if empty
-        if (_nameController.text.isEmpty) {
-          final suggestedName = fileName
-              .replaceAll('.exe', '')
-              .replaceAll('_', ' ')
-              .replaceAll('-', ' ');
-          _nameController.text = suggestedName;
-          _nameInput = GameNameInput.dirty(suggestedName);
-          context.read<AddGameBloc>().add(NameChanged(suggestedName));
+          // Auto-populate name if empty
+          if (_nameController.text.isEmpty) {
+            final suggestedName = fileName
+                .replaceAll('.exe', '')
+                .replaceAll('_', ' ')
+                .replaceAll('-', ' ');
+            _nameController.text = suggestedName;
+            _nameInput = GameNameInput.dirty(suggestedName);
+            context.read<AddGameBloc>().add(NameChanged(suggestedName));
+          }
         }
-      }
-    } else {
-      // File picker cancelled
-      if (mounted) {
-        context.read<AddGameBloc>().add(const FilePickerCancelled());
-      }
-    }
+      },
+    );
   }
 
   void _onNameChanged(String value) {
@@ -189,44 +185,15 @@ class _ManualAddTabState extends State<ManualAddTab> {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          Focus(
+          FocusableTextField(
             focusNode: _nameInputFocusNode,
-            child: TextField(
-              controller: _nameController,
-              onChanged: _onNameChanged,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textPrimary,
-              ),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: AppColors.surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.small),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.small),
-                  borderSide: const BorderSide(
-                    color: AppColors.primaryAccent,
-                    width: 2,
-                  ),
-                ),
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.small),
-                  borderSide: const BorderSide(
-                    color: AppColors.error,
-                    width: 2,
-                  ),
-                ),
-                errorText: _nameInput.isNotValid && !_nameInput.isPure
-                    ? (_nameInput.errorMessage ?? 'Invalid name')
-                    : null,
-                hintText: 'Enter game name',
-                hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textMuted,
-                ),
-              ),
-            ),
+            controller: _nameController,
+            hintText: 'Enter game name',
+            errorText: _nameInput.isNotValid && !_nameInput.isPure
+                ? (_nameInput.errorMessage ?? 'Invalid name')
+                : null,
+            onChanged: _onNameChanged,
+            onSubmitted: (_) => _confirmAdd(),
           ),
 
           const Spacer(),

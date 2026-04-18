@@ -1,44 +1,52 @@
 # Harness Run Summary
 
 ## Original Prompt
-1. 底部ui很丑，而且不是圆形，颜色非常不搭。我希望只有选择与返回 两个按键的说明，并且放在右侧
-2. 在modal中，手柄无法正确控制focus元素，在modal下，应该自定focus到modal中，并且无法focus modal 外的元素
-3. 手柄的 B 按钮应该是路由后退，如果已经是顶层路由，则不后退
-4. 手柄的方向控制在首页通过y轴控制后，focus样式消失，没有任何ui被focus（游戏库为空的情况）
-5. 在顶部导航区与内容区的手柄y轴方向移动时，当focus移动到内容区后，无法返回至顶部区域
+
+这个项目从自定义的focus系统迁移到了flutter自带的focusscope,但有些部分可能没有迁移完全，我希望你帮我排查项目中还使用老focus的代码，然后更新它们。另外，应用底部的"设置"按钮需要适配focus,"添加游戏"的modal需要适配focus. "添加游戏"的modal如果有重新实现，则合并只保留一个。自定义的文件或文件夹选择器也需要支持focus.
 
 ## Sprints Completed
 
-### Sprint 17: Gamepad & Focus UI Bug Fixes — PASS
-- **Evaluation rounds:** 1
-- **Contract negotiation rounds:** 1
-- **Key deliverables:**
-  1. **Bottom hint bar redesigned:** Shows only A (Select) and B (Back) hints, right-aligned, with circular button icons using harmonious colors (B button changed from error red to textSecondary gray).
-  2. **Dialog focus trapping:** All modals (Add Game, Delete Game, API Key, Metadata Search) now enter dialog mode, auto-focus their first element, and trap gamepad focus inside. B/Escape closes dialogs.
-  3. **B button router back:** Gamepad B button now uses `GoRouter.canPop()` and `pop()` for navigation back. No-op on root route (`/`).
-  4. **Empty state focus:** Empty home/library state widgets register their CTA buttons as content nodes, preventing focus loss when navigating down from the top bar in empty states.
-  5. **Vertical focus return:** Pressing up from first grid row or card row now wraps focus back to the top bar with sound effects.
-- **Score:** 9.125/10
-- **Minor note:** Evaluator noted a non-blocking edge case where tapping outside the API Key dialog barrier does not call `exitDialogMode()`. Marked as optional future fix.
+### Sprint 1: Core Cleanup — Remove Legacy Dialog Mode — PASS
+- **Evaluation rounds**: 1/1 (passed on first round)
+- **Contract negotiation rounds**: 1
+- **Key changes**:
+  - Removed all `enterDialogMode()` / `exitDialogMode()` calls from 5 dialogs/file browser widgets
+  - Stripped `_isInDialogMode`, `_dialogTriggerNode`, `_dialogCancelCallback` fields and `isInDialogMode()` / `enterDialogMode()` / `exitDialogMode()` methods from `FocusTraversalService`
+  - Replaced explicit dialog mode tracking with `_isFocusInsideDialog()` — a focus-tree inspection helper that walks up ancestors to detect modal/dialog FocusScopeNodes
+  - Updated `gamepad_hint_provider.dart` to use the new `isDialogOpen` getter
+  - Preserved dialog focus trapping via existing `FocusScope` wrappers and `KeyboardListener` escape handlers
+  - All 370 tests passed, no new analyzer warnings
 
-## Previous Sprints (13-16)
-See archived entries for Flatpak Steam Path, Multi-Source Metadata, Focus Styles, Simplified Scanning Flow, and Bottom Navigation Bar implementations.
+### Sprint 2: Settings Button & File Browser Polish — PASS
+- **Evaluation rounds**: 2/3 (Round 1 failed due to 2 analyzer info items; Round 2 passed after fix)
+- **Contract negotiation rounds**: 1
+- **Key changes**:
+  - Added `BottomNavScope` FocusScope in `router.dart` wrapping `GamepadNavBar`
+  - Registered BottomNav scope with `FocusTraversalService` via `setBottomNavContainer()`
+  - Added `wrapToBottomNav()` and updated `moveFocus()` for bidirectional Content ↔ BottomNav cross-scope navigation
+  - Set `canRequestFocus: false` on `GamepadFileBrowser` KeyboardListener to prevent autofocus stealing
+  - Cleaned up stale doc comments referencing removed "dialog mode" concept
+  - Fixed `prefer_function_declarations_over_variables` analyzer lints in `registerRow()` and `registerGrid()`
+  - All 370 tests passed, zero new analyzer issues in modified files
 
 ## Final Assessment
-All 5 requested gamepad and focus UI bug fixes have been successfully implemented. The app now provides a polished, controller-driven navigation experience with:
-- A minimal, right-aligned bottom hint bar showing only essential A/B buttons
-- Proper modal focus trapping that keeps gamepad navigation inside dialogs
-- Router-aware B-button back navigation that safely guards the root route
-- Focus preservation in empty states so users can always navigate to the CTA
-- Bidirectional vertical focus movement between top bar and content areas
 
-All **370 tests pass** and `flutter analyze` shows 0 warnings in sprint code (2 pre-existing warnings in unrelated test files).
+The legacy focus system cleanup is complete. The app now uses a clean, three-scope FocusScope architecture:
+
+```
+TopBarScope ↔ ContentScope ↔ BottomNavScope
+```
+
+All dialogs rely on Flutter's native `showDialog()` FocusScope for focus trapping, with their own `KeyboardListener` widgets handling Escape and arrow keys. The `FocusTraversalService` is significantly simplified — it no longer maintains redundant dialog mode state, and instead detects dialogs via focus tree inspection.
 
 ## Known Gaps
-- **Barrier dismissal edge case:** If the API Key dialog is dismissed by tapping outside (when `isFirstLaunch=false`), `exitDialogMode()` is not called. This is a minor edge case with minimal user impact.
-- 2 pre-existing analyzer warnings in unrelated test files (not part of this sprint).
+
+- `MetadataSearchDialog` is dead code (no `show()` method, never instantiated). It was cleaned up as part of Sprint 1 but could be removed entirely in a future pass.
+- Two pre-existing analyzer warnings remain in test files (unused variable and unused import), unrelated to this refactoring.
 
 ## Recommendations
-1. **(Optional)** Add `exitDialogMode()` in the `.then()` callback of `ApiKeyDialog.show()` to handle barrier dismissal cleanly.
-2. Clean up pre-existing analyzer warnings in test files when convenient.
-3. Consider splitting `FocusTraversalService` into smaller focused services if it grows further in future sprints.
+
+1. **Remove dead code**: `MetadataSearchDialog` can be safely deleted if it's truly unused.
+2. **Focus-tree heuristic robustness**: The `_isFocusInsideDialog()` method relies on `debugLabel` string matching (`ModalScope`, `Dialog`). While consistent with existing patterns in the codebase, this could break with future Flutter framework updates. Consider using `FocusScopeNode` ancestry checks without label heuristics if possible.
+3. **BottomNav focus history**: `wrapToBottomNav()` currently searches focus history for recently focused bottom-nav descendants. If no history exists, it falls back to the first descendant. This works well but could be enhanced with per-scope history tracking if more bottom-nav buttons are added.
+4. **Test coverage**: Consider adding widget tests for cross-scope navigation (TopBar → Content → BottomNav) to prevent regressions.

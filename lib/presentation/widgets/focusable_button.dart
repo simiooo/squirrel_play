@@ -21,6 +21,7 @@ class FocusableButton extends StatefulWidget {
     this.icon,
     this.hint,
     this.isPrimary = false,
+    this.isActive = false,
   });
 
   /// The focus node for this button.
@@ -44,6 +45,15 @@ class FocusableButton extends StatefulWidget {
   /// - Focused: background uses [AppColors.primaryAccent]
   /// - Unfocused: text uses [AppColors.textPrimary]
   final bool isPrimary;
+
+  /// Whether this button represents the currently active route.
+  ///
+  /// When true and not focused:
+  /// - Background uses a subtle [AppColors.primaryAccent] tint
+  /// - Text is bold
+  ///
+  /// When focused, the focus styling takes precedence.
+  final bool isActive;
 
   @override
   State<FocusableButton> createState() => _FocusableButtonState();
@@ -96,14 +106,16 @@ class _FocusableButtonState extends State<FocusableButton> {
   Widget build(BuildContext context) {
     final isFocused = widget.focusNode.hasFocus;
 
-    // Determine colors based on focus state and isPrimary
+    // Determine colors based on focus state, isPrimary, and isActive
     final backgroundColor = isFocused
         ? (widget.isPrimary ? AppColors.primaryAccent : AppColors.surfaceElevated)
-        : Colors.transparent;
+        : (widget.isActive ? AppColors.primaryAccent.withAlpha(77) : Colors.transparent);
 
     final textColor = isFocused
         ? AppColors.textPrimary
-        : (widget.isPrimary ? AppColors.textPrimary : AppColors.textSecondary);
+        : (widget.isPrimary || widget.isActive ? AppColors.textPrimary : AppColors.textSecondary);
+
+    final fontWeight = (widget.isActive || isFocused) ? FontWeight.bold : FontWeight.normal;
 
     return Semantics(
       button: true,
@@ -154,6 +166,7 @@ class _FocusableButtonState extends State<FocusableButton> {
                   widget.label,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: textColor,
+                    fontWeight: fontWeight,
                   ),
                 ),
               ],

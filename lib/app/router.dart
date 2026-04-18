@@ -57,24 +57,7 @@ class AppRouter {
           _FocusManagementNavigatorObserver(),
         ],
         builder: (context, state, child) {
-          return Scaffold(
-            body: GamepadHintProviderWrapper(
-              child: Column(
-                children: [
-                  // TopBar - persistent across navigation (not recreated on page change)
-                  // Wrapped with QuickScanBloc for refresh functionality
-                  BlocProvider(
-                    create: (context) => getIt<QuickScanBloc>(),
-                    child: const TopBar(),
-                  ),
-                  // Page content - changes during navigation with transition animation
-                  Expanded(child: child),
-                  // Gamepad navigation hints - persistent bottom bar
-                  const GamepadNavBar(),
-                ],
-              ),
-            ),
-          );
+          return _ShellWithFocusScope(content: child);
         },
         routes: [
           // Home route
@@ -250,8 +233,8 @@ class _FocusManagementNavigatorObserver extends NavigatorObserver {
     // Clear focus history
     FocusTraversalService.instance.clearHistory();
 
-    // Clear all registrations (rows, grids)
-    FocusTraversalService.instance.clearAllRegistrations();
+    // Clear row and grid registrations
+    FocusTraversalService.instance.clearRowAndGridRegistrations();
 
     // Schedule focus reset after frame builds
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -259,5 +242,68 @@ class _FocusManagementNavigatorObserver extends NavigatorObserver {
       // their focus nodes in initState -> addPostFrameCallback
       debugPrint('[AppRouter] Focus state reset complete');
     });
+  }
+}
+
+/// Shell widget that wraps the TopBar in a [FocusScope] and provides
+/// the content area below it.
+///
+/// The TopBar gets its own [FocusScopeNode] for automatic focus containment
+/// and cross-scope wrapping via [FocusTraversalService].
+class _ShellWithFocusScope extends StatefulWidget {
+  const _ShellWithFocusScope({required this.content});
+
+  final Widget content;
+
+  @override
+  State<_ShellWithFocusScope> createState() => _ShellWithFocusScopeState();
+}
+
+class _ShellWithFocusScopeState extends State<_ShellWithFocusScope> {
+  final _topBarScopeNode = FocusScopeNode(debugLabel: 'TopBarScope');
+  final _bottomNavScopeNode = FocusScopeNode(debugLabel: 'BottomNavScope');
+
+  @override
+  void initState() {
+    super.initState();
+    FocusTraversalService.instance.setTopBarContainer(_topBarScopeNode);
+    FocusTraversalService.instance.setBottomNavContainer(_bottomNavScopeNode);
+  }
+
+  @override
+  void dispose() {
+    _topBarScopeNode.dispose();
+    _bottomNavScopeNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: GamepadHintProviderWrapper(
+        child: Column(
+          children: [
+            // TopBar - persistent across navigation (not recreated on page change)
+            // Wrapped with QuickScanBloc for refresh functionality
+            // Also wrapped in FocusScope for automatic focus containment
+            FocusScope(
+              node: _topBarScopeNode,
+              child: BlocProvider(
+                create: (context) => getIt<QuickScanBloc>(),
+                child: const TopBar(),
+              ),
+            ),
+            // Page content - changes during navigation with transition animation
+            Expanded(child: widget.content),
+            // Gamepad navigation hints - persistent bottom bar
+            // Wrapped in FocusScope so Settings button participates in cross-scope navigation
+            FocusScope(
+              node: _bottomNavScopeNode,
+              child: const GamepadNavBar(),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

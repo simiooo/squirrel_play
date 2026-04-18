@@ -706,5 +706,40 @@
         "type": "int"
       }
     }
+  },
+
+  "fileBrowserTitle": "Select File",
+  "@fileBrowserTitle": {
+    "description": "Title for the file browser dialog"
+  },
+
+  "fileBrowserSelect": "Select",
+  "@fileBrowserSelect": {
+    "description": "Button label to confirm file selection"
+  },
+
+  "fileBrowserCancel": "Cancel",
+  "@fileBrowserCancel": {
+    "description": "Button label to cancel file selection"
+  },
+
+  "fileBrowserNoItems": "No items",
+  "@fileBrowserNoItems": {
+    "description": "Message shown when directory is empty"
+  },
+
+  "fileBrowserParentDirectory": "Parent Directory",
+  "@fileBrowserParentDirectory": {
+    "description": "Label for navigating to parent directory"
+  },
+
+  "fileBrowserSelectedCount": "{count} selected",
+  "@fileBrowserSelectedCount": {
+    "description": "Message showing number of selected items",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

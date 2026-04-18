@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'package:squirrel_play/core/theme/design_tokens.dart';
-import 'package:squirrel_play/presentation/navigation/focus_traversal.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_button.dart';
 
 /// A reusable empty state widget with CTA button.
@@ -47,14 +46,10 @@ class _EmptyStateWidgetState extends State<EmptyStateWidget> {
   void initState() {
     super.initState();
     _buttonFocusNode = FocusNode(debugLabel: 'EmptyStateButton');
-
-    // Register empty-state button as content node for focus traversal
-    FocusTraversalService.instance.registerContentNode(_buttonFocusNode);
   }
 
   @override
   void dispose() {
-    FocusTraversalService.instance.unregisterContentNode(_buttonFocusNode);
     _buttonFocusNode.dispose();
     super.dispose();
   }

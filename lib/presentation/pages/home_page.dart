@@ -43,19 +43,13 @@ class _HomePageState extends State<HomePage> {
 
   void _handleAddGame() {
     SoundService.instance.playFocusSelect();
-    showDialog(
-      context: context,
-      builder: (context) => const AddGameDialog(),
-    );
+    AddGameDialog.show(context);
   }
 
   void _handleScanDirectory() {
     SoundService.instance.playFocusSelect();
     // Open Add Game dialog on Scan Directory tab
-    showDialog(
-      context: context,
-      builder: (context) => const AddGameDialog(initialTab: 1),
-    );
+    AddGameDialog.show(context, initialTab: 1);
   }
 
   void _handleNavigateToLibrary() {
@@ -192,41 +186,53 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildCardRows(HomeLoaded state) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        // Card rows (show all non-empty rows)
-        for (int i = 0; i < state.rows.length; i++) ...[
-          GameCardRow(
-            row: state.rows[i],
-            rowIndex: i,
-            focusedCardIndex: state.focusedRowIndex == i ? state.focusedCardIndex : null,
-            isRowFocused: state.focusedRowIndex == i,
-            onCardFocused: (int cardIndex) {
-              _homeBloc.add(HomeGameFocused(
-                game: state.rows[i].games[cardIndex],
-                rowIndex: i,
-                cardIndex: cardIndex,
-              ));
-            },
-            onCardSelected: (int cardIndex) {
-              _handleGameLaunched(state.rows[i].games[cardIndex]);
-            },
-            onHeaderFocused: () {
-              _homeBloc.add(HomeRowHeaderFocused(row: state.rows[i]));
-            },
-            onHeaderActivated: () {
-              _homeBloc.add(HomeRowHeaderActivated(row: state.rows[i]));
-              if (state.rows[i].isNavigable && state.rows[i].type == HomeRowType.allGames) {
-                _handleNavigateToLibrary();
-              }
-            },
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          reverse: true,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Card rows (show all non-empty rows)
+                for (int i = 0; i < state.rows.length; i++) ...[
+                  GameCardRow(
+                    row: state.rows[i],
+                    rowIndex: i,
+                    focusedCardIndex: state.focusedRowIndex == i ? state.focusedCardIndex : null,
+                    isRowFocused: state.focusedRowIndex == i,
+                    onCardFocused: (int cardIndex) {
+                      _homeBloc.add(HomeGameFocused(
+                        game: state.rows[i].games[cardIndex],
+                        rowIndex: i,
+                        cardIndex: cardIndex,
+                      ));
+                    },
+                    onCardSelected: (int cardIndex) {
+                      _handleGameLaunched(state.rows[i].games[cardIndex]);
+                    },
+                    onHeaderFocused: () {
+                      _homeBloc.add(HomeRowHeaderFocused(row: state.rows[i]));
+                    },
+                    onHeaderActivated: () {
+                      _homeBloc.add(HomeRowHeaderActivated(row: state.rows[i]));
+                      if (state.rows[i].isNavigable && state.rows[i].type == HomeRowType.allGames) {
+                        _handleNavigateToLibrary();
+                      }
+                    },
+                  ),
+                  if (i < state.rows.length - 1)
+                    const SizedBox(height: AppSpacing.lg),
+                ],
+                const SizedBox(height: AppSpacing.xl),
+              ],
+            ),
           ),
-          if (i < state.rows.length - 1)
-            const SizedBox(height: AppSpacing.lg),
-        ],
-        const SizedBox(height: AppSpacing.xl),
-      ],
+        );
+      },
     );
   }
 }

@@ -10,7 +10,6 @@ import 'package:squirrel_play/data/services/sound_service.dart';
 import 'package:squirrel_play/l10n/app_localizations.dart';
 import 'package:squirrel_play/presentation/blocs/gamepad/gamepad_cubit.dart';
 import 'package:squirrel_play/presentation/blocs/settings/settings_bloc.dart';
-import 'package:squirrel_play/presentation/navigation/focus_traversal.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_button.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_list_tile.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_slider.dart';
@@ -73,36 +72,10 @@ class _SettingsPageContentState extends State<_SettingsPageContent> {
     _chineseLanguageFocusNode = FocusNode(debugLabel: 'ChineseLanguageOption');
     _muteSwitchFocusNode = FocusNode(debugLabel: 'MuteSwitch');
     _volumeSliderFocusNode = FocusNode(debugLabel: 'VolumeSlider');
-
-    // Register focus nodes with FocusTraversalService
-    // Order: Back → English → Chinese → API Key Input → Save → Clear → Volume → Mute → Test Sound → Test Gamepad
-    // Note: API Key Input is registered automatically by FocusableTextField
-    FocusTraversalService.instance.registerTopBarNode(_backButtonFocusNode);
-    FocusTraversalService.instance.registerContentNode(_englishLanguageFocusNode);
-    FocusTraversalService.instance.registerContentNode(_chineseLanguageFocusNode);
-    FocusTraversalService.instance.registerContentNode(_saveKeyFocusNode);
-    FocusTraversalService.instance.registerContentNode(_clearKeyFocusNode);
-    FocusTraversalService.instance.registerContentNode(_volumeSliderFocusNode);
-    FocusTraversalService.instance.registerContentNode(_muteSwitchFocusNode);
-    FocusTraversalService.instance.registerContentNode(_testSoundFocusNode);
-    FocusTraversalService.instance.registerContentNode(_testGamepadFocusNode);
   }
 
   @override
   void dispose() {
-    // Unregister focus nodes from FocusTraversalService first
-    // Note: API Key Input is unregistered automatically by FocusableTextField
-    FocusTraversalService.instance.unregisterTopBarNode(_backButtonFocusNode);
-    FocusTraversalService.instance.unregisterContentNode(_englishLanguageFocusNode);
-    FocusTraversalService.instance.unregisterContentNode(_chineseLanguageFocusNode);
-    FocusTraversalService.instance.unregisterContentNode(_saveKeyFocusNode);
-    FocusTraversalService.instance.unregisterContentNode(_clearKeyFocusNode);
-    FocusTraversalService.instance.unregisterContentNode(_volumeSliderFocusNode);
-    FocusTraversalService.instance.unregisterContentNode(_muteSwitchFocusNode);
-    FocusTraversalService.instance.unregisterContentNode(_testSoundFocusNode);
-    FocusTraversalService.instance.unregisterContentNode(_testGamepadFocusNode);
-
-    // Dispose all focus nodes and controllers
     _apiKeyController.dispose();
     _backButtonFocusNode.dispose();
     _apiKeyFocusNode.dispose();

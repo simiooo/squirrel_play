@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:squirrel_play/core/theme/design_tokens.dart';
 import 'package:squirrel_play/data/services/sound_service.dart';
 import 'package:squirrel_play/domain/entities/metadata_match_result.dart';
-import 'package:squirrel_play/presentation/navigation/focus_traversal.dart';
 import 'package:squirrel_play/presentation/widgets/cached_game_image.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_button.dart';
 
@@ -49,7 +48,6 @@ class _MetadataSearchDialogState extends State<MetadataSearchDialog> {
   final _resultsFocusNodes = <FocusNode>[];
   final _selectButtonFocusNode = FocusNode();
   final _cancelButtonFocusNode = FocusNode();
-  FocusNode? _triggerNode;
 
   MetadataAlternative? _selectedAlternative;
 
@@ -59,12 +57,8 @@ class _MetadataSearchDialogState extends State<MetadataSearchDialog> {
     _searchController.text = widget.gameTitle;
     _createFocusNodes();
 
-    // Store the trigger node (what opened the dialog)
-    _triggerNode = FocusManager.instance.primaryFocus;
-
-    // Enter dialog focus mode and auto-focus first element
+    // Auto-focus first element after frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _enterDialogMode();
       _searchFocusNode.requestFocus();
     });
   }
@@ -74,24 +68,7 @@ class _MetadataSearchDialogState extends State<MetadataSearchDialog> {
     super.didUpdateWidget(oldWidget);
     if (widget.searchResults.length != oldWidget.searchResults.length) {
       _createFocusNodes();
-      FocusTraversalService.instance.updateDialogNodes(_dialogNodes);
     }
-  }
-
-  List<FocusNode> get _dialogNodes => [
-    _searchFocusNode,
-    ..._resultsFocusNodes,
-    if (_selectedAlternative != null) _selectButtonFocusNode,
-    _cancelButtonFocusNode,
-  ];
-
-  void _enterDialogMode() {
-    FocusTraversalService.instance.enterDialogMode(
-      'metadataSearchDialog',
-      _dialogNodes,
-      _triggerNode,
-      onCancel: _cancel,
-    );
   }
 
   void _createFocusNodes() {
@@ -109,7 +86,6 @@ class _MetadataSearchDialogState extends State<MetadataSearchDialog> {
 
   @override
   void dispose() {
-    FocusTraversalService.instance.exitDialogMode();
     _searchController.dispose();
     _searchFocusNode.dispose();
     for (final node in _resultsFocusNodes) {
@@ -130,13 +106,11 @@ class _MetadataSearchDialogState extends State<MetadataSearchDialog> {
     setState(() {
       _selectedAlternative = alternative;
     });
-    FocusTraversalService.instance.updateDialogNodes(_dialogNodes);
   }
 
   void _confirmSelection() {
     if (_selectedAlternative != null) {
       SoundService.instance.playFocusSelect();
-      FocusTraversalService.instance.exitDialogMode();
       widget.onSelect(_selectedAlternative!.gameId);
       Navigator.of(context).pop();
     }
@@ -144,7 +118,6 @@ class _MetadataSearchDialogState extends State<MetadataSearchDialog> {
 
   void _cancel() {
     SoundService.instance.playFocusBack();
-    FocusTraversalService.instance.exitDialogMode();
     Navigator.of(context).pop();
   }
 

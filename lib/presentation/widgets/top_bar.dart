@@ -8,7 +8,6 @@ import 'package:squirrel_play/core/theme/design_tokens.dart';
 import 'package:squirrel_play/data/services/sound_service.dart';
 import 'package:squirrel_play/l10n/app_localizations.dart';
 import 'package:squirrel_play/presentation/blocs/quick_scan/quick_scan_bloc.dart';
-import 'package:squirrel_play/presentation/navigation/focus_traversal.dart';
 import 'package:squirrel_play/presentation/widgets/add_game_dialog.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_button.dart';
 import 'package:squirrel_play/presentation/widgets/scan_notification.dart';
@@ -18,7 +17,7 @@ import 'package:squirrel_play/presentation/widgets/scan_notification.dart';
 /// A fixed 64px height bar containing:
 /// - Left: System time display (updates every minute)
 /// - Center: App logo/title
-/// - Right: Action buttons (Home, Add Game, Game Library, Refresh, Settings)
+/// - Right: Action buttons (Home, Add Game, Game Library, Refresh)
 ///
 /// Each button uses [FocusableButton] for gamepad navigation with
 /// focus animations and sound hooks.
@@ -40,22 +39,15 @@ class _TopBarState extends State<TopBar> {
   void initState() {
     super.initState();
 
-    // Create focus nodes for the four buttons (Home is index 0)
+    // Create focus nodes for the three navigation buttons (Home is index 0)
     _buttonFocusNodes = [
       FocusNode(debugLabel: 'HomeButton'),
       FocusNode(debugLabel: 'AddGameButton'),
       FocusNode(debugLabel: 'GameLibraryButton'),
-      FocusNode(debugLabel: 'SettingsButton'),
     ];
 
     // Separate focus node for refresh icon
     _refreshFocusNode = FocusNode(debugLabel: 'RefreshButton');
-
-    // Register focus nodes with the traversal service
-    for (final node in _buttonFocusNodes) {
-      FocusTraversalService.instance.registerTopBarNode(node);
-    }
-    FocusTraversalService.instance.registerTopBarNode(_refreshFocusNode);
 
     // Update time every minute
     _timeTimer = Timer.periodic(
@@ -68,12 +60,10 @@ class _TopBarState extends State<TopBar> {
   void dispose() {
     _timeTimer.cancel();
 
-    // Unregister focus nodes
+    // Dispose focus nodes
     for (final node in _buttonFocusNodes) {
-      FocusTraversalService.instance.unregisterTopBarNode(node);
       node.dispose();
     }
-    FocusTraversalService.instance.unregisterTopBarNode(_refreshFocusNode);
     _refreshFocusNode.dispose();
 
     super.dispose();
@@ -107,13 +97,6 @@ class _TopBarState extends State<TopBar> {
     context.read<QuickScanBloc>().add(const QuickScanRequested());
   }
 
-  void _handleSettings(BuildContext context) {
-    // Play page transition sound first
-    SoundService.instance.playPageTransition();
-    // Navigate to settings page
-    context.go('/settings');
-  }
-
   void _handleDismissNotification(BuildContext context) {
     context.read<QuickScanBloc>().add(const QuickScanCancelled());
   }
@@ -121,6 +104,7 @@ class _TopBarState extends State<TopBar> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final currentPath = GoRouterState.of(context).uri.path;
 
     return BlocBuilder<QuickScanBloc, QuickScanState>(
       builder: (context, scanState) {
@@ -170,6 +154,7 @@ class _TopBarState extends State<TopBar> {
                         focusNode: _buttonFocusNodes[0],
                         label: l10n?.topBarHome ?? 'Home',
                         hint: l10n?.focusHomeHint ?? 'Return to home page',
+                        isActive: currentPath == '/',
                         onPressed: () => _handleHome(context),
                       ),
                       const SizedBox(width: AppSpacing.sm),
@@ -188,20 +173,12 @@ class _TopBarState extends State<TopBar> {
                         label: l10n?.topBarGameLibrary ?? 'Game Library',
                         hint: l10n?.focusGameLibraryHint ??
                             'View all games in your library',
+                        isActive: currentPath.startsWith('/library'),
                         onPressed: () => _handleGameLibrary(context),
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       // Refresh icon button
                       _buildRefreshButton(context, isScanning),
-                      const SizedBox(width: AppSpacing.sm),
-                      // Settings button (index 3)
-                      FocusableButton(
-                        focusNode: _buttonFocusNodes[3],
-                        label: l10n?.topBarSettings ?? 'Settings',
-                        hint: l10n?.focusSettingsHint ??
-                            'Open application settings',
-                        onPressed: () => _handleSettings(context),
-                      ),
                     ],
                   ),
                 ],

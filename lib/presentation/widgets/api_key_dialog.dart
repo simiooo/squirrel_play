@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:squirrel_play/core/theme/design_tokens.dart';
 import 'package:squirrel_play/data/services/sound_service.dart';
-import 'package:squirrel_play/presentation/navigation/focus_traversal.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_button.dart';
 
 /// Dialog for configuring the RAWG API key.
@@ -55,7 +54,6 @@ class _ApiKeyDialogState extends State<ApiKeyDialog> {
   final _keyFocusNode = FocusNode();
   final _saveButtonFocusNode = FocusNode();
   final _skipButtonFocusNode = FocusNode();
-  FocusNode? _triggerNode;
 
   bool _isValid = false;
   bool _isObscured = true;
@@ -65,28 +63,14 @@ class _ApiKeyDialogState extends State<ApiKeyDialog> {
     super.initState();
     _keyController.addListener(_validateKey);
 
-    // Store the trigger node (what opened the dialog)
-    _triggerNode = FocusManager.instance.primaryFocus;
-
-    // Enter dialog focus mode and auto-focus first element
+    // Auto-focus first element after frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusTraversalService.instance.enterDialogMode(
-        'apiKeyDialog',
-        [
-          _keyFocusNode,
-          if (!widget.isFirstLaunch) _skipButtonFocusNode,
-          _saveButtonFocusNode,
-        ],
-        _triggerNode,
-        onCancel: widget.isFirstLaunch ? null : _skip,
-      );
       _keyFocusNode.requestFocus();
     });
   }
 
   @override
   void dispose() {
-    FocusTraversalService.instance.exitDialogMode();
     _keyController.dispose();
     _keyFocusNode.dispose();
     _saveButtonFocusNode.dispose();
@@ -106,14 +90,12 @@ class _ApiKeyDialogState extends State<ApiKeyDialog> {
   void _save() {
     if (_isValid) {
       SoundService.instance.playFocusSelect();
-      FocusTraversalService.instance.exitDialogMode();
       Navigator.of(context).pop(_keyController.text.trim());
     }
   }
 
   void _skip() {
     SoundService.instance.playFocusBack();
-    FocusTraversalService.instance.exitDialogMode();
     Navigator.of(context).pop(null);
   }
 

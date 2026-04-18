@@ -8,6 +8,8 @@ import 'package:squirrel_play/data/services/sound_service.dart';
 import 'package:squirrel_play/l10n/app_localizations.dart';
 import 'package:squirrel_play/presentation/blocs/steam_scanner/steam_scanner_bloc.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_button.dart';
+import 'package:squirrel_play/presentation/widgets/gamepad_file_browser.dart';
+import 'package:squirrel_play/presentation/widgets/picker_button.dart';
 
 /// Tab widget for scanning and importing Steam games.
 ///
@@ -25,8 +27,8 @@ class SteamGamesTab extends StatefulWidget {
 }
 
 class _SteamGamesTabState extends State<SteamGamesTab> {
-  final TextEditingController _pathController = TextEditingController();
-  final FocusNode _pathFocusNode = FocusNode();
+  final FocusNode _browseFocusNode = FocusNode(debugLabel: 'SteamBrowseButton');
+  final FocusNode _closeFocusNode = FocusNode(debugLabel: 'SteamCloseButton');
   final List<FocusNode> _checkboxFocusNodes = [];
   final List<FocusNode> _buttonFocusNodes = [];
 
@@ -41,8 +43,8 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
 
   @override
   void dispose() {
-    _pathController.dispose();
-    _pathFocusNode.dispose();
+    _browseFocusNode.dispose();
+    _closeFocusNode.dispose();
     for (final node in _checkboxFocusNodes) {
       node.dispose();
     }
@@ -58,9 +60,7 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
 
     return BlocConsumer<SteamScannerBloc, SteamScannerState>(
       listener: (context, state) {
-        if (state is SteamScannerError) {
-          _pathController.text = state.currentPath ?? '';
-        }
+        // No listener needed - path selection is handled by GamepadFileBrowser
       },
       builder: (context, state) {
         return Container(
@@ -148,50 +148,33 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.lg),
-          const Text(
-            'Enter Steam installation path manually:',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 14,
+          Text(
+            'Default: ${_getDefaultSteamPath()}',
+            style: const TextStyle(
+              color: AppColors.textMuted,
+              fontSize: 12,
             ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          TextField(
-            controller: _pathController,
-            focusNode: _pathFocusNode,
-            style: const TextStyle(color: AppColors.textPrimary),
-            decoration: InputDecoration(
-              hintText: _getDefaultSteamPath(),
-              hintStyle: const TextStyle(color: AppColors.textMuted),
-              filled: true,
-              fillColor: AppColors.surface,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadii.small),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadii.small),
-                borderSide: const BorderSide(
-                  color: AppColors.primaryAccent,
-                  width: 2,
-                ),
-              ),
-            ),
-            onSubmitted: (value) {
-              if (value.isNotEmpty) {
-                context.read<SteamScannerBloc>().add(SetSteamPath(value));
-              }
-            },
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.md),
-          FocusableButton(
-            focusNode: _pathFocusNode,
-            label: 'Set Path & Scan',
-            onPressed: () {
-              final path = _pathController.text.trim();
-              if (path.isNotEmpty) {
-                context.read<SteamScannerBloc>().add(SetSteamPath(path));
-              }
+          PickerButton(
+            focusNode: _browseFocusNode,
+            label: 'Browse for Steam Folder',
+            icon: Icons.folder_open,
+            onPressed: () async {
+              SoundService.instance.playFocusSelect();
+              await GamepadFileBrowser.show(
+                context,
+                mode: FileBrowserMode.directory,
+                onSelected: (paths) {
+                  if (paths.isNotEmpty) {
+                    final path = paths.first;
+                    context
+                        .read<SteamScannerBloc>()
+                        .add(SetSteamPath(path));
+                  }
+                },
+              );
             },
           ),
         ],
@@ -548,7 +531,7 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
           ],
           const SizedBox(height: AppSpacing.lg),
           FocusableButton(
-            focusNode: _buttonFocusNodes.length > 4 ? _buttonFocusNodes[4] : FocusNode(),
+            focusNode: _closeFocusNode,
             label: 'Close',
             onPressed: () {
               // Reset and close

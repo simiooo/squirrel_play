@@ -706,5 +706,40 @@
         "type": "int"
       }
     }
+  },
+
+  "fileBrowserTitle": "选择文件",
+  "@fileBrowserTitle": {
+    "description": "文件浏览器对话框的标题"
+  },
+
+  "fileBrowserSelect": "选择",
+  "@fileBrowserSelect": {
+    "description": "确认文件选择的按钮标签"
+  },
+
+  "fileBrowserCancel": "取消",
+  "@fileBrowserCancel": {
+    "description": "取消文件选择的按钮标签"
+  },
+
+  "fileBrowserNoItems": "无内容",
+  "@fileBrowserNoItems": {
+    "description": "目录为空时显示的消息"
+  },
+
+  "fileBrowserParentDirectory": "上级目录",
+  "@fileBrowserParentDirectory": {
+    "description": "导航到上级目录的标签"
+  },
+
+  "fileBrowserSelectedCount": "已选择 {count} 项",
+  "@fileBrowserSelectedCount": {
+    "description": "显示已选择项数的消息",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

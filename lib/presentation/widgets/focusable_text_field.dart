@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:squirrel_play/core/theme/design_tokens.dart';
 import 'package:squirrel_play/data/services/sound_service.dart';
-import 'package:squirrel_play/presentation/navigation/focus_traversal.dart';
 
 /// A reusable text field with visible focus styling and sound feedback.
 ///
@@ -11,7 +10,6 @@ import 'package:squirrel_play/presentation/navigation/focus_traversal.dart';
 /// - [AppColors.surfaceElevated] background when focused
 /// - 200ms focus-in / 150ms focus-out animations
 /// - [SoundService.playFocusMove] on focus gain
-/// - Automatic registration with [FocusTraversalService]
 class FocusableTextField extends StatefulWidget {
   /// The focus node for this text field.
   final FocusNode focusNode;
@@ -34,6 +32,9 @@ class FocusableTextField extends StatefulWidget {
   /// Called when the text changes.
   final ValueChanged<String>? onChanged;
 
+  /// Error text to display below the field.
+  final String? errorText;
+
   /// Creates a focusable text field.
   const FocusableTextField({
     super.key,
@@ -44,6 +45,7 @@ class FocusableTextField extends StatefulWidget {
     this.obscureText = false,
     this.onSubmitted,
     this.onChanged,
+    this.errorText,
   });
 
   @override
@@ -57,7 +59,6 @@ class _FocusableTextFieldState extends State<FocusableTextField> {
   void initState() {
     super.initState();
     widget.focusNode.addListener(_onFocusChanged);
-    FocusTraversalService.instance.registerContentNode(widget.focusNode);
     _isFocused = widget.focusNode.hasFocus;
   }
 
@@ -66,9 +67,7 @@ class _FocusableTextFieldState extends State<FocusableTextField> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.focusNode != widget.focusNode) {
       oldWidget.focusNode.removeListener(_onFocusChanged);
-      FocusTraversalService.instance.unregisterContentNode(oldWidget.focusNode);
       widget.focusNode.addListener(_onFocusChanged);
-      FocusTraversalService.instance.registerContentNode(widget.focusNode);
       _updateFocusState();
     }
   }
@@ -76,7 +75,6 @@ class _FocusableTextFieldState extends State<FocusableTextField> {
   @override
   void dispose() {
     widget.focusNode.removeListener(_onFocusChanged);
-    FocusTraversalService.instance.unregisterContentNode(widget.focusNode);
     super.dispose();
   }
 
@@ -122,8 +120,31 @@ class _FocusableTextFieldState extends State<FocusableTextField> {
         decoration: InputDecoration(
           labelText: widget.labelText,
           hintText: widget.hintText,
+          errorText: widget.errorText,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppRadii.medium),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadii.medium),
+            borderSide: const BorderSide(
+              color: AppColors.primaryAccent,
+              width: 2,
+            ),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadii.medium),
+            borderSide: const BorderSide(
+              color: AppColors.error,
+              width: 2,
+            ),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadii.medium),
+            borderSide: const BorderSide(
+              color: AppColors.error,
+              width: 2,
+            ),
           ),
           filled: true,
           fillColor: AppColors.surface,

@@ -51,7 +51,7 @@ class _GameGridState extends State<GameGrid> {
 
     // Register with focus traversal service
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _registerFocusNodes();
+      _registerGrid();
       // Focus the initial game
       _focusGameAtIndex(_currentFocusedIndex);
     });
@@ -62,10 +62,10 @@ class _GameGridState extends State<GameGrid> {
     super.didUpdateWidget(oldWidget);
     if (widget.games.length != oldWidget.games.length) {
       // Rebuild focus nodes if game count changed
-      _unregisterFocusNodes();
+      _unregisterGrid();
       _createFocusNodes();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _registerFocusNodes();
+        _registerGrid();
         _focusGameAtIndex(_currentFocusedIndex.clamp(0, widget.games.length - 1));
       });
     }
@@ -73,7 +73,7 @@ class _GameGridState extends State<GameGrid> {
 
   @override
   void dispose() {
-    _unregisterFocusNodes();
+    _unregisterGrid();
     _disposeFocusNodes();
     super.dispose();
   }
@@ -107,24 +107,14 @@ class _GameGridState extends State<GameGrid> {
     }
   }
 
-  void _registerFocusNodes() {
+  void _registerGrid() {
     if (_gridFocusNodes.isNotEmpty) {
       FocusTraversalService.instance.registerGrid('gameGrid', _gridFocusNodes);
-      for (final row in _gridFocusNodes) {
-        for (final node in row) {
-          FocusTraversalService.instance.registerContentNode(node);
-        }
-      }
     }
   }
 
-  void _unregisterFocusNodes() {
+  void _unregisterGrid() {
     FocusTraversalService.instance.unregisterGrid('gameGrid');
-    for (final row in _gridFocusNodes) {
-      for (final node in row) {
-        FocusTraversalService.instance.unregisterContentNode(node);
-      }
-    }
   }
 
   void _focusGameAtIndex(int index) {

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:squirrel_play/core/theme/design_tokens.dart';
 import 'package:squirrel_play/data/services/sound_service.dart';
 import 'package:squirrel_play/l10n/app_localizations.dart';
-import 'package:squirrel_play/presentation/navigation/focus_traversal.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_button.dart';
 
 /// Empty state widget for the home page.
@@ -45,18 +44,10 @@ class _EmptyHomeStateState extends State<EmptyHomeState> {
     super.initState();
     _addGameFocusNode = FocusNode(debugLabel: 'EmptyStateAddGame');
     _scanDirectoryFocusNode = FocusNode(debugLabel: 'EmptyStateScanDirectory');
-
-    // Register empty-state buttons as content nodes for focus traversal
-    FocusTraversalService.instance.registerContentNode(_addGameFocusNode);
-    if (widget.onScanDirectory != null) {
-      FocusTraversalService.instance.registerContentNode(_scanDirectoryFocusNode);
-    }
   }
 
   @override
   void dispose() {
-    FocusTraversalService.instance.unregisterContentNode(_addGameFocusNode);
-    FocusTraversalService.instance.unregisterContentNode(_scanDirectoryFocusNode);
     _addGameFocusNode.dispose();
     _scanDirectoryFocusNode.dispose();
     super.dispose();

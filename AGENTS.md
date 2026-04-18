@@ -1,6 +1,6 @@
 # Squirrel Play - Agent Instructions
 
-A Steam Big Picture-inspired game management Flutter app for couch gaming with gamepad support.
+A Steam Big Picture-inspired game management Flutter desktop app for couch gaming with gamepad support.
 
 ## Essential Commands
 
@@ -8,10 +8,10 @@ A Steam Big Picture-inspired game management Flutter app for couch gaming with g
 # Requires Flutter SDK in PATH
 export PATH="/home/simooo/flutter/bin:$PATH"
 
-# Run app (desktop only)
+# Run app (desktop only — Linux primary target)
 flutter run -d linux
 
-# Run all tests
+# Run all tests (370 tests, do NOT use `dart test`)
 flutter test
 
 # Analyze code
@@ -23,6 +23,8 @@ flutter pub run build_runner build --delete-conflicting-outputs
 # Generate localization code from ARB files
 flutter gen-l10n
 ```
+
+Run `flutter analyze` then `flutter test` after any code change. Run both codegen commands after modifying models or ARB files.
 
 ## Architecture
 
@@ -38,7 +40,21 @@ lib/
 
 - **DI**: Manual registration in `lib/app/di.dart` using get_it
 - **State**: BLoC pattern — all blocs in `presentation/blocs/`
-- **Navigation**: GoRouter with focus management observer
+- **Navigation**: GoRouter with ShellRoute providing persistent TopBar + GamepadNavBar
+- **Focus**: Flutter `FocusScope` architecture (see below)
+
+## Focus Architecture (Post-Sprint 3)
+
+The app uses **Flutter's native `FocusScope`** for focus management, not manual node lists.
+
+- **TopBar scope**: `router.dart` `_ShellWithFocusScope` wraps `TopBar` in a `FocusScopeNode` (debugLabel: `TopBarScope`)
+- **Content scope**: `app_shell.dart` wraps page body in a `FocusScopeNode` (debugLabel: `ContentScope`)
+- **Dialog scopes**: `AddGameDialog`, `GamepadFileBrowser`, etc. wrap their content in `FocusScope` for automatic focus trapping
+- **Cross-scope wrapping**: `FocusTraversalService` handles TopBar ↔ Content wrapping via `wrapToTopBar()` / `wrapToContent()` using `FocusScopeNode.traversalDescendants`
+- **Internal navigation**: Within a scope, `FocusNode.focusInDirection()` handles geometry-based traversal
+- **Row/grid navigation**: `GameCardRow` calls `registerRow()`, `GameGrid` calls `registerGrid()` for precise directional control. These are the **only** manual registrations remaining.
+
+**Do NOT add manual `registerContentNode` / `registerTopBarNode` calls.** Widgets inside a `FocusScope` are automatically focusable if they use `Focus` or `FocusableButton`.
 
 ## Critical Setup Requirements
 
@@ -121,8 +137,9 @@ From `analysis_options.yaml`:
 4. **Generated files**: Must regenerate after model changes — build errors often stem from stale `.g.dart`
 5. **Package imports only**: Relative imports violate `analysis_options.yaml` and will fail CI
 6. **Testing custom objects with mocktail**: Remember to `registerFallbackValue(FakeGame())` before using mocked methods that accept custom types
-7. **FocusTraversalService registration**: All focusable widgets must register/unregister their `FocusNode` with `FocusTraversalService` in `initState`/`dispose`
+7. **Dialog FocusScope**: Wrap dialog content in `FocusScope` for automatic focus trapping. Do NOT use the removed `DialogFocusScope` widget or manual `registerContentNode` calls
 8. **L10n keys**: New strings must be added to both `app_en.arb` and `app_zh.arb`, then run `flutter gen-l10n`
+9. **FocusNode lifecycle**: Never create `FocusNode` inline in `build()` — always use state fields with `initState`/`dispose`
 
 ## Focusable Widgets
 

@@ -428,4 +428,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String timeAgoYears(int years) {
     return '$years years ago';
   }
+
+  @override
+  String get fileBrowserTitle => 'Select File';
+
+  @override
+  String get fileBrowserSelect => 'Select';
+
+  @override
+  String get fileBrowserCancel => 'Cancel';
+
+  @override
+  String get fileBrowserNoItems => 'No items';
+
+  @override
+  String get fileBrowserParentDirectory => 'Parent Directory';
+
+  @override
+  String fileBrowserSelectedCount(int count) {
+    return '$count selected';
+  }
 }

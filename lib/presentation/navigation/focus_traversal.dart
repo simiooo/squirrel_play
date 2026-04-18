@@ -8,9 +8,13 @@ import 'package:squirrel_play/data/services/sound_service.dart';
 
 /// Service for managing focus traversal with gamepad and keyboard input.
 ///
-/// This service manages a graph of [FocusNode]s for gamepad-driven navigation.
-/// It provides methods to move focus in cardinal directions, handle row/grid
-/// navigation, manage focus history, and trap focus in dialogs.
+/// This service delegates focus-tree traversal to Flutter's built-in
+/// [FocusScope] mechanism where possible, and only handles what Flutter
+/// cannot do natively:
+/// - Cross-Scope wrapping (TopBar ↔ Content ↔ BottomNav)
+/// - Row/grid directional navigation with gamepad/keyboard event routing
+/// - Focus history and activation callbacks
+/// - Sound effects on focus moves
 class FocusTraversalService {
   /// Singleton instance.
   static final FocusTraversalService _instance = FocusTraversalService._internal();
@@ -34,17 +38,14 @@ class FocusTraversalService {
   /// Subscription to gamepad actions.
   StreamSubscription<GamepadAction>? _gamepadSubscription;
 
-  /// The focus node for the top bar container.
-  FocusNode? _topBarFocusNode;
+  /// The focus scope node for the top bar container.
+  FocusScopeNode? _topBarFocusNode;
 
-  /// List of focus nodes in the top bar.
-  final List<FocusNode> _topBarNodes = [];
+  /// The focus scope node for the content area container.
+  FocusScopeNode? _contentFocusNode;
 
-  /// The focus node for the content area container.
-  FocusNode? _contentFocusNode;
-
-  /// List of focus nodes in the content area.
-  final List<FocusNode> _contentNodes = [];
+  /// The focus scope node for the bottom nav container.
+  FocusScopeNode? _bottomNavFocusNode;
 
   /// Registered row focus groups.
   final Map<String, List<FocusNode>> _rowGroups = {};
@@ -57,18 +58,6 @@ class FocusTraversalService {
 
   /// Maximum depth of focus history stack.
   static const int _maxHistoryDepth = 10;
-
-  /// Whether focus is currently trapped in a dialog.
-  bool _isInDialogMode = false;
-
-  /// The dialog's focus nodes when in dialog mode.
-  List<FocusNode> _dialogNodes = [];
-
-  /// The node that triggered the dialog (for restoring focus on close).
-  FocusNode? _dialogTriggerNode;
-
-  /// Optional callback invoked when cancel is pressed in dialog mode.
-  VoidCallback? _dialogCancelCallback;
 
   /// Callbacks registered for focus node activation.
   final Map<FocusNode, VoidCallback> _activationCallbacks = {};
@@ -83,8 +72,8 @@ class FocusTraversalService {
   FocusNode? get currentFocusNode =>
       WidgetsBinding.instance.focusManager.primaryFocus;
 
-  /// Returns true if focus is currently trapped in a dialog.
-  bool isInDialogMode() => _isInDialogMode;
+  /// Returns true if the current focus is inside a dialog scope.
+  bool get isDialogOpen => _isFocusInsideDialog();
 
   /// Initializes the focus traversal service.
   ///
@@ -122,47 +111,16 @@ class FocusTraversalService {
     _isInitialized = false;
   }
 
-  /// Registers the top bar focus node.
-  void registerTopBarNode(FocusNode node) {
-    if (!_topBarNodes.contains(node)) {
-      _topBarNodes.add(node);
-      node.addListener(() => _onNodeFocusChanged(node));
-      debugPrint(
-        '[FocusTraversalService] Registered top bar node: '
-        '${node.debugLabel ?? "unnamed"}',
-      );
-    }
-  }
-
-  /// Unregisters a top bar focus node.
-  void unregisterTopBarNode(FocusNode node) {
-    _topBarNodes.remove(node);
-    node.removeListener(() => _onNodeFocusChanged(node));
-  }
-
-  /// Registers a content area focus node.
-  void registerContentNode(FocusNode node) {
-    if (!_contentNodes.contains(node)) {
-      _contentNodes.add(node);
-      node.addListener(() => _onNodeFocusChanged(node));
-      debugPrint(
-        '[FocusTraversalService] Registered content node: '
-        '${node.debugLabel ?? "unnamed"}',
-      );
-    }
-  }
-
-  /// Unregisters a content area focus node.
-  void unregisterContentNode(FocusNode node) {
-    _contentNodes.remove(node);
-    node.removeListener(() => _onNodeFocusChanged(node));
-  }
+  /// Map of focus nodes to their registered listeners, for cleanup on unregister.
+  final Map<FocusNode, VoidCallback> _registeredNodeListeners = {};
 
   /// Registers a row of focus nodes for horizontal navigation.
   void registerRow(String rowId, List<FocusNode> nodes) {
     _rowGroups[rowId] = nodes;
     for (final node in nodes) {
-      node.addListener(() => _onNodeFocusChanged(node));
+      void listener() => _onNodeFocusChanged(node);
+      _registeredNodeListeners[node] = listener;
+      node.addListener(listener);
     }
     debugPrint('[FocusTraversalService] Registered row "$rowId" with ${nodes.length} nodes');
   }
@@ -172,7 +130,9 @@ class FocusTraversalService {
     _gridGroups[gridId] = nodes;
     for (final row in nodes) {
       for (final node in row) {
-        node.addListener(() => _onNodeFocusChanged(node));
+        void listener() => _onNodeFocusChanged(node);
+        _registeredNodeListeners[node] = listener;
+        node.addListener(listener);
       }
     }
     debugPrint(
@@ -181,33 +141,60 @@ class FocusTraversalService {
     );
   }
 
-  /// Unregisters a row.
+  /// Removes the registered listener from a focus node and the tracking map.
+  void _removeNodeListener(FocusNode node) {
+    final listener = _registeredNodeListeners.remove(node);
+    if (listener != null) {
+      node.removeListener(listener);
+    }
+  }
+
+  /// Unregisters a row and removes all its node listeners.
   void unregisterRow(String rowId) {
-    _rowGroups.remove(rowId);
+    final nodes = _rowGroups.remove(rowId);
+    if (nodes != null) {
+      for (final node in nodes) {
+        _removeNodeListener(node);
+      }
+    }
   }
 
-  /// Unregisters a grid.
+  /// Unregisters a grid and removes all its node listeners.
   void unregisterGrid(String gridId) {
-    _gridGroups.remove(gridId);
+    final grid = _gridGroups.remove(gridId);
+    if (grid != null) {
+      for (final row in grid) {
+        for (final node in row) {
+          _removeNodeListener(node);
+        }
+      }
+    }
   }
 
-  /// Clears all row and grid registrations.
-  void clearAllRegistrations() {
+  /// Clears all row and grid registrations and removes all node listeners.
+  void clearRowAndGridRegistrations() {
+    for (final entry in _registeredNodeListeners.entries) {
+      entry.key.removeListener(entry.value);
+    }
+    _registeredNodeListeners.clear();
     _rowGroups.clear();
     _gridGroups.clear();
-    _contentNodes.clear();
-    // Note: _topBarNodes is NOT cleared as the top bar persists across navigation
-    debugPrint('[FocusTraversalService] Cleared content registrations (rows, grids, content nodes)');
+    debugPrint('[FocusTraversalService] Cleared row and grid registrations');
   }
 
-  /// Sets the top bar container focus node.
-  void setTopBarContainer(FocusNode node) {
+  /// Sets the top bar container focus scope node.
+  void setTopBarContainer(FocusScopeNode node) {
     _topBarFocusNode = node;
   }
 
-  /// Sets the content area container focus node.
-  void setContentContainer(FocusNode node) {
+  /// Sets the content area container focus scope node.
+  void setContentContainer(FocusScopeNode node) {
     _contentFocusNode = node;
+  }
+
+  /// Sets the bottom nav container focus scope node.
+  void setBottomNavContainer(FocusScopeNode node) {
+    _bottomNavFocusNode = node;
   }
 
   /// Called when a node's focus state changes.
@@ -221,7 +208,12 @@ class FocusTraversalService {
   /// Adds a node to the focus history stack.
   void _addToHistory(FocusNode node) {
     // Don't add dialog nodes to history
-    if (_isInDialogMode && _dialogNodes.contains(node)) {
+    if (_isFocusInsideDialog()) {
+      return;
+    }
+
+    // Don't add non-interactive nodes (e.g., Scrollable) to history
+    if (!_isInteractiveFocusNode(node)) {
       return;
     }
 
@@ -273,53 +265,26 @@ class FocusTraversalService {
     return true;
   }
 
-  /// Enters dialog focus mode.
-  ///
-  /// When in dialog mode:
-  /// - Focus is trapped within dialog elements
-  /// - Arrow keys navigate within dialog only
-  /// - Escape closes the dialog
-  void enterDialogMode(
-    String dialogId,
-    List<FocusNode> dialogNodes,
-    FocusNode? triggerNode, {
-    VoidCallback? onCancel,
-  }) {
-    _isInDialogMode = true;
-    _dialogNodes = dialogNodes;
-    _dialogTriggerNode = triggerNode;
-    _dialogCancelCallback = onCancel;
-    debugPrint('[FocusTraversalService] Entered dialog mode: $dialogId');
-  }
-
-  /// Exits dialog focus mode.
-  ///
-  /// Restores focus to the element that opened the dialog.
-  void exitDialogMode() {
-    _isInDialogMode = false;
-    _dialogNodes = [];
-    _dialogCancelCallback = null;
-
-    // Restore focus to trigger node
-    if (_dialogTriggerNode != null) {
-      _dialogTriggerNode!.requestFocus();
+  /// Checks whether the primary focus is inside a dialog scope by walking
+  /// up the focus tree and looking for a [FocusScopeNode] that is not the
+  /// top bar or content scope and has a label indicating a modal/dialog.
+  bool _isFocusInsideDialog() {
+    final node = WidgetsBinding.instance.focusManager.primaryFocus;
+    if (node == null) return false;
+    var current = node.parent;
+    while (current != null) {
+      if (current is FocusScopeNode &&
+          current != _topBarFocusNode &&
+          current != _contentFocusNode &&
+          current != _bottomNavFocusNode) {
+        final label = current.debugLabel ?? '';
+        if (label.contains('ModalScope') || label.contains('Dialog')) {
+          return true;
+        }
+      }
+      current = current.parent;
     }
-
-    _dialogTriggerNode = null;
-    debugPrint('[FocusTraversalService] Exited dialog mode');
-  }
-
-  /// Updates the dialog focus nodes while in dialog mode.
-  ///
-  /// Call this when the set of focusable elements inside a dialog changes
-  /// (e.g., search results update).
-  void updateDialogNodes(List<FocusNode> dialogNodes) {
-    if (_isInDialogMode) {
-      _dialogNodes = dialogNodes;
-      debugPrint(
-        '[FocusTraversalService] Updated dialog nodes: ${dialogNodes.length}',
-      );
-    }
+    return false;
   }
 
   /// Registers an activation callback for a focus node.
@@ -385,8 +350,8 @@ class FocusTraversalService {
       return false;
     }
 
-    // In dialog mode, let the dialog's KeyboardListener handle arrow keys
-    if (_isInDialogMode) {
+    // When focus is inside a dialog, let the dialog's KeyboardListener handle arrow keys
+    if (_isFocusInsideDialog()) {
       switch (event.logicalKey) {
         case LogicalKeyboardKey.arrowUp:
         case LogicalKeyboardKey.arrowDown:
@@ -413,8 +378,8 @@ class FocusTraversalService {
         activateCurrentNode();
         return true;
       case LogicalKeyboardKey.escape:
-        // In dialog mode, don't consume the event - let the dialog handle it
-        if (_isInDialogMode) {
+        // When focus is inside a dialog, don't consume the event - let the dialog handle it
+        if (_isFocusInsideDialog()) {
           return false;
         }
         _handleCancel();
@@ -449,14 +414,8 @@ class FocusTraversalService {
 
   /// Handles cancel/back action.
   void _handleCancel() {
-    // If in dialog mode, close the dialog
-    if (_isInDialogMode) {
-      SoundService.instance.playFocusBack();
-      if (_dialogCancelCallback != null) {
-        _dialogCancelCallback!();
-      } else {
-        exitDialogMode();
-      }
+    // If focus is inside a dialog, let the dialog handle its own close logic
+    if (_isFocusInsideDialog()) {
       return;
     }
 
@@ -475,6 +434,45 @@ class FocusTraversalService {
     debugPrint('[FocusTraversalService] No route to navigate back');
   }
 
+  /// Checks whether a focus node is an interactive element that should
+  /// receive focus and display visual feedback.
+  ///
+  /// Returns false for Flutter internal nodes (Scrollable, ModalScope, etc.)
+  /// and generic container scope nodes that don't have their own focus styling.
+  bool _isInteractiveFocusNode(FocusNode node) {
+    final label = node.debugLabel ?? '';
+
+    // Skip Flutter internal focus nodes without visual feedback
+    if (label.contains('Scrollable') ||
+        label.contains('ModalScope') ||
+        label.contains('NavigatorScope')) {
+      return false;
+    }
+
+    // Skip generic Focus Scope nodes that are not our registered scopes
+    // (these are container nodes, not interactive elements)
+    if (node is FocusScopeNode &&
+        node != _topBarFocusNode &&
+        node != _contentFocusNode &&
+        node != _bottomNavFocusNode) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /// Checks whether a node is a descendant of the given scope.
+  bool _isDescendantOfScope(FocusNode? node, FocusScopeNode? scope) {
+    if (node == null || scope == null) return false;
+    // Walk up the focus tree to check ancestry
+    var current = node.parent;
+    while (current != null) {
+      if (current == scope) return true;
+      current = current.parent;
+    }
+    return false;
+  }
+
   /// Checks if the current focus node is on a non-interactive scope node
   /// (e.g., _ModalScopeState Focus Scope) that shouldn't receive focus actions.
   ///
@@ -486,35 +484,29 @@ class FocusTraversalService {
     // Modal scope nodes, focus scope nodes that aren't our registered nodes
     return label.contains('ModalScope') ||
            (label.contains('Focus Scope') &&
-            !_topBarNodes.contains(node) &&
-            !_contentNodes.contains(node) &&
-            !_dialogNodes.contains(node) &&
             node != _topBarFocusNode &&
-            node != _contentFocusNode);
+            node != _contentFocusNode &&
+            node != _bottomNavFocusNode);
   }
 
   /// Recovers focus when stuck on a non-interactive scope node.
   ///
-  /// Tries to focus the most recently focused registered node, or falls back
-  /// to the first available registered node.
+  /// Tries to focus the most recently focused interactive node, or falls back
+  /// to the first available interactive descendant of the appropriate scope.
   void _recoverFocusFromScope() {
     debugPrint('[FocusTraversalService] Recovering focus from scope node');
 
     // Try the most recent history entry that's still valid
     for (final node in _focusHistory) {
-      if (node.hasFocus &&
-          !_isOnNonInteractiveScope(node) &&
-          (_topBarNodes.contains(node) ||
-           _contentNodes.contains(node) ||
-           _dialogNodes.contains(node))) {
+      if (node.hasFocus && _isInteractiveFocusNode(node)) {
         // Already on a valid node
         return;
       }
     }
 
-    // Find a valid node from history
+    // Find a valid interactive node from history
     for (final node in _focusHistory) {
-      if (!_isOnNonInteractiveScope(node)) {
+      if (_isInteractiveFocusNode(node)) {
         try {
           final context = node.context;
           if (context != null && context.mounted) {
@@ -532,8 +524,74 @@ class FocusTraversalService {
       }
     }
 
-    // Fall back to first available node
-    _focusFirstAvailableNode();
+    // Fall back to first interactive descendant of content scope, then top bar scope
+    if (_contentFocusNode != null) {
+      final target = _findFirstInteractiveDescendant(_contentFocusNode!);
+      if (target != null) {
+        target.requestFocus();
+        debugPrint(
+          '[FocusTraversalService] Recovered focus to first content descendant: '
+          '${target.debugLabel ?? "unnamed"}',
+        );
+        return;
+      }
+    }
+    if (_topBarFocusNode != null) {
+      final target = _findFirstInteractiveDescendant(_topBarFocusNode!);
+      if (target != null) {
+        target.requestFocus();
+        debugPrint(
+          '[FocusTraversalService] Recovered focus to first top bar descendant: '
+          '${target.debugLabel ?? "unnamed"}',
+        );
+        return;
+      }
+    }
+
+    // Fall back to first interactive descendant of bottom nav scope
+    if (_bottomNavFocusNode != null) {
+      final target = _findFirstInteractiveDescendant(_bottomNavFocusNode!);
+      if (target != null) {
+        target.requestFocus();
+        debugPrint(
+          '[FocusTraversalService] Recovered focus to first bottom nav descendant: '
+          '${target.debugLabel ?? "unnamed"}',
+        );
+        return;
+      }
+    }
+  }
+
+  /// Moves focus to the next row from the current row.
+  /// If there is no next row, wraps to the bottom nav.
+  void _focusNextRow(String currentRowId) {
+    debugPrint(
+      '[FocusTraversalService] _focusNextRow from "$currentRowId"',
+    );
+    final rowIds = _rowGroups.keys.toList();
+    final currentIndex = rowIds.indexOf(currentRowId);
+    debugPrint(
+      '[FocusTraversalService]   rowIds=$rowIds, currentIndex=$currentIndex',
+    );
+    if (currentIndex == -1 || currentIndex >= rowIds.length - 1) {
+      debugPrint('[FocusTraversalService]   -> No next row, wrapping to bottom nav');
+      wrapToBottomNav();
+      return;
+    }
+
+    final nextRowId = rowIds[currentIndex + 1];
+    final nextRowNodes = _rowGroups[nextRowId];
+    debugPrint(
+      '[FocusTraversalService]   -> Next row: "$nextRowId" with ${nextRowNodes?.length ?? 0} nodes',
+    );
+    if (nextRowNodes != null && nextRowNodes.isNotEmpty) {
+      final target = nextRowNodes.first;
+      target.requestFocus();
+      debugPrint(
+        '[FocusTraversalService]   -> Focused: ${target.debugLabel ?? "unnamed"}',
+      );
+      SoundService.instance.playFocusMove();
+    }
   }
 
   /// Moves focus in the specified direction.
@@ -545,9 +603,15 @@ class FocusTraversalService {
     debugPrint('[FocusTraversalService] Moving focus: $direction');
 
     final currentNode = currentFocusNode;
+    debugPrint(
+      '[FocusTraversalService]   currentNode=${currentNode?.debugLabel ?? "null"}',
+    );
 
     // If focus is stuck on a non-interactive scope, recover it first
     if (_isOnNonInteractiveScope(currentNode)) {
+      debugPrint(
+        '[FocusTraversalService]   currentNode is on non-interactive scope, recovering...',
+      );
       _recoverFocusFromScope();
       return;
     }
@@ -555,12 +619,6 @@ class FocusTraversalService {
     if (currentNode == null) {
       // No current focus - focus first available node
       _focusFirstAvailableNode();
-      return;
-    }
-
-    // If in dialog mode, only navigate within dialog
-    if (_isInDialogMode) {
-      _moveFocusInDialog(direction);
       return;
     }
 
@@ -580,6 +638,13 @@ class FocusTraversalService {
         } else if (direction == TraversalDirection.up) {
           // Pressing up from any row node wraps back to the top bar
           wrapToTopBar();
+          return;
+        } else if (direction == TraversalDirection.down) {
+          // Pressing down from any row node moves to the next row
+          debugPrint(
+            '[FocusTraversalService]   Row down from "${entry.key}" index=$index',
+          );
+          _focusNextRow(entry.key);
           return;
         }
       }
@@ -604,7 +669,7 @@ class FocusTraversalService {
       }
     }
 
-    // Try using Flutter's focus traversal
+    // Try using Flutter's focus traversal for general navigation
     final moved = currentNode.focusInDirection(direction);
     if (moved) {
       final newNode = currentFocusNode;
@@ -612,51 +677,45 @@ class FocusTraversalService {
         '[FocusTraversalService] Focus moved to: '
         '${newNode?.debugLabel ?? "unnamed"}',
       );
+
+      // If focus landed on a non-interactive node, recover to a valid one
+      if (newNode != null && !_isInteractiveFocusNode(newNode)) {
+        debugPrint(
+          '[FocusTraversalService] Focus landed on non-interactive node, '
+          'recovering...',
+        );
+        _recoverFocusFromScope();
+        return;
+      }
+
       SoundService.instance.playFocusMove();
       return;
     }
 
-    // Handle wrapping between top bar and content
-    if (_topBarNodes.contains(currentNode) && direction == TraversalDirection.down) {
+    // Handle wrapping between top bar and content scopes
+    // When focusInDirection fails and we're at a scope boundary
+    if (direction == TraversalDirection.down &&
+        _isDescendantOfScope(currentNode, _topBarFocusNode)) {
       wrapToContent();
       return;
     }
 
-    if (_contentNodes.contains(currentNode) && direction == TraversalDirection.up) {
+    if (direction == TraversalDirection.up &&
+        _isDescendantOfScope(currentNode, _contentFocusNode)) {
       wrapToTopBar();
       return;
     }
-  }
 
-  /// Moves focus within a dialog.
-  void _moveFocusInDialog(TraversalDirection direction) {
-    final currentNode = currentFocusNode;
-    if (currentNode == null) return;
+    if (direction == TraversalDirection.down &&
+        _isDescendantOfScope(currentNode, _contentFocusNode)) {
+      wrapToBottomNav();
+      return;
+    }
 
-    final index = _dialogNodes.indexOf(currentNode);
-    if (index == -1) return;
-
-    switch (direction) {
-      case TraversalDirection.left:
-        if (index > 0) {
-          _dialogNodes[index - 1].requestFocus();
-          SoundService.instance.playFocusMove();
-        }
-      case TraversalDirection.right:
-        if (index < _dialogNodes.length - 1) {
-          _dialogNodes[index + 1].requestFocus();
-          SoundService.instance.playFocusMove();
-        }
-      case TraversalDirection.up:
-      case TraversalDirection.down:
-        // In simple dialogs, up/down can also navigate
-        if (direction == TraversalDirection.up && index > 0) {
-          _dialogNodes[index - 1].requestFocus();
-          SoundService.instance.playFocusMove();
-        } else if (direction == TraversalDirection.down && index < _dialogNodes.length - 1) {
-          _dialogNodes[index + 1].requestFocus();
-          SoundService.instance.playFocusMove();
-        }
+    if (direction == TraversalDirection.up &&
+        _isDescendantOfScope(currentNode, _bottomNavFocusNode)) {
+      wrapToContent();
+      return;
     }
   }
 
@@ -739,24 +798,109 @@ class FocusTraversalService {
   /// Wraps focus to the top bar.
   void wrapToTopBar() {
     debugPrint('[FocusTraversalService] Wrapping to top bar');
-    if (_topBarNodes.isNotEmpty) {
-      // Focus the first node in the top bar
-      _topBarNodes.first.requestFocus();
+    if (_topBarFocusNode == null) return;
+
+    // Find the most recently focused interactive descendant of the top bar scope
+    FocusNode? targetNode;
+    for (final node in _focusHistory) {
+      if (_isDescendantOfScope(node, _topBarFocusNode) &&
+          _isInteractiveFocusNode(node)) {
+        // Check if node is still valid (not disposed)
+        try {
+          final context = node.context;
+          if (context != null && context.mounted) {
+            targetNode = node;
+            break;
+          }
+        } catch (_) {
+          // Node may be disposed, continue searching
+          continue;
+        }
+      }
+    }
+
+    // Fall back to first interactive descendant of top bar scope
+    targetNode ??= _findFirstInteractiveDescendant(_topBarFocusNode!);
+
+    if (targetNode != null && targetNode != _topBarFocusNode) {
+      targetNode.requestFocus();
       SoundService.instance.playFocusMove();
-    } else if (_topBarFocusNode != null) {
+    } else {
       _topBarFocusNode!.requestFocus();
     }
+  }
+
+  /// Finds the first interactive descendant of a focus scope.
+  FocusNode? _findFirstInteractiveDescendant(FocusScopeNode scope) {
+    final descendants = scope.traversalDescendants.toList();
+    debugPrint(
+      '[FocusTraversalService] Scope ${scope.debugLabel} has ${descendants.length} descendants',
+    );
+    for (final node in descendants) {
+      final label = node.debugLabel ?? 'unnamed';
+      final interactive = _isInteractiveFocusNode(node);
+      debugPrint(
+        '[FocusTraversalService]   - $label (interactive=$interactive)',
+      );
+      if (interactive) {
+        debugPrint(
+          '[FocusTraversalService]   -> Selected: $label',
+        );
+        return node;
+      }
+    }
+    debugPrint('[FocusTraversalService]   -> No interactive descendant found');
+    return null;
   }
 
   /// Wraps focus to the content area.
   void wrapToContent() {
     debugPrint('[FocusTraversalService] Wrapping to content');
-    if (_contentNodes.isNotEmpty) {
-      // Focus the first node in the content area
-      _contentNodes.first.requestFocus();
+    if (_contentFocusNode == null) return;
+
+    // Focus the first interactive descendant of content scope
+    final targetNode = _findFirstInteractiveDescendant(_contentFocusNode!);
+
+    if (targetNode != null && targetNode != _contentFocusNode) {
+      targetNode.requestFocus();
       SoundService.instance.playFocusMove();
-    } else if (_contentFocusNode != null) {
+    } else {
       _contentFocusNode!.requestFocus();
+    }
+  }
+
+  /// Wraps focus to the bottom nav.
+  void wrapToBottomNav() {
+    debugPrint('[FocusTraversalService] Wrapping to bottom nav');
+    if (_bottomNavFocusNode == null) return;
+
+    // Find the most recently focused interactive descendant of the bottom nav scope
+    FocusNode? targetNode;
+    for (final node in _focusHistory) {
+      if (_isDescendantOfScope(node, _bottomNavFocusNode) &&
+          _isInteractiveFocusNode(node)) {
+        // Check if node is still valid (not disposed)
+        try {
+          final context = node.context;
+          if (context != null && context.mounted) {
+            targetNode = node;
+            break;
+          }
+        } catch (_) {
+          // Node may be disposed, continue searching
+          continue;
+        }
+      }
+    }
+
+    // Fall back to first interactive descendant of bottom nav scope
+    targetNode ??= _findFirstInteractiveDescendant(_bottomNavFocusNode!);
+
+    if (targetNode != null && targetNode != _bottomNavFocusNode) {
+      targetNode.requestFocus();
+      SoundService.instance.playFocusMove();
+    } else {
+      _bottomNavFocusNode!.requestFocus();
     }
   }
 
@@ -823,12 +967,30 @@ class FocusTraversalService {
     );
   }
 
-  /// Focuses the first available node.
+  /// Focuses the first available interactive node.
   void _focusFirstAvailableNode() {
-    if (_topBarNodes.isNotEmpty) {
-      _topBarNodes.first.requestFocus();
-    } else if (_contentNodes.isNotEmpty) {
-      _contentNodes.first.requestFocus();
+    // Try content scope first, then top bar scope
+    if (_contentFocusNode != null) {
+      final target = _findFirstInteractiveDescendant(_contentFocusNode!);
+      if (target != null) {
+        target.requestFocus();
+        return;
+      }
+    }
+    if (_topBarFocusNode != null) {
+      final target = _findFirstInteractiveDescendant(_topBarFocusNode!);
+      if (target != null) {
+        target.requestFocus();
+        return;
+      }
+    }
+
+    if (_bottomNavFocusNode != null) {
+      final target = _findFirstInteractiveDescendant(_bottomNavFocusNode!);
+      if (target != null) {
+        target.requestFocus();
+        return;
+      }
     }
   }
 }

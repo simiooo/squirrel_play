@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:squirrel_play/core/theme/design_tokens.dart';
 import 'package:squirrel_play/data/services/sound_service.dart';
 import 'package:squirrel_play/domain/entities/game.dart';
-import 'package:squirrel_play/presentation/navigation/focus_traversal.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_button.dart';
 
 /// A confirmation dialog for deleting a game.
@@ -52,7 +51,6 @@ class DeleteGameDialog extends StatefulWidget {
 class _DeleteGameDialogState extends State<DeleteGameDialog>
     with SingleTickerProviderStateMixin {
   late final List<FocusNode> _buttonFocusNodes;
-  FocusNode? _triggerNode;
 
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
@@ -79,18 +77,8 @@ class _DeleteGameDialogState extends State<DeleteGameDialog>
       ),
     );
 
-    // Store the trigger node
-    _triggerNode = FocusManager.instance.primaryFocus;
-
-    // Enter dialog focus mode
+    // Focus the cancel button by default (safer) after frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusTraversalService.instance.enterDialogMode(
-        'deleteGameDialog',
-        _buttonFocusNodes,
-        _triggerNode,
-        onCancel: _cancel,
-      );
-      // Focus the cancel button by default (safer)
       _buttonFocusNodes[1].requestFocus();
       _animationController.forward();
     });
@@ -107,7 +95,6 @@ class _DeleteGameDialogState extends State<DeleteGameDialog>
 
   void _confirmDelete() {
     SoundService.instance.playFocusSelect();
-    FocusTraversalService.instance.exitDialogMode();
     _animationController.reverse().then((_) {
       if (mounted) {
         Navigator.of(context).pop(true);
@@ -117,7 +104,6 @@ class _DeleteGameDialogState extends State<DeleteGameDialog>
 
   void _cancel() {
     SoundService.instance.playFocusBack();
-    FocusTraversalService.instance.exitDialogMode();
     _animationController.reverse().then((_) {
       if (mounted) {
         Navigator.of(context).pop(false);

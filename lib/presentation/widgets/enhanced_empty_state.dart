@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:squirrel_play/core/theme/design_tokens.dart';
 import 'package:squirrel_play/l10n/app_localizations.dart';
-import 'package:squirrel_play/presentation/navigation/focus_traversal.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_button.dart';
 
 /// Enhanced empty state widget with specific variants and illustrations.
@@ -79,25 +78,10 @@ class _EnhancedEmptyStateState extends State<EnhancedEmptyState> {
     } else {
       _secondaryFocusNode = null;
     }
-
-    // Register empty-state buttons as content nodes for focus traversal
-    if (widget.onPrimaryAction != null) {
-      FocusTraversalService.instance.registerContentNode(_primaryFocusNode);
-    }
-    if (widget.type == EmptyStateType.noGames &&
-        widget.onSecondaryAction != null) {
-      FocusTraversalService.instance
-          .registerContentNode(_secondaryFocusNode!);
-    }
   }
 
   @override
   void dispose() {
-    FocusTraversalService.instance.unregisterContentNode(_primaryFocusNode);
-    if (_secondaryFocusNode != null) {
-      FocusTraversalService.instance
-          .unregisterContentNode(_secondaryFocusNode!);
-    }
     _primaryFocusNode.dispose();
     _secondaryFocusNode?.dispose();
     super.dispose();

@@ -3,29 +3,48 @@
 ## Assessment: APPROVED
 
 ## Scope Coverage
-The proposed scope directly addresses all 5 bugs outlined in the spec for Sprint 1 (Gamepad & Focus UI Fixes):
-1. Bottom gamepad hint bar redesign — covered.
-2. Modal focus trapping and auto-focus — covered.
-3. B button mapped to router back navigation with guard on `/` — covered.
-4. Empty state focus preservation on home and library — covered.
-5. Bidirectional vertical focus movement between top bar and content — covered.
 
-No missing requirements were identified, and the contract does not overstep into out-of-scope areas (e.g., no new pages, no haptics, no color palette changes).
+The contract is well-aligned with **Sprint 1: Core Cleanup — Remove Legacy Dialog Mode** from the spec. It covers:
+
+- Removing all `enterDialogMode()` / `exitDialogMode()` calls from dialogs and file browser ✅
+- Stripping redundant dialog mode state from `FocusTraversalService` ✅
+- Replacing explicit dialog mode tracking with focus-tree inspection ✅
+- Preserving dialog focus trapping and Escape-key behavior ✅
+- Maintaining test/analyzer hygiene (370 tests, no warnings) ✅
+
+The contract correctly does **not** include Sprint 2 items (Settings button cross-scope navigation, file browser polish), keeping the scope tightly bounded.
 
 ## Success Criteria Review
-- **Criterion 1 (Bottom Hint Bar)**: Adequate. "Harmonize with `AppColors`" and "proper padding" are slightly subjective, but the overall deliverable is testable via visual inspection and navigation across pages.
-- **Criterion 2 (Modal Focus Trap)**: Adequate. Auto-focus, containment, B/Escape close, and history isolation are all discrete, verifiable behaviors.
-- **Criterion 3 (B Button Router Back)**: Adequate. Each clause has a clear expected outcome and can be tested on `/`, `/library`, `/settings`, and inside dialogs.
-- **Criterion 4 (Empty State Focus)**: Adequate. Focus target and visibility are explicitly defined for both home and library empty states.
-- **Criterion 5 (Vertical Focus Return)**: Adequate. Directional wrap behavior and sound effect are testable with a controller/keyboard on library and home pages.
+
+- **SC1** (No `enterDialogMode`/`exitDialogMode` calls): Specific and measurable via grep. ✅ Adequate.
+- **SC2** (No dialog mode state fields in `FocusTraversalService`): Measurable via code inspection. ✅ Adequate.
+- **SC3** (Focus-tree inspection for dialog detection): Specific implementation guidance provided; measurable via code review and functional testing. ✅ Adequate.
+- **SC4** (Dialogs still trap focus): Requires manual/UI testing; reasonable for focus behavior. ✅ Adequate.
+- **SC5** (Escape key closes dialogs): Testable per-dialog. ✅ Adequate.
+- **SC6** (Focus restoration on dialog close): Good addition not explicitly listed in the spec's success criteria, but covers a real risk area. ✅ Adequate.
+- **SC7** (`gamepad_hint_provider.dart` updated): Excellent catch — this file calls `isInDialogMode()` and would break without explicit handling. ✅ Adequate.
+- **SC8** (370 tests pass, analyzer clean): Unambiguous. ✅ Adequate.
 
 ## Suggested Changes
-None. The contract is ready for implementation as written.
+
+None blocking. Two minor observations for the Generator to be aware of during implementation:
+
+1. **`MetadataSearchDialog` is dead code**: It has no static `show()` method and is never instantiated anywhere in the codebase. SC6's claim that "Each dialog's `show()` static method (or equivalent) already captures... focus" is technically inaccurate for this file. However, since it's dead code and `showDialog` itself restores focus automatically, this has no runtime impact. The contract's instructions for this file are still correct.
+
+2. **`debugLabel` heuristic fragility**: The proposed `_isFocusInsideDialog()` relies on `debugLabel` strings (`ModalScope`, `Dialog`). These are Flutter internals that could change between framework versions. That said, this is consistent with the existing `_isOnNonInteractiveScope` pattern already in the codebase, so it's acceptable for this refactoring.
 
 ## Test Plan Preview
-1. Launch the desktop app and navigate every page (home, library, settings, game detail) with a controller/keyboard to verify the bottom hint bar shows only A/B, is right-aligned, and uses circular icons.
-2. Open each dialog type (Add Game, Delete Game, API Key, Metadata Search) and confirm: first element auto-focused, D-pad cannot escape, B/Escape closes dialog and restores focus, and main-page focus history is unaffected.
-3. Press B on `/library` and `/settings` to verify router back navigation, then press B on `/` to verify no-op behavior.
-4. Clear the library to trigger empty states and test down/up focus movement between the top bar and the empty-state CTA button.
-5. Populate the library and test down/up focus wrapping between the top bar and the first row of the game grid / card rows, confirming sound effects play.
-6. Run `flutter test`, `flutter analyze`, and `flutter pub run build_runner build --delete-conflicting-outputs` to enforce code quality.
+
+I will verify this sprint by:
+
+1. Running `grep -rn "enterDialogMode\|exitDialogMode" lib/` — must return zero matches.
+2. Inspecting `FocusTraversalService` to confirm `_isInDialogMode`, `_dialogTriggerNode`, `_dialogCancelCallback`, and the public `isInDialogMode()` method are gone.
+3. Confirming `_isFocusInsideDialog()` (or equivalent) exists and is used in `_handleKeyEvent`, `_handleCancel`, `_addToHistory`, and `moveFocus`.
+4. Verifying `gamepad_hint_provider.dart` no longer references `isInDialogMode()`.
+5. Running `flutter analyze` — must produce no warnings/errors.
+6. Running `flutter test` — all 370 tests must pass.
+7. If UI access is available, manually opening each dialog to confirm arrow-key trapping and Escape-to-close behavior.
+
+---
+
+The contract is clear, measurable, achievable, and aligned with the spec. Approved for implementation.

@@ -40,7 +40,7 @@ class _ExecutableCheckboxListState extends State<ExecutableCheckboxList> {
       (index) => FocusNode(debugLabel: 'ExecutableCheckbox_$index'),
     );
 
-    // Focus first item after frame
+    // Focus first item after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_focusNodes.isNotEmpty) {
         _focusNodes[0].requestFocus();

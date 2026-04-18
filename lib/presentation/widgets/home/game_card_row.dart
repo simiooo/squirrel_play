@@ -67,19 +67,14 @@ class _GameCardRowState extends State<GameCardRow> {
   void initState() {
     super.initState();
     _headerFocusNode = FocusNode(debugLabel: 'RowHeader_${widget.row.id}');
-    _headerFocusNode.addListener(_onHeaderFocusChanged);
     _initializeCardFocusNodes();
 
-    // Register with focus traversal service
+    // Register with focus traversal service for row navigation
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusTraversalService.instance.registerRow(
         'row_${widget.row.id}',
         [_headerFocusNode, ..._cardFocusNodes],
       );
-      for (final node in _cardFocusNodes) {
-        FocusTraversalService.instance.registerContentNode(node);
-      }
-      FocusTraversalService.instance.registerContentNode(_headerFocusNode);
     });
   }
 
@@ -104,11 +99,8 @@ class _GameCardRowState extends State<GameCardRow> {
   void dispose() {
     FocusTraversalService.instance.unregisterRow('row_${widget.row.id}');
     for (final node in _cardFocusNodes) {
-      FocusTraversalService.instance.unregisterContentNode(node);
       node.dispose();
     }
-    FocusTraversalService.instance.unregisterContentNode(_headerFocusNode);
-    _headerFocusNode.removeListener(_onHeaderFocusChanged);
     _headerFocusNode.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -127,12 +119,6 @@ class _GameCardRowState extends State<GameCardRow> {
       node.dispose();
     }
     _cardFocusNodes.clear();
-  }
-
-  void _onHeaderFocusChanged() {
-    if (_headerFocusNode.hasFocus) {
-      widget.onHeaderFocused();
-    }
   }
 
   void _onCardFocusChanged(int index) {
@@ -216,50 +202,71 @@ class _GameCardRowState extends State<GameCardRow> {
   }
 
   Widget _buildHeader(BuildContext context, AppLocalizations? l10n) {
-    final isFocused = _headerFocusNode.hasFocus;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
       child: Focus(
         focusNode: _headerFocusNode,
-        child: GestureDetector(
-          onTap: _handleHeaderActivate,
-          child: AnimatedContainer(
-            duration: AppAnimationDurations.focusIn,
-            curve: AppAnimationCurves.focusIn,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            decoration: BoxDecoration(
-              color: isFocused ? AppColors.surfaceElevated : Colors.transparent,
-              borderRadius: BorderRadius.circular(AppRadii.small),
-              border: isFocused
-                  ? Border.all(color: AppColors.primaryAccent, width: 2)
-                  : null,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _getRowTitle(l10n),
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: isFocused ? AppColors.primaryAccent : AppColors.textPrimary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                  ),
+        onFocusChange: (hasFocus) {
+          if (hasFocus) {
+            widget.onHeaderFocused();
+          }
+        },
+        child: Builder(
+          builder: (context) {
+            final isFocused = Focus.of(context).hasFocus;
+
+            return GestureDetector(
+              onTap: _handleHeaderActivate,
+              child: AnimatedContainer(
+                duration: AppAnimationDurations.focusIn,
+                curve: AppAnimationCurves.focusIn,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
                 ),
-                if (widget.row.isNavigable) ...[
-                  const SizedBox(width: AppSpacing.sm),
-                  Icon(
-                    Icons.arrow_forward,
-                    color: isFocused ? AppColors.primaryAccent : AppColors.textMuted,
-                    size: 20,
-                  ),
-                ],
-              ],
-            ),
-          ),
+                decoration: BoxDecoration(
+                  color: isFocused
+                      ? AppColors.surfaceElevated
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(AppRadii.small),
+                  border: isFocused
+                      ? Border.all(
+                          color: AppColors.primaryAccent,
+                          width: 2,
+                        )
+                      : null,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _getRowTitle(l10n),
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleLarge
+                          ?.copyWith(
+                            color: isFocused
+                                ? AppColors.primaryAccent
+                                : AppColors.textPrimary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                          ),
+                    ),
+                    if (widget.row.isNavigable) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      Icon(
+                        Icons.arrow_forward,
+                        color: isFocused
+                            ? AppColors.primaryAccent
+                            : AppColors.textMuted,
+                        size: 20,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       ),
     );

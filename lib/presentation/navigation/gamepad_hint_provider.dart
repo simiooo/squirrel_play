@@ -10,8 +10,8 @@ import 'package:squirrel_play/presentation/navigation/focus_traversal.dart';
 
 /// Provides contextual gamepad action hints to descendant widgets.
 ///
-/// Listens to GoRouter route changes and FocusTraversalService dialog mode
-/// to dynamically update the displayed hints.
+/// Listens to GoRouter route changes and FocusTraversalService dialog
+/// detection via `isDialogOpen` to dynamically update the displayed hints.
 class GamepadHintProvider extends InheritedWidget {
   /// Creates a gamepad hint provider.
   const GamepadHintProvider({
@@ -88,7 +88,7 @@ class _GamepadHintProviderWrapperState
     final l10n = AppLocalizations.of(context);
     if (l10n == null) return [];
 
-    final isDialog = FocusTraversalService.instance.isInDialogMode();
+    final isDialog = FocusTraversalService.instance.isDialogOpen;
 
     if (isDialog) {
       return [

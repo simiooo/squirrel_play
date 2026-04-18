@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:squirrel_play/core/theme/design_tokens.dart';
+import 'package:squirrel_play/data/services/sound_service.dart';
+import 'package:squirrel_play/l10n/app_localizations.dart';
 import 'package:squirrel_play/presentation/models/gamepad_action_hint.dart';
 import 'package:squirrel_play/presentation/navigation/gamepad_hint_provider.dart';
+import 'package:squirrel_play/presentation/widgets/focusable_button.dart';
 import 'package:squirrel_play/presentation/widgets/gamepad_button_icon.dart';
 
 /// A persistent bottom navigation bar displaying contextual gamepad button hints.
@@ -25,33 +29,31 @@ class GamepadNavBar extends StatelessWidget {
     final isExpanded = width >= 1024;
     // Medium (640-1024) uses the same labels but may truncate via layout
 
-    return ExcludeFocus(
-      child: SizedBox(
-        height: AppSpacing.xxxl,
-        child: Container(
-          padding: const EdgeInsets.only(
-            left: AppSpacing.lg,
-            right: AppSpacing.xl,
-            top: AppSpacing.sm,
-            bottom: AppSpacing.sm,
+    return SizedBox(
+      height: AppSpacing.xxxl,
+      child: Container(
+        padding: const EdgeInsets.only(
+          left: AppSpacing.lg,
+          right: AppSpacing.xl,
+          top: AppSpacing.sm,
+          bottom: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surface.withAlpha(
+            (AppColors.surfaceOpacity * 255).round(),
           ),
-          decoration: BoxDecoration(
-            color: AppColors.surface.withAlpha(
-              (AppColors.surfaceOpacity * 255).round(),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.backgroundDeep.withAlpha(128),
+              blurRadius: 4,
+              offset: const Offset(0, -2),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.backgroundDeep.withAlpha(128),
-                blurRadius: 4,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1200),
-              child: _buildContent(context, hints, isCompact, isExpanded),
-            ),
+          ],
+        ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: _buildContent(context, hints, isCompact, isExpanded),
           ),
         ),
       ),
@@ -59,6 +61,25 @@ class GamepadNavBar extends StatelessWidget {
   }
 
   Widget _buildContent(
+    BuildContext context,
+    List<GamepadActionHint> hints,
+    bool isCompact,
+    bool isExpanded,
+  ) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Left: Settings button (outside ExcludeFocus so it can receive focus)
+        _SettingsNavButton(),
+        // Right: Gamepad hints (excluded from focus traversal)
+        ExcludeFocus(
+          child: _buildHints(context, hints, isCompact, isExpanded),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHints(
     BuildContext context,
     List<GamepadActionHint> hints,
     bool isCompact,
@@ -100,8 +121,46 @@ class GamepadNavBar extends StatelessWidget {
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
-      mainAxisSize: MainAxisSize.max,
+      mainAxisSize: MainAxisSize.min,
       children: items,
+    );
+  }
+}
+
+class _SettingsNavButton extends StatefulWidget {
+  @override
+  State<_SettingsNavButton> createState() => _SettingsNavButtonState();
+}
+
+class _SettingsNavButtonState extends State<_SettingsNavButton> {
+  late final FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode(debugLabel: 'SettingsNavButton');
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _handlePress() {
+    SoundService.instance.playPageTransition();
+    context.go('/settings');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return FocusableButton(
+      focusNode: _focusNode,
+      label: l10n?.topBarSettings ?? 'Settings',
+      hint: l10n?.focusSettingsHint ?? 'Open application settings',
+      onPressed: _handlePress,
     );
   }
 }

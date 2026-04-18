@@ -1,8 +1,8 @@
 # Sprint Status
 
-## Current Sprint: 1 — Gamepad & Focus UI Fixes
+## Current Sprint: 2 — Settings Button & File Browser Polish
 ## Current Phase: complete
 ## Contract Status: accepted
-## Evaluation Status: PASS
-## Last Updated: Fri Apr 17 2026
-## Notes: Sprint 1 passed. Harness run complete.
+## Evaluation Status: passed (round 2/3)
+## Last Updated: Sat Apr 18 2026
+## Notes: All sprints complete. See harness/final-summary.md for full summary.

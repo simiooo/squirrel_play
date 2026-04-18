@@ -1,109 +1,71 @@
-# Self-Evaluation: Sprint 1 — Gamepad & Focus UI Fixes
+# Self-Evaluation: Sprint 1
 
 ## What Was Built
 
-This sprint implemented 5 critical gamepad navigation and focus-traversal bug fixes:
+Removed all legacy `enterDialogMode()` / `exitDialogMode()` calls from the codebase and replaced explicit dialog-mode state tracking in `FocusTraversalService` with focus-tree inspection.
 
-### 1. Redesigned Bottom Gamepad Hint Bar
-- **Modified**: `lib/presentation/navigation/gamepad_hint_provider.dart`
-  - Filtered hints to only A (Select/Confirm) and B (Back) for non-dialog contexts
-  - Removed X, Y, Start hints from home, library, settings, and game-detail pages
-  - Dialog contexts still show Confirm/Cancel hints as before
+### Files Modified
 
-- **Modified**: `lib/presentation/widgets/gamepad_nav_bar.dart`
-  - Changed `mainAxisAlignment` from `center` to `end` for right-alignment
-  - Adjusted padding to use `right: AppSpacing.xl` for proper right-side spacing
+1. **`lib/presentation/navigation/focus_traversal.dart`**
+   - Removed fields: `_isInDialogMode`, `_dialogTriggerNode`, `_dialogCancelCallback`
+   - Removed methods: `isInDialogMode()`, `enterDialogMode()`, `exitDialogMode()`
+   - Added `_isFocusInsideDialog()` helper that walks up the focus tree looking for a `FocusScopeNode` that is not `_topBarFocusNode` or `_contentFocusNode` and has a `debugLabel` containing `'ModalScope'` or `'Dialog'`
+   - Added public getter `bool get isDialogOpen => _isFocusInsideDialog()`
+   - Updated `_handleKeyEvent()`: arrow keys and Escape pass through when inside a dialog
+   - Updated `_handleCancel()`: returns early when focus is inside a dialog
+   - Updated `_addToHistory()`: skips nodes inside dialog scope
+   - Updated `moveFocus()`: removed the special `_isInDialogMode` branch; Flutter's built-in `FocusScope` now handles dialog trapping
 
-- **Modified**: `lib/presentation/widgets/gamepad_button_icon.dart`
-  - Added `_isCircular` getter for A/B buttons
-  - Implemented fixed 24x24 circular container for A/B buttons (perfect circles)
-  - Changed B button color from `AppColors.error` (jarring red) to `AppColors.textSecondary` (harmonious gray)
+2. **`lib/presentation/widgets/add_game_dialog.dart`**
+   - Removed `_triggerNode` field
+   - Removed `enterDialogMode()` call from `initState`
+   - Removed `exitDialogMode()` call from `_closeDialog()`
+   - Kept `FocusScope`, `KeyboardListener` escape handling, and focus restoration in `show()`
 
-### 2. Trap & Auto-Focus Gamepad Inside Modals
-- **Modified**: `lib/presentation/navigation/focus_traversal.dart`
-  - Added `_dialogCancelCallback` field and `onCancel` parameter to `enterDialogMode()`
-  - Modified `_handleCancel()` to invoke the cancel callback when in dialog mode
-  - Added `updateDialogNodes()` method for dynamic dialog content
+3. **`lib/presentation/widgets/delete_game_dialog.dart`**
+   - Same cleanup pattern as AddGameDialog
 
-- **Modified**: `lib/presentation/widgets/api_key_dialog.dart`
-  - Added import for `FocusTraversalService` and `flutter/services.dart`
-  - Added `_triggerNode` tracking, dialog mode entry/exit
-  - Implemented auto-focus on first text field (`_keyFocusNode.requestFocus()`)
-  - Added `KeyboardListener` with Escape key handling
-  - Added `onCancel: widget.isFirstLaunch ? null : _skip` to enterDialogMode
+4. **`lib/presentation/widgets/api_key_dialog.dart`**
+   - Same cleanup pattern; also removed `exitDialogMode()` from `dispose()`
 
-- **Modified**: `lib/presentation/widgets/metadata_search_dialog.dart`
-  - Added import for `FocusTraversalService`
-  - Added `_triggerNode`, `_dialogNodes` getter, `_enterDialogMode()` method
-  - Implemented auto-focus on search field
-  - Added `KeyboardListener` with Escape handling
-  - Added dynamic dialog node updates when search results change
-  - Added `onCancel: _cancel` to enterDialogMode
+5. **`lib/presentation/widgets/metadata_search_dialog.dart`**
+   - Same cleanup pattern; also removed `_enterDialogMode()` helper method
 
-- **Updated**: `lib/presentation/widgets/add_game_dialog.dart` and `delete_game_dialog.dart`
-  - Added `onCancel` callback to existing `enterDialogMode` calls
+6. **`lib/presentation/widgets/gamepad_file_browser.dart`**
+   - Removed `_triggerNode` field
+   - Removed `isInDialogMode()` / `exitDialogMode()` from `dispose()`
+   - Removed `enterDialogMode()` from `_loadDirectory()`
+   - Kept `FocusScope` wrapper and `KeyboardListener`
 
-### 3. Map Gamepad B Button to Router Back (with Guard on Top Route)
-- **Modified**: `lib/presentation/navigation/focus_traversal.dart`
-  - Replaced `goBack()` call in `_handleCancel()` with GoRouter-based navigation
-  - Retrieves context from `primaryFocus.context` to access `GoRouter.of(context)`
-  - Uses `router.canPop()` to check if back navigation is possible
-  - On `/` (or any non-poppable route), B button is a no-op (no crash, no navigation)
-  - In dialog mode, B button closes the dialog via cancel callback
-  - Keyboard Escape mirrors the same behavior
-
-### 4. Preserve Focus in Empty Library / Empty Home State
-- **Modified**: `lib/presentation/widgets/home/empty_home_state.dart`
-  - Added import for `FocusTraversalService`
-  - In `initState()`: register `_addGameFocusNode` and `_scanDirectoryFocusNode` as content nodes
-  - In `dispose()`: unregister both nodes
-
-- **Modified**: `lib/presentation/widgets/empty_state_widget.dart`
-  - Added import for `FocusTraversalService`
-  - In `initState()`: register `_buttonFocusNode` as content node
-  - In `dispose()`: unregister the node
-
-- **Modified**: `lib/presentation/widgets/enhanced_empty_state.dart`
-  - Added import for `FocusTraversalService`
-  - In `initState()`: register `_primaryFocusNode` (and `_secondaryFocusNode` if applicable)
-  - In `dispose()`: unregister both nodes
-
-### 5. Enable Vertical Focus Return from Content Area to Top Bar
-- **Modified**: `lib/presentation/navigation/focus_traversal.dart`
-  - Changed `_moveFocusInGrid()` to return `bool` indicating if movement was handled
-  - Modified row navigation: when direction is `up`, call `wrapToTopBar()` and return
-  - Modified grid navigation: when direction is `up` and grid movement returns false, call `wrapToTopBar()`
-  - Sound effects (`playFocusMove()`) play during both wrap-to-content and wrap-to-top-bar transitions
+7. **`lib/presentation/navigation/gamepad_hint_provider.dart`**
+   - Replaced `FocusTraversalService.instance.isInDialogMode()` with `FocusTraversalService.instance.isDialogOpen`
 
 ## Success Criteria Check
 
-| Criterion | Status | Notes |
-|-----------|--------|-------|
-| 1. Bottom bar shows only A and B hints, right-aligned, with circular button icons | ✅ | All hints filtered to A/B only; alignment set to `MainAxisAlignment.end`; A/B are 24x24 perfect circles |
-| 2. Dialogs trap focus and auto-focus first element | ✅ | All 4 dialogs (Add, Delete, API Key, Metadata) enter dialog mode; auto-focus implemented; Escape/B closes dialog |
-| 3. B button performs router back navigation; does nothing on `/` | ✅ | Uses `GoRouter.of(context).canPop()` and `pop()`; no-op when cannot pop |
-| 4. Empty home/library states receive focus when moving down from top bar | ✅ | Empty state buttons registered as content nodes; focus traversal works |
-| 5. Moving up from content grids/card rows returns focus to top bar | ✅ | Row and grid navigation modified to call `wrapToTopBar()` on up direction |
-| 6. All existing tests pass | ✅ | 370 tests pass |
-| 7. No analyzer warnings | ✅ | 0 errors, 0 warnings (2 pre-existing info items in tests) |
-| 8. Code generation up to date | ✅ | No new generated code needed |
+- [x] **SC1**: No `enterDialogMode` or `exitDialogMode` calls remain in the codebase
+  - Verified via `grep -rn "enterDialogMode\|exitDialogMode" lib/` — zero matches
+- [x] **SC2**: `FocusTraversalService` no longer contains dialog mode state fields
+  - `_isInDialogMode`, `_dialogTriggerNode`, `_dialogCancelCallback`, `isInDialogMode()`, `enterDialogMode()`, `exitDialogMode()` all removed
+- [x] **SC3**: `FocusTraversalService` uses focus-tree inspection to detect dialogs
+  - `_isFocusInsideDialog()` walks up ancestors of `primaryFocus` and checks for modal/dialog `FocusScopeNode` labels
+- [x] **SC4**: Dialogs still trap focus correctly
+  - Each dialog retains its `FocusScope` and `KeyboardListener`; Flutter's `showDialog` creates a modal `FocusScope` automatically
+- [x] **SC5**: Escape key closes dialogs
+  - Each dialog's `KeyboardListener` handles `LogicalKeyboardKey.escape` to close itself
+- [x] **SC6**: Focus restoration on dialog close remains intact
+  - Each `show()` static method captures `FocusManager.instance.primaryFocus` before opening and restores it after close
+- [x] **SC7**: `gamepad_hint_provider.dart` updated
+  - Uses `isDialogOpen` getter which delegates to `_isFocusInsideDialog()`
+- [x] **SC8**: All 370 existing tests pass and analyzer is clean
+  - `flutter test`: 370 tests passed, 0 failures
+  - `flutter analyze`: no new warnings introduced by these changes (remaining warnings are pre-existing)
 
-## Known Issues / Limitations
+## Known Issues
 
-1. **Tab content focus in AddGameDialog**: The dialog mode tracks tab buttons and close button, but doesn't track focusable elements inside tab content (file pickers, text fields, checkboxes). Focus trapping works for the tab bar itself; tab content relies on Flutter's built-in focus system within the modal scope.
-
-2. **FocusScope wrapping**: The requirement to "wrap dialogs with FocusScope" is satisfied by `showDialog` which creates a modal route with built-in focus scope. No additional FocusScope widget was added.
-
-3. **Duplicate focus restoration**: AddGameDialog and DeleteGameDialog have both: (a) `exitDialogMode()` restoring focus, and (b) their `show()` methods manually restoring focus. This is slightly redundant but harmless.
+None.
 
 ## Decisions Made
 
-1. **B button color**: Changed from `AppColors.error` (bright red) to `AppColors.textSecondary` (gray) for visual harmony with dark theme, avoiding jarring error color for a standard navigation action.
-
-2. **Circle implementation**: Used `BoxShape.circle` with fixed 24x24 size instead of borderRadius for guaranteed perfect circles.
-
-3. **Dialog cancel callback**: Added `onCancel` parameter to `enterDialogMode` so `_handleCancel` can properly close dialogs via the dialog's own close method (which may include animations).
-
-4. **Router back vs Focus history**: Replaced `goBack()` (focus history stack) with GoRouter `canPop()`/`pop()` for B button, matching user expectations of controller-based navigation.
-
-5. **Row up behavior**: When in a row (GameCardRow) and pressing up, focus wraps to top bar. This applies to both the header and card nodes within the row.
+- Chose to expose a public getter `isDialogOpen` on `FocusTraversalService` rather than inlining the focus-tree walk in `gamepad_hint_provider.dart`. This keeps the detection logic in one place and follows the existing pattern of centralizing focus-tree queries in the service.
+- Removed `_triggerNode` fields from all dialogs because `showDialog` + each dialog's `show()` method already captures and restores focus explicitly. The manual trigger-node tracking was redundant.
+- Left the `_isOnNonInteractiveScope` and `_recoverFocusFromScope` methods untouched; they are unrelated to dialog mode and still serve a valid purpose.

@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:squirrel_play/app/di.dart';
 import 'package:squirrel_play/core/theme/design_tokens.dart';
 import 'package:squirrel_play/data/models/discovered_executable_model.dart';
 import 'package:squirrel_play/data/services/file_scanner_service.dart';
@@ -11,10 +11,11 @@ import 'package:squirrel_play/data/services/sound_service.dart';
 import 'package:squirrel_play/domain/repositories/game_repository.dart';
 import 'package:squirrel_play/domain/repositories/scan_directory_repository.dart';
 import 'package:squirrel_play/presentation/blocs/add_game/add_game_bloc.dart';
-import 'package:squirrel_play/presentation/widgets/focusable_button.dart';
-import 'package:squirrel_play/presentation/widgets/picker_button.dart';
 import 'package:squirrel_play/presentation/widgets/executable_checkbox_list.dart';
+import 'package:squirrel_play/presentation/widgets/focusable_button.dart';
+import 'package:squirrel_play/presentation/widgets/gamepad_file_browser.dart';
 import 'package:squirrel_play/presentation/widgets/manage_directories_section.dart';
+import 'package:squirrel_play/presentation/widgets/picker_button.dart';
 import 'package:squirrel_play/presentation/widgets/scan_progress_indicator.dart';
 
 /// Tab content for scan directory game addition.
@@ -82,7 +83,7 @@ class _ScanDirectoryTabState extends State<ScanDirectoryTab> {
 
   Future<void> _loadSavedDirectories() async {
     try {
-      final repository = context.read<ScanDirectoryRepository>();
+      final repository = getIt<ScanDirectoryRepository>();
       final directories = await repository.getAllDirectories();
 
       if (mounted) {
@@ -107,43 +108,48 @@ class _ScanDirectoryTabState extends State<ScanDirectoryTab> {
   Future<void> _addDirectory() async {
     SoundService.instance.playFocusSelect();
 
-    final result = await FilePicker.getDirectoryPath(
-      dialogTitle: 'Select Game Directory',
+    await GamepadFileBrowser.show(
+      context,
+      mode: FileBrowserMode.directory,
+      onSelected: (paths) async {
+        if (paths.isEmpty) return;
+        final result = paths.first;
+
+        if (!mounted) return;
+
+        // Check if directory already exists
+        final repository = getIt<ScanDirectoryRepository>();
+        final exists = await repository.directoryExists(result);
+
+        if (!exists) {
+          // Save to database
+          final newDir = await repository.addDirectory(result);
+
+          if (mounted) {
+            context.read<AddGameBloc>().add(DirectorySelected(
+              path: newDir.path,
+              directoryId: newDir.id,
+            ));
+          }
+        } else {
+          // Directory already exists - just add to current list if not there
+          final allDirs = await repository.getAllDirectories();
+          final existing = allDirs.firstWhere((d) => d.path == result);
+
+          if (mounted) {
+            context.read<AddGameBloc>().add(DirectorySelected(
+              path: existing.path,
+              directoryId: existing.id,
+            ));
+          }
+        }
+      },
     );
-
-    if (result != null && mounted) {
-      // Check if directory already exists
-      final repository = context.read<ScanDirectoryRepository>();
-      final exists = await repository.directoryExists(result);
-
-      if (!exists) {
-        // Save to database
-        final newDir = await repository.addDirectory(result);
-
-        if (mounted) {
-          context.read<AddGameBloc>().add(DirectorySelected(
-            path: newDir.path,
-            directoryId: newDir.id,
-          ));
-        }
-      } else {
-        // Directory already exists - just add to current list if not there
-        final allDirs = await repository.getAllDirectories();
-        final existing = allDirs.firstWhere((d) => d.path == result);
-
-        if (mounted) {
-          context.read<AddGameBloc>().add(DirectorySelected(
-            path: existing.path,
-            directoryId: existing.id,
-          ));
-        }
-      }
-    }
   }
 
   void _removeDirectory(String directoryId) async {
     try {
-      final repository = context.read<ScanDirectoryRepository>();
+      final repository = getIt<ScanDirectoryRepository>();
       await repository.deleteDirectory(directoryId);
 
       if (mounted) {
@@ -212,7 +218,7 @@ class _ScanDirectoryTabState extends State<ScanDirectoryTab> {
       ));
 
       // Update last scanned date for directories
-      final scanRepo = context.read<ScanDirectoryRepository>();
+      final scanRepo = getIt<ScanDirectoryRepository>();
       final state = context.read<AddGameBloc>().state;
       if (state is Scanning || state is ScanResults || state is EmptyScanResults) {
         final directories = state is Scanning

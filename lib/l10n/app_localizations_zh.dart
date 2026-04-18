@@ -418,4 +418,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String timeAgoYears(int years) {
     return '$years年前';
   }
+
+  @override
+  String get fileBrowserTitle => '选择文件';
+
+  @override
+  String get fileBrowserSelect => '选择';
+
+  @override
+  String get fileBrowserCancel => '取消';
+
+  @override
+  String get fileBrowserNoItems => '无内容';
+
+  @override
+  String get fileBrowserParentDirectory => '上级目录';
+
+  @override
+  String fileBrowserSelectedCount(int count) {
+    return '已选择 $count 项';
+  }
 }
