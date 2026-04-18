@@ -62,33 +62,33 @@ enum ResponsiveLayout {
 
 /// Card dimensions for each breakpoint.
 ///
-/// Game cards use a 2:3 aspect ratio (movie poster style).
+/// Game cards use a 16:9 aspect ratio (landscape style).
 class CardDimensions {
   CardDimensions._();
 
-  /// Card width for compact layout - 140px.
-  static const double compactWidth = 140.0;
+  /// Card width for compact layout - 200px.
+  static const double compactWidth = 200.0;
 
-  /// Card height for compact layout - 210px (2:3 ratio).
-  static const double compactHeight = 210.0;
+  /// Card height for compact layout - 112px (16:9 ratio).
+  static const double compactHeight = 112.0;
 
-  /// Card width for medium layout - 170px.
-  static const double mediumWidth = 170.0;
+  /// Card width for medium layout - 240px.
+  static const double mediumWidth = 240.0;
 
-  /// Card height for medium layout - 255px (2:3 ratio).
-  static const double mediumHeight = 255.0;
+  /// Card height for medium layout - 135px (16:9 ratio).
+  static const double mediumHeight = 135.0;
 
-  /// Card width for expanded layout - 200px.
-  static const double expandedWidth = 200.0;
+  /// Card width for expanded layout - 280px.
+  static const double expandedWidth = 280.0;
 
-  /// Card height for expanded layout - 300px (2:3 ratio).
-  static const double expandedHeight = 300.0;
+  /// Card height for expanded layout - 158px (16:9 ratio).
+  static const double expandedHeight = 158.0;
 
-  /// Card width for large layout - 240px.
-  static const double largeWidth = 240.0;
+  /// Card width for large layout - 320px.
+  static const double largeWidth = 320.0;
 
-  /// Card height for large layout - 360px (2:3 ratio).
-  static const double largeHeight = 360.0;
+  /// Card height for large layout - 180px (16:9 ratio).
+  static const double largeHeight = 180.0;
 
   /// Gets the card width for the given breakpoint.
   static double getWidth(ResponsiveLayout breakpoint) {

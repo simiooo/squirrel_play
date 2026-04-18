@@ -152,6 +152,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeRowRecentlyPlayed => 'Recently Played';
 
   @override
+  String get homeRowFeatured => 'Featured';
+
+  @override
+  String get viewAllGames => 'View All';
+
+  @override
   String launchingGame(String gameName) {
     return 'Launching $gameName...';
   }

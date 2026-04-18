@@ -83,6 +83,19 @@ class _DynamicBackgroundState extends State<DynamicBackground> {
       );
     }
 
+    // Fallback to cover image if available
+    final coverImageUrl = widget.metadata?.coverImageUrl;
+    if (coverImageUrl != null && coverImageUrl.isNotEmpty) {
+      return Container(
+        key: ValueKey('cover_${game.id}'),
+        child: CachedGameImage(
+          imageUrl: coverImageUrl,
+          fit: BoxFit.cover,
+          showOverlay: true,
+        ),
+      );
+    }
+
     // Show deterministic gradient based on game ID
     return Container(
       key: ValueKey('gradient_${game.id}'),

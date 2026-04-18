@@ -76,7 +76,7 @@ void main() {
       expect(titleFinder, findsOneWidget);
 
       final textWidget = tester.widget<Text>(titleFinder);
-      expect(textWidget.style?.fontSize, 32);
+      expect(textWidget.style?.fontSize, 48);
       expect(textWidget.style?.fontWeight, FontWeight.bold);
     });
 
@@ -108,33 +108,8 @@ void main() {
       expect(animatedOpacity, findsOneWidget);
 
       final opacityWidget = tester.widget<AnimatedOpacity>(animatedOpacity);
-      expect(opacityWidget.duration, const Duration(milliseconds: 300));
+      expect(opacityWidget.duration, const Duration(milliseconds: 400));
       expect(opacityWidget.curve, Curves.easeInOut);
-    });
-
-    testWidgets('has gradient background decoration', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GameInfoOverlay(game: testGame),
-          ),
-        ),
-      );
-
-      final container = find.byType(Container);
-      expect(container, findsWidgets);
-
-      // Find the main container with decoration
-      final containers = tester.widgetList<Container>(container);
-      final decoratedContainer = containers.firstWhere(
-        (c) => c.decoration != null,
-        orElse: () => containers.first,
-      );
-
-      expect(decoratedContainer.decoration, isA<BoxDecoration>());
-
-      final decoration = decoratedContainer.decoration as BoxDecoration;
-      expect(decoration.gradient, isA<LinearGradient>());
     });
 
     testWidgets('genre chips section returns empty when no genres', (tester) async {

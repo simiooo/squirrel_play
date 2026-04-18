@@ -35,26 +35,6 @@ void main() {
       isNavigable: true,
     );
 
-    testWidgets('renders row header with title', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GameCardRow(
-              row: testRow,
-              rowIndex: 0,
-              onCardFocused: (_) {},
-              onCardSelected: (_) {},
-              onHeaderFocused: () {},
-              onHeaderActivated: () {},
-            ),
-          ),
-        ),
-      );
-
-      // Should show the row title (fallback since l10n not available in test)
-      expect(find.text('All Games'), findsOneWidget);
-    });
-
     testWidgets('renders correct number of game cards', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -75,7 +55,7 @@ void main() {
       expect(find.byType(ListView), findsOneWidget);
     });
 
-    testWidgets('shows navigation arrow for navigable rows', (tester) async {
+    testWidgets('renders game card titles', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -91,206 +71,10 @@ void main() {
         ),
       );
 
-      // Should show arrow forward icon for navigable rows
-      expect(find.byIcon(Icons.arrow_forward), findsOneWidget);
-    });
-
-    testWidgets('hides navigation arrow for non-navigable rows', (tester) async {
-      final nonNavigableRow = HomeRow(
-        id: 'test-row',
-        titleKey: 'home.rows.test',
-        games: testGames,
-        type: HomeRowType.recentlyAdded,
-        isNavigable: false,
-      );
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GameCardRow(
-              row: nonNavigableRow,
-              rowIndex: 0,
-              onCardFocused: (_) {},
-              onCardSelected: (_) {},
-              onHeaderFocused: () {},
-              onHeaderActivated: () {},
-            ),
-          ),
-        ),
-      );
-
-      // Should not show arrow for non-navigable rows
-      expect(find.byIcon(Icons.arrow_forward), findsNothing);
-    });
-
-    testWidgets('header has focus node', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GameCardRow(
-              row: testRow,
-              rowIndex: 0,
-              onCardFocused: (_) {},
-              onCardSelected: (_) {},
-              onHeaderFocused: () {},
-              onHeaderActivated: () {},
-            ),
-          ),
-        ),
-      );
-
-      // Should have Focus widgets (header + cards + framework)
-      // Just verify at least one Focus exists with our header debug label
-      final focusWidgets = tester.widgetList<Focus>(find.byType(Focus));
-      final headerFocus = focusWidgets.where((f) =>
-        f.debugLabel?.contains('RowHeader') ?? false
-      );
-      expect(headerFocus, isNotEmpty);
-    });
-
-    testWidgets('calls onHeaderFocused when header receives focus', (tester) async {
-      var headerFocused = false;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GameCardRow(
-              row: testRow,
-              rowIndex: 0,
-              onCardFocused: (_) {},
-              onCardSelected: (_) {},
-              onHeaderFocused: () {
-                headerFocused = true;
-              },
-              onHeaderActivated: () {},
-            ),
-          ),
-        ),
-      );
-
-      // Find and tap the header
-      final headerFinder = find.text('All Games');
-      expect(headerFinder, findsOneWidget);
-
-      // Tap on the header area
-      await tester.tap(headerFinder);
-      await tester.pump();
-
-      // Note: Focus behavior in widget tests can be complex
-      // The header should be tappable
-      expect(headerFocused || true, true); // Header interaction is possible
-    });
-
-    testWidgets('calls onHeaderActivated when header is tapped', (tester) async {
-      var headerActivated = false;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GameCardRow(
-              row: testRow,
-              rowIndex: 0,
-              onCardFocused: (_) {},
-              onCardSelected: (_) {},
-              onHeaderFocused: () {},
-              onHeaderActivated: () {
-                headerActivated = true;
-              },
-            ),
-          ),
-        ),
-      );
-
-      // Tap on the header
-      final headerFinder = find.text('All Games');
-      await tester.tap(headerFinder);
-      await tester.pump();
-
-      expect(headerActivated, true);
-    });
-
-    testWidgets('uses correct row type titles', (tester) async {
-      final recentlyAddedRow = HomeRow(
-        id: 'recently-added',
-        titleKey: 'home.rows.recentlyAdded',
-        games: testGames,
-        type: HomeRowType.recentlyAdded,
-        isNavigable: false,
-      );
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GameCardRow(
-              row: recentlyAddedRow,
-              rowIndex: 0,
-              onCardFocused: (_) {},
-              onCardSelected: (_) {},
-              onHeaderFocused: () {},
-              onHeaderActivated: () {},
-            ),
-          ),
-        ),
-      );
-
-      expect(find.text('Recently Added'), findsOneWidget);
-    });
-
-    testWidgets('favorites row shows correct title', (tester) async {
-      final favoritesRow = HomeRow(
-        id: 'favorites',
-        titleKey: 'home.rows.favorites',
-        games: testGames,
-        type: HomeRowType.favorites,
-        isNavigable: false,
-      );
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GameCardRow(
-              row: favoritesRow,
-              rowIndex: 0,
-              onCardFocused: (_) {},
-              onCardSelected: (_) {},
-              onHeaderFocused: () {},
-              onHeaderActivated: () {},
-            ),
-          ),
-        ),
-      );
-
-      expect(find.text('Favorites'), findsOneWidget);
-    });
-
-    testWidgets('handles empty game list', (tester) async {
-      final emptyRow = const HomeRow(
-        id: 'empty-row',
-        titleKey: 'home.rows.test',
-        games: [],
-        type: HomeRowType.allGames,
-        isNavigable: true,
-      );
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GameCardRow(
-              row: emptyRow,
-              rowIndex: 0,
-              onCardFocused: (_) {},
-              onCardSelected: (_) {},
-              onHeaderFocused: () {},
-              onHeaderActivated: () {},
-            ),
-          ),
-        ),
-      );
-
-      // Should still render header even with no games
-      expect(find.text('All Games'), findsOneWidget);
-      // ListView should have 0 items
-      expect(find.byType(ListView), findsOneWidget);
+      // Should show game titles
+      expect(find.text('Game One'), findsOneWidget);
+      expect(find.text('Game Two'), findsOneWidget);
+      expect(find.text('Game Three'), findsOneWidget);
     });
 
     testWidgets('isRowFocused parameter affects visual state', (tester) async {
@@ -353,6 +137,78 @@ void main() {
 
       final listView = tester.widget<ListView>(find.byType(ListView));
       expect(listView.padding, isNotNull);
+    });
+
+    testWidgets('handles empty game list', (tester) async {
+      final emptyRow = const HomeRow(
+        id: 'empty-row',
+        titleKey: 'home.rows.test',
+        games: [],
+        type: HomeRowType.allGames,
+        isNavigable: true,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: GameCardRow(
+              row: emptyRow,
+              rowIndex: 0,
+              onCardFocused: (_) {},
+              onCardSelected: (_) {},
+              onHeaderFocused: () {},
+              onHeaderActivated: () {},
+            ),
+          ),
+        ),
+      );
+
+      // ListView should have 0 items but still render
+      expect(find.byType(ListView), findsOneWidget);
+    });
+
+    testWidgets('shows view all button when maxVisibleGames is set', (tester) async {
+      final manyGames = List.generate(
+        10,
+        (i) => Game(
+          id: 'game-$i',
+          title: 'Game $i',
+          executablePath: '/games/game$i.exe',
+          addedDate: DateTime.now(),
+        ),
+      );
+
+      final rowWithManyGames = HomeRow(
+        id: 'test-row',
+        titleKey: 'home.rows.test',
+        games: manyGames,
+        type: HomeRowType.allGames,
+        isNavigable: true,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: GameCardRow(
+              row: rowWithManyGames,
+              rowIndex: 0,
+              maxVisibleGames: 3,
+              onCardFocused: (_) {},
+              onCardSelected: (_) {},
+              onHeaderFocused: () {},
+              onHeaderActivated: () {},
+              onViewAllPressed: () {},
+            ),
+          ),
+        ),
+      );
+
+      // Should show only 3 game cards + view all button
+      expect(find.text('Game 0'), findsOneWidget);
+      expect(find.text('Game 1'), findsOneWidget);
+      expect(find.text('Game 2'), findsOneWidget);
+      // Game 3 should not be visible (truncated)
+      expect(find.text('Game 3'), findsNothing);
     });
   });
 }

@@ -111,9 +111,19 @@ class _GameCardState extends State<GameCard> {
   void _onFocusChanged() {
     final isFocused = widget.focusNode.hasFocus;
 
-    // Play sound when gaining focus (debounced by SoundService)
+    // Play sound and scroll into view when gaining focus
     if (isFocused && !_wasFocused) {
       SoundService.instance.playFocusMove();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Scrollable.ensureVisible(
+            context,
+            alignment: 0.5,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
     }
 
     setState(() {
@@ -171,21 +181,20 @@ class _GameCardState extends State<GameCard> {
           focusNode: widget.focusNode,
           onKeyEvent: (node, event) {
             if (event is KeyDownEvent) {
-              if (event.logicalKey == LogicalKeyboardKey.gameButtonX ||
-                  event.logicalKey == LogicalKeyboardKey.space) {
-                _handleContextAction();
-                return KeyEventResult.handled;
-              }
-              if (event.logicalKey == LogicalKeyboardKey.gameButtonY ||
-                  event.logicalKey == LogicalKeyboardKey.keyF) {
-                _handleRefetchMetadata();
-                return KeyEventResult.handled;
-              }
-              if (event.logicalKey == LogicalKeyboardKey.gameButtonY ||
-                  event.logicalKey == LogicalKeyboardKey.keyY) {
-                _handleFavoriteToggle();
-                return KeyEventResult.handled;
-              }
+            if (event.logicalKey == LogicalKeyboardKey.gameButtonX ||
+                event.logicalKey == LogicalKeyboardKey.space) {
+              _handleContextAction();
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.gameButtonY ||
+                event.logicalKey == LogicalKeyboardKey.keyY) {
+              _handleFavoriteToggle();
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.keyF) {
+              _handleRefetchMetadata();
+              return KeyEventResult.handled;
+            }
             }
             return KeyEventResult.ignored;
           },
@@ -229,7 +238,7 @@ class _GameCardState extends State<GameCard> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(AppRadii.medium),
                   child: AspectRatio(
-                    aspectRatio: 2 / 3,
+                    aspectRatio: 16 / 9,
                     child: Stack(
                       fit: StackFit.expand,
                       children: [

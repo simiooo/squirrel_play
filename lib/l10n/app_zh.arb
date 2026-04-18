@@ -243,6 +243,16 @@
     "description": "主页最近玩过游戏行的标题"
   },
 
+  "homeRowFeatured": "精选",
+  "@homeRowFeatured": {
+    "description": "主页精选游戏行的标题"
+  },
+
+  "viewAllGames": "全部游戏",
+  "@viewAllGames": {
+    "description": "查看游戏库中所有游戏的按钮标签"
+  },
+
   "launchingGame": "正在启动 {gameName}...",
   "@launchingGame": {
     "description": "启动游戏时显示的消息",

@@ -40,34 +40,23 @@ class GameGrid extends StatefulWidget {
 }
 
 class _GameGridState extends State<GameGrid> {
-  late List<List<FocusNode>> _gridFocusNodes;
+  List<List<FocusNode>> _gridFocusNodes = [];
   int _currentFocusedIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _currentFocusedIndex = widget.focusedIndex;
-    _createFocusNodes();
-
-    // Register with focus traversal service
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _registerGrid();
-      // Focus the initial game
-      _focusGameAtIndex(_currentFocusedIndex);
-    });
   }
 
   @override
   void didUpdateWidget(GameGrid oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.games.length != oldWidget.games.length) {
-      // Rebuild focus nodes if game count changed
+      // Mark focus nodes for recreation on next build
       _unregisterGrid();
-      _createFocusNodes();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _registerGrid();
-        _focusGameAtIndex(_currentFocusedIndex.clamp(0, widget.games.length - 1));
-      });
+      _disposeFocusNodes();
+      _gridFocusNodes = [];
     }
   }
 
@@ -156,6 +145,15 @@ class _GameGridState extends State<GameGrid> {
 
   @override
   Widget build(BuildContext context) {
+    // Lazy-create focus nodes in build where context is safe to use
+    if (_gridFocusNodes.isEmpty && widget.games.isNotEmpty) {
+      _createFocusNodes();
+      _registerGrid();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _focusGameAtIndex(_currentFocusedIndex.clamp(0, widget.games.length - 1));
+      });
+    }
+
     final columns = _getColumnCount();
 
     return LayoutBuilder(

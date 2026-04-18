@@ -26,72 +26,35 @@ class HomeRepositoryImpl implements HomeRepository {
       return [];
     }
 
-    final rows = <HomeRow>[];
+    // Comprehensive sorting: combine recently played, favorites, and recently added
+    final sortedGames = List<Game>.from(allGames)..sort((a, b) {
+      // Priority 1: Recently played games (by lastPlayedDate descending)
+      if (a.lastPlayedDate != null && b.lastPlayedDate != null) {
+        final cmp = b.lastPlayedDate!.compareTo(a.lastPlayedDate!);
+        if (cmp != 0) return cmp;
+      } else if (a.lastPlayedDate != null) {
+        return -1;
+      } else if (b.lastPlayedDate != null) {
+        return 1;
+      }
 
-    // Row 1: Recently Added (sorted by addedDate descending)
-    final recentlyAdded = List<Game>.from(allGames)
-      ..sort((a, b) => b.addedDate.compareTo(a.addedDate));
+      // Priority 2: Favorite games
+      if (a.isFavorite && !b.isFavorite) return -1;
+      if (!a.isFavorite && b.isFavorite) return 1;
 
-    if (recentlyAdded.isNotEmpty) {
-      rows.add(
-        HomeRow(
-          id: 'recently_added',
-          titleKey: 'homeRowRecentlyAdded',
-          games: recentlyAdded,
-          type: HomeRowType.recentlyAdded,
-          isNavigable: false,
-        ),
-      );
-    }
+      // Priority 3: Recently added (by addedDate descending)
+      return b.addedDate.compareTo(a.addedDate);
+    });
 
-    // Row 2: All Games
-    if (allGames.isNotEmpty) {
-      rows.add(
-        HomeRow(
-          id: 'all_games',
-          titleKey: 'homeRowAllGames',
-          games: allGames,
-          type: HomeRowType.allGames,
-          isNavigable: true,
-        ),
-      );
-    }
-
-    // Row 3: Favorites (only if there are favorites)
-    final favorites = allGames.where((g) => g.isFavorite).toList();
-    if (favorites.isNotEmpty) {
-      rows.add(
-        HomeRow(
-          id: 'favorites',
-          titleKey: 'homeRowFavorites',
-          games: favorites,
-          type: HomeRowType.favorites,
-          isNavigable: false,
-        ),
-      );
-    }
-
-    // Row 4: Recently Played (only if there are played games)
-    final playedGames = allGames
-        .where((g) => g.lastPlayedDate != null)
-        .toList()
-      ..sort((a, b) => b.lastPlayedDate!.compareTo(a.lastPlayedDate!));
-
-    if (playedGames.isNotEmpty) {
-      // Show last 5-10 recently played games
-      final recentGames = playedGames.take(10).toList();
-      rows.add(
-        HomeRow(
-          id: 'recently_played',
-          titleKey: 'homeRowRecentlyPlayed',
-          games: recentGames,
-          type: HomeRowType.recentlyPlayed,
-          isNavigable: false,
-        ),
-      );
-    }
-
-    return rows;
+    return [
+      HomeRow(
+        id: 'featured',
+        titleKey: 'homeRowFeatured',
+        games: sortedGames,
+        type: HomeRowType.allGames,
+        isNavigable: true,
+      ),
+    ];
   }
 
   @override

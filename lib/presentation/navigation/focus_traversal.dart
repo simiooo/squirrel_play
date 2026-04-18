@@ -594,6 +594,38 @@ class FocusTraversalService {
     }
   }
 
+  /// Moves focus to the previous row from the current row.
+  /// If there is no previous row, wraps to the top bar.
+  void _focusPreviousRow(String currentRowId) {
+    debugPrint(
+      '[FocusTraversalService] _focusPreviousRow from "$currentRowId"',
+    );
+    final rowIds = _rowGroups.keys.toList();
+    final currentIndex = rowIds.indexOf(currentRowId);
+    debugPrint(
+      '[FocusTraversalService]   rowIds=$rowIds, currentIndex=$currentIndex',
+    );
+    if (currentIndex <= 0) {
+      debugPrint('[FocusTraversalService]   -> No previous row, wrapping to top bar');
+      wrapToTopBar();
+      return;
+    }
+
+    final previousRowId = rowIds[currentIndex - 1];
+    final previousRowNodes = _rowGroups[previousRowId];
+    debugPrint(
+      '[FocusTraversalService]   -> Previous row: "$previousRowId" with ${previousRowNodes?.length ?? 0} nodes',
+    );
+    if (previousRowNodes != null && previousRowNodes.isNotEmpty) {
+      final target = previousRowNodes.last;
+      target.requestFocus();
+      debugPrint(
+        '[FocusTraversalService]   -> Focused: ${target.debugLabel ?? "unnamed"}',
+      );
+      SoundService.instance.playFocusMove();
+    }
+  }
+
   /// Moves focus in the specified direction.
   ///
   /// Uses Flutter's built-in focus traversal when possible, with custom
@@ -636,14 +668,24 @@ class FocusTraversalService {
           SoundService.instance.playFocusMove();
           return;
         } else if (direction == TraversalDirection.up) {
-          // Pressing up from any row node wraps back to the top bar
-          wrapToTopBar();
+          // Move to previous node in row, or to previous row if at start
+          if (index > 0) {
+            nodes[index - 1].requestFocus();
+            SoundService.instance.playFocusMove();
+            return;
+          }
+          _focusPreviousRow(entry.key);
           return;
         } else if (direction == TraversalDirection.down) {
-          // Pressing down from any row node moves to the next row
+          // Move to next node in row, or to next row if at end
           debugPrint(
             '[FocusTraversalService]   Row down from "${entry.key}" index=$index',
           );
+          if (index < nodes.length - 1) {
+            nodes[index + 1].requestFocus();
+            SoundService.instance.playFocusMove();
+            return;
+          }
           _focusNextRow(entry.key);
           return;
         }
@@ -858,8 +900,27 @@ class FocusTraversalService {
     debugPrint('[FocusTraversalService] Wrapping to content');
     if (_contentFocusNode == null) return;
 
-    // Focus the first interactive descendant of content scope
-    final targetNode = _findFirstInteractiveDescendant(_contentFocusNode!);
+    // Find the most recently focused interactive descendant of the content scope
+    FocusNode? targetNode;
+    for (final node in _focusHistory) {
+      if (_isDescendantOfScope(node, _contentFocusNode) &&
+          _isInteractiveFocusNode(node)) {
+        // Check if node is still valid (not disposed)
+        try {
+          final context = node.context;
+          if (context != null && context.mounted) {
+            targetNode = node;
+            break;
+          }
+        } catch (_) {
+          // Node may be disposed, continue searching
+          continue;
+        }
+      }
+    }
+
+    // Fall back to first interactive descendant of content scope
+    targetNode ??= _findFirstInteractiveDescendant(_contentFocusNode!);
 
     if (targetNode != null && targetNode != _contentFocusNode) {
       targetNode.requestFocus();

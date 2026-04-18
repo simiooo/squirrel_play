@@ -243,6 +243,16 @@
     "description": "Title for recently played games row on home page"
   },
 
+  "homeRowFeatured": "Featured",
+  "@homeRowFeatured": {
+    "description": "Title for featured games row on home page"
+  },
+
+  "viewAllGames": "View All",
+  "@viewAllGames": {
+    "description": "Button label to view all games in library"
+  },
+
   "launchingGame": "Launching {gameName}...",
   "@launchingGame": {
     "description": "Message shown when launching a game",

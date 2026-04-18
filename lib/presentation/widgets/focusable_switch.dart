@@ -74,9 +74,19 @@ class _FocusableSwitchState extends State<FocusableSwitch> {
   void _onFocusChanged() {
     final isFocused = widget.focusNode.hasFocus;
 
-    // Play sound when gaining focus (debounced by SoundService)
+    // Play sound and scroll into view when gaining focus
     if (isFocused && !_wasFocused) {
       SoundService.instance.playFocusMove();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Scrollable.ensureVisible(
+            context,
+            alignment: 0.5,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
     }
 
     setState(() {

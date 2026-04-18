@@ -374,6 +374,18 @@ abstract class AppLocalizations {
   /// **'Recently Played'**
   String get homeRowRecentlyPlayed;
 
+  /// Title for featured games row on home page
+  ///
+  /// In en, this message translates to:
+  /// **'Featured'**
+  String get homeRowFeatured;
+
+  /// Button label to view all games in library
+  ///
+  /// In en, this message translates to:
+  /// **'View All'**
+  String get viewAllGames;
+
   /// Message shown when launching a game
   ///
   /// In en, this message translates to:

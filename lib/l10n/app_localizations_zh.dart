@@ -151,6 +151,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get homeRowRecentlyPlayed => '最近玩过';
 
   @override
+  String get homeRowFeatured => '精选';
+
+  @override
+  String get viewAllGames => '全部游戏';
+
+  @override
   String launchingGame(String gameName) {
     return '正在启动 $gameName...';
   }

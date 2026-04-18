@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:squirrel_play/core/theme/design_tokens.dart';
 import 'package:squirrel_play/core/utils/breakpoints.dart';
 import 'package:squirrel_play/data/services/sound_service.dart';
+import 'package:squirrel_play/domain/entities/game.dart';
 import 'package:squirrel_play/domain/entities/home_row.dart';
 import 'package:squirrel_play/l10n/app_localizations.dart';
 import 'package:squirrel_play/presentation/navigation/focus_traversal.dart';
 import 'package:squirrel_play/presentation/widgets/game_card.dart';
 
-/// Horizontal scrolling row of game cards.
+/// Horizontal scrolling row of game cards with Netflix-style layout.
 ///
 /// Features:
 /// - Focusable header with title
@@ -16,6 +17,7 @@ import 'package:squirrel_play/presentation/widgets/game_card.dart';
 /// - Smooth scroll animation when navigating past visible cards
 /// - Focus management integration with FocusTraversalService
 /// - Responsive card count per breakpoint
+/// - Optional "View All" button at the end when games exceed maxVisibleGames
 class GameCardRow extends StatefulWidget {
   /// The home row data.
   final HomeRow row;
@@ -29,6 +31,9 @@ class GameCardRow extends StatefulWidget {
   /// Whether this row is currently focused.
   final bool isRowFocused;
 
+  /// Maximum number of game cards to display before showing "View All" button.
+  final int? maxVisibleGames;
+
   /// Callback when a card receives focus.
   final ValueChanged<int> onCardFocused;
 
@@ -41,6 +46,9 @@ class GameCardRow extends StatefulWidget {
   /// Callback when the row header is activated.
   final VoidCallback onHeaderActivated;
 
+  /// Callback when "View All" button is pressed.
+  final VoidCallback? onViewAllPressed;
+
   /// Creates a GameCardRow widget.
   const GameCardRow({
     super.key,
@@ -48,10 +56,12 @@ class GameCardRow extends StatefulWidget {
     required this.rowIndex,
     this.focusedCardIndex,
     this.isRowFocused = false,
+    this.maxVisibleGames,
     required this.onCardFocused,
     required this.onCardSelected,
     required this.onHeaderFocused,
     required this.onHeaderActivated,
+    this.onViewAllPressed,
   });
 
   @override
@@ -61,19 +71,41 @@ class GameCardRow extends StatefulWidget {
 class _GameCardRowState extends State<GameCardRow> {
   final ScrollController _scrollController = ScrollController();
   final List<FocusNode> _cardFocusNodes = [];
-  late FocusNode _headerFocusNode;
+  FocusNode? _viewAllFocusNode;
+
+  /// Games visible in this row (may be truncated by maxVisibleGames).
+  List<Game> get _visibleGames {
+    if (widget.maxVisibleGames != null &&
+        widget.row.games.length > widget.maxVisibleGames!) {
+      return widget.row.games.take(widget.maxVisibleGames!).toList();
+    }
+    return widget.row.games;
+  }
+
+  /// Whether to show the "View All" button.
+  bool get _showViewAllButton =>
+      widget.maxVisibleGames != null &&
+      widget.row.games.length > widget.maxVisibleGames!;
 
   @override
   void initState() {
     super.initState();
-    _headerFocusNode = FocusNode(debugLabel: 'RowHeader_${widget.row.id}');
     _initializeCardFocusNodes();
+    if (_showViewAllButton) {
+      _viewAllFocusNode = FocusNode(
+        debugLabel: 'ViewAll_${widget.row.id}',
+      );
+    }
 
     // Register with focus traversal service for row navigation
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final nodes = List<FocusNode>.from(_cardFocusNodes);
+      if (_viewAllFocusNode != null) {
+        nodes.add(_viewAllFocusNode!);
+      }
       FocusTraversalService.instance.registerRow(
         'row_${widget.row.id}',
-        [_headerFocusNode, ..._cardFocusNodes],
+        nodes,
       );
     });
   }
@@ -83,9 +115,40 @@ class _GameCardRowState extends State<GameCardRow> {
     super.didUpdateWidget(oldWidget);
 
     // Handle row data changes
-    if (widget.row.games.length != oldWidget.row.games.length) {
+    final oldVisibleCount = oldWidget.maxVisibleGames != null &&
+            oldWidget.row.games.length > oldWidget.maxVisibleGames!
+        ? oldWidget.maxVisibleGames!
+        : oldWidget.row.games.length;
+    final newVisibleCount = _visibleGames.length;
+
+    if (newVisibleCount != oldVisibleCount) {
       _disposeCardFocusNodes();
       _initializeCardFocusNodes();
+
+      // Handle view all button focus node
+      if (_showViewAllButton && _viewAllFocusNode == null) {
+        _viewAllFocusNode = FocusNode(
+          debugLabel: 'ViewAll_${widget.row.id}',
+        );
+      } else if (!_showViewAllButton && _viewAllFocusNode != null) {
+        _viewAllFocusNode!.dispose();
+        _viewAllFocusNode = null;
+      }
+
+      // Re-register with the focus traversal service using updated nodes
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        FocusTraversalService.instance.unregisterRow(
+          'row_${widget.row.id}',
+        );
+        final nodes = List<FocusNode>.from(_cardFocusNodes);
+        if (_viewAllFocusNode != null) {
+          nodes.add(_viewAllFocusNode!);
+        }
+        FocusTraversalService.instance.registerRow(
+          'row_${widget.row.id}',
+          nodes,
+        );
+      });
     }
 
     // Scroll to focused card if needed
@@ -101,13 +164,13 @@ class _GameCardRowState extends State<GameCardRow> {
     for (final node in _cardFocusNodes) {
       node.dispose();
     }
-    _headerFocusNode.dispose();
+    _viewAllFocusNode?.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
   void _initializeCardFocusNodes() {
-    for (int i = 0; i < widget.row.games.length; i++) {
+    for (int i = 0; i < _visibleGames.length; i++) {
       final node = FocusNode(debugLabel: 'Card_${widget.row.id}_$i');
       node.addListener(() => _onCardFocusChanged(i));
       _cardFocusNodes.add(node);
@@ -153,136 +216,125 @@ class _GameCardRowState extends State<GameCardRow> {
     );
   }
 
-  void _handleHeaderActivate() {
-    SoundService.instance.playFocusSelect();
-    widget.onHeaderActivated();
-  }
-
   void _handleCardActivate(int index) {
     SoundService.instance.playFocusSelect();
     widget.onCardSelected(index);
+  }
+
+  void _handleViewAllActivate() {
+    SoundService.instance.playFocusSelect();
+    widget.onViewAllPressed?.call();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Row header
-        _buildHeader(context, l10n),
-        const SizedBox(height: AppSpacing.md),
+    return SizedBox(
+      height: _getCardHeight(context),
+      child: ListView.builder(
+        controller: _scrollController,
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+        itemCount: _visibleGames.length + (_showViewAllButton ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index < _visibleGames.length) {
+            final isLastCard = index == _visibleGames.length - 1;
+            final hasViewAllAfter = _showViewAllButton;
 
-        // Card list
-        SizedBox(
-          height: _getCardHeight(context),
-          child: ListView.builder(
-            controller: _scrollController,
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-            itemCount: widget.row.games.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: EdgeInsets.only(
-                  right: index < widget.row.games.length - 1 ? AppSpacing.lg : 0,
-                ),
-                child: GameCard(
-                  focusNode: _cardFocusNodes[index],
-                  game: widget.row.games[index],
-                  onPressed: () => _handleCardActivate(index),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHeader(BuildContext context, AppLocalizations? l10n) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-      child: Focus(
-        focusNode: _headerFocusNode,
-        onFocusChange: (hasFocus) {
-          if (hasFocus) {
-            widget.onHeaderFocused();
-          }
-        },
-        child: Builder(
-          builder: (context) {
-            final isFocused = Focus.of(context).hasFocus;
-
-            return GestureDetector(
-              onTap: _handleHeaderActivate,
-              child: AnimatedContainer(
-                duration: AppAnimationDurations.focusIn,
-                curve: AppAnimationCurves.focusIn,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: isFocused
-                      ? AppColors.surfaceElevated
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(AppRadii.small),
-                  border: isFocused
-                      ? Border.all(
-                          color: AppColors.primaryAccent,
-                          width: 2,
-                        )
-                      : null,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _getRowTitle(l10n),
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(
-                            color: isFocused
-                                ? AppColors.primaryAccent
-                                : AppColors.textPrimary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 24,
-                          ),
-                    ),
-                    if (widget.row.isNavigable) ...[
-                      const SizedBox(width: AppSpacing.sm),
-                      Icon(
-                        Icons.arrow_forward,
-                        color: isFocused
-                            ? AppColors.primaryAccent
-                            : AppColors.textMuted,
-                        size: 20,
-                      ),
-                    ],
-                  ],
-                ),
+            return Padding(
+              padding: EdgeInsets.only(
+                right: isLastCard && !hasViewAllAfter ? 0 : AppSpacing.lg,
+              ),
+              child: GameCard(
+                focusNode: _cardFocusNodes[index],
+                game: _visibleGames[index],
+                onPressed: () => _handleCardActivate(index),
               ),
             );
-          },
-        ),
+          } else {
+            // View All button
+            return Padding(
+              padding: const EdgeInsets.only(left: AppSpacing.lg),
+              child: _buildViewAllButton(context, l10n),
+            );
+          }
+        },
       ),
     );
   }
 
-  String _getRowTitle(AppLocalizations? l10n) {
-    switch (widget.row.type) {
-      case HomeRowType.recentlyAdded:
-        return l10n?.homeRowRecentlyAdded ?? 'Recently Added';
-      case HomeRowType.allGames:
-        return l10n?.homeRowAllGames ?? 'All Games';
-      case HomeRowType.favorites:
-        return l10n?.homeRowFavorites ?? 'Favorites';
-      case HomeRowType.recentlyPlayed:
-        return l10n?.homeRowRecentlyPlayed ?? 'Recently Played';
-    }
+  Widget _buildViewAllButton(BuildContext context, AppLocalizations? l10n) {
+    final breakpoint = Breakpoints.getBreakpointFromContext(context);
+    final cardWidth = CardDimensions.getWidth(breakpoint);
+    final cardHeight = CardDimensions.getHeight(breakpoint);
+
+    return Focus(
+      focusNode: _viewAllFocusNode,
+      onFocusChange: (hasFocus) {
+        if (hasFocus) {
+          SoundService.instance.playFocusMove();
+        }
+      },
+      child: Builder(
+        builder: (context) {
+          final isFocused = Focus.of(context).hasFocus;
+
+          return GestureDetector(
+            onTap: _handleViewAllActivate,
+            child: AnimatedContainer(
+              duration: AppAnimationDurations.focusIn,
+              curve: AppAnimationCurves.focusIn,
+              width: cardWidth,
+              height: cardHeight,
+              decoration: BoxDecoration(
+                color: isFocused
+                    ? AppColors.surfaceElevated
+                    : AppColors.surface.withAlpha(100),
+                borderRadius: BorderRadius.circular(AppRadii.medium),
+                border: isFocused
+                    ? Border.all(
+                        color: AppColors.primaryAccent,
+                        width: 2,
+                      )
+                    : Border.all(
+                        color: AppColors.textSecondary.withAlpha(60),
+                        width: 1,
+                      ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedScale(
+                    scale: isFocused ? 1.2 : 1.0,
+                    duration: AppAnimationDurations.focusIn,
+                    curve: AppAnimationCurves.focusIn,
+                    child: Icon(
+                      Icons.arrow_forward,
+                      color: isFocused
+                          ? AppColors.primaryAccent
+                          : AppColors.textSecondary,
+                      size: 36,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    l10n?.viewAllGames ?? 'View All',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: isFocused
+                              ? AppColors.primaryAccent
+                              : AppColors.textSecondary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   double _getCardHeight(BuildContext context) {

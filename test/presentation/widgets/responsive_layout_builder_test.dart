@@ -132,17 +132,17 @@ void main() {
 
   group('ResponsiveLayoutExtension', () {
     test('cardWidth returns correct values', () {
-      expect(ResponsiveLayout.compact.cardWidth, 140.0);
-      expect(ResponsiveLayout.medium.cardWidth, 170.0);
-      expect(ResponsiveLayout.expanded.cardWidth, 200.0);
-      expect(ResponsiveLayout.large.cardWidth, 240.0);
+      expect(ResponsiveLayout.compact.cardWidth, 200.0);
+      expect(ResponsiveLayout.medium.cardWidth, 240.0);
+      expect(ResponsiveLayout.expanded.cardWidth, 280.0);
+      expect(ResponsiveLayout.large.cardWidth, 320.0);
     });
 
     test('cardHeight returns correct values', () {
-      expect(ResponsiveLayout.compact.cardHeight, 210.0);
-      expect(ResponsiveLayout.medium.cardHeight, 255.0);
-      expect(ResponsiveLayout.expanded.cardHeight, 300.0);
-      expect(ResponsiveLayout.large.cardHeight, 360.0);
+      expect(ResponsiveLayout.compact.cardHeight, 112.0);
+      expect(ResponsiveLayout.medium.cardHeight, 135.0);
+      expect(ResponsiveLayout.expanded.cardHeight, 158.0);
+      expect(ResponsiveLayout.large.cardHeight, 180.0);
     });
 
     test('visibleCardCount returns correct values', () {

@@ -83,6 +83,16 @@ class _FocusableTextFieldState extends State<FocusableTextField> {
     _updateFocusState();
     if (_isFocused && !hadFocus) {
       SoundService.instance.playFocusMove();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Scrollable.ensureVisible(
+            context,
+            alignment: 0.5,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
     }
   }
 
