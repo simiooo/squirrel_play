@@ -4,47 +4,52 @@
 
 ## Scope Coverage
 
-The contract is well-aligned with **Sprint 1: Core Cleanup — Remove Legacy Dialog Mode** from the spec. It covers:
+The proposed scope is tightly aligned with the spec's Sprint 1 definition: **Foundation — Database, Entity & Process Tracking**. It correctly limits itself to:
 
-- Removing all `enterDialogMode()` / `exitDialogMode()` calls from dialogs and file browser ✅
-- Stripping redundant dialog mode state from `FocusTraversalService` ✅
-- Replacing explicit dialog mode tracking with focus-tree inspection ✅
-- Preserving dialog focus trapping and Escape-key behavior ✅
-- Maintaining test/analyzer hygiene (370 tests, no warnings) ✅
+- Database schema v4 with `launch_arguments` column and migration path
+- `Game` entity and `GameModel` updates for the new field
+- `GameRepositoryImpl` mapping updates
+- `GameLauncher` interface redesign with lifecycle methods (`stopGame`, `isGameRunning`, `runningGamesStream`, `RunningGameInfo`)
+- `GameLauncherService` reimplementation with `Map<String, Process>` tracking, non-detached `Process.start`, and stream-based state emission
+- Test updates and additions across service, repository, and bloc layers
 
-The contract correctly does **not** include Sprint 2 items (Settings button cross-scope navigation, file browser polish), keeping the scope tightly bounded.
+The contract correctly defers all UI, routing, localization, and navigation changes to Sprints 2 and 3.
 
 ## Success Criteria Review
 
-- **SC1** (No `enterDialogMode`/`exitDialogMode` calls): Specific and measurable via grep. ✅ Adequate.
-- **SC2** (No dialog mode state fields in `FocusTraversalService`): Measurable via code inspection. ✅ Adequate.
-- **SC3** (Focus-tree inspection for dialog detection): Specific implementation guidance provided; measurable via code review and functional testing. ✅ Adequate.
-- **SC4** (Dialogs still trap focus): Requires manual/UI testing; reasonable for focus behavior. ✅ Adequate.
-- **SC5** (Escape key closes dialogs): Testable per-dialog. ✅ Adequate.
-- **SC6** (Focus restoration on dialog close): Good addition not explicitly listed in the spec's success criteria, but covers a real risk area. ✅ Adequate.
-- **SC7** (`gamepad_hint_provider.dart` updated): Excellent catch — this file calls `isInDialogMode()` and would break without explicit handling. ✅ Adequate.
-- **SC8** (370 tests pass, analyzer clean): Unambiguous. ✅ Adequate.
+| # | Criterion | Assessment |
+|---|---|---|
+| 1 | Database schema is version 4 with `launch_arguments` column | **Adequate** — specific files and verification steps listed. |
+| 2 | `Game` entity includes `launchArguments` | **Adequate** — field, `copyWith`, and `props` updates are specified. |
+| 3 | `GameModel` includes `launchArguments` with correct JSON/db mapping | **Adequate** — `fromMap`/`toMap` and code regeneration noted. |
+| 4 | `GameRepositoryImpl` round-trips `launchArguments` | **Adequate** — explicit round-trip test with non-null arguments specified. |
+| 5 | `GameLauncher` interface has new lifecycle methods | **Adequate** — all four new members (`stopGame`, `isGameRunning`, `runningGamesStream`, `RunningGameInfo`) are listed. |
+| 6 | `GameLauncherService` tracks processes in memory | **Adequate** — real process launch/stop/isRunning cycle is testable. |
+| 7 | `GameLauncherService` emits running games on stream | **Adequate** — stream emission after launch and after stop/exit are both specified. |
+| 8 | `GameLauncherService` parses and passes launch arguments | **Adequate** — argument splitting and forwarding to `Process.start` is testable. |
+| 9 | Existing `launchStatusStream` behavior is preserved | **Adequate** — backward compatibility is explicitly required. |
+| 10 | All tests pass | **Adequate** — zero failures required. |
+| 11 | Static analysis passes | **Adequate** — zero issues required. |
 
 ## Suggested Changes
 
-None blocking. Two minor observations for the Generator to be aware of during implementation:
+None. The contract is well-structured and ready for implementation.
 
-1. **`MetadataSearchDialog` is dead code**: It has no static `show()` method and is never instantiated anywhere in the codebase. SC6's claim that "Each dialog's `show()` static method (or equivalent) already captures... focus" is technically inaccurate for this file. However, since it's dead code and `showDialog` itself restores focus automatically, this has no runtime impact. The contract's instructions for this file are still correct.
-
-2. **`debugLabel` heuristic fragility**: The proposed `_isFocusInsideDialog()` relies on `debugLabel` strings (`ModalScope`, `Dialog`). These are Flutter internals that could change between framework versions. That said, this is consistent with the existing `_isOnNonInteractiveScope` pattern already in the codebase, so it's acceptable for this refactoring.
+One minor note for the Generator to keep in mind during implementation (not blocking):
+- The contract mentions regenerating `game_model.g.dart`, while the spec notes it "uses manual fromMap/toMap" and that `*.g.dart` is "not needed for GameModel." Regenerating is harmless if the model still carries `@JsonSerializable`, but the Generator should verify whether `game_model.g.dart` is actually used before treating regeneration as a hard requirement.
 
 ## Test Plan Preview
 
-I will verify this sprint by:
+During evaluation, I will verify the following:
 
-1. Running `grep -rn "enterDialogMode\|exitDialogMode" lib/` — must return zero matches.
-2. Inspecting `FocusTraversalService` to confirm `_isInDialogMode`, `_dialogTriggerNode`, `_dialogCancelCallback`, and the public `isInDialogMode()` method are gone.
-3. Confirming `_isFocusInsideDialog()` (or equivalent) exists and is used in `_handleKeyEvent`, `_handleCancel`, `_addToHistory`, and `moveFocus`.
-4. Verifying `gamepad_hint_provider.dart` no longer references `isInDialogMode()`.
-5. Running `flutter analyze` — must produce no warnings/errors.
-6. Running `flutter test` — all 370 tests must pass.
-7. If UI access is available, manually opening each dialog to confirm arrow-key trapping and Escape-to-close behavior.
-
----
-
-The contract is clear, measurable, achievable, and aligned with the spec. Approved for implementation.
+1. **Database migration**: Inspect `database_constants.dart` and `database_helper.dart` for version 4, the `launch_arguments` column, and the `onUpgrade` migration block.
+2. **Entity/Model correctness**: Check `Game` and `GameModel` for the new nullable field, proper `copyWith`, `props`, `fromMap`, and `toMap` handling.
+3. **Repository round-trip**: Run `game_repository_impl_test.dart` and confirm a game with `launchArguments: '-windowed --fullscreen'` is persisted and retrieved correctly.
+4. **Process lifecycle**: Run `game_launcher_service_test.dart` and verify:
+   - `isGameRunning` returns `true` after launch and `false` after `stopGame`
+   - `runningGamesStream` emits the correct map on launch and empty map on stop/exit
+   - Launch arguments are correctly split and passed to `Process.start`
+   - Existing `launchStatusStream` tests still pass
+5. **BLoC compatibility**: Run `home_bloc_test.dart` and confirm mock stubs for new `GameLauncher` members compile and pass.
+6. **Static analysis & full test suite**: Run `flutter analyze` and `flutter test` — both must pass with zero issues/failures.
+7. **Code review**: Check for dead code, unused imports, and that no UI/routing files were modified.

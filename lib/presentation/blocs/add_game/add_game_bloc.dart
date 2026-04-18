@@ -1,9 +1,12 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 
 import 'package:squirrel_play/data/models/discovered_executable_model.dart';
 import 'package:squirrel_play/data/repositories/home_repository_impl.dart';
+import 'package:squirrel_play/data/services/directory_metadata_chain/directory_context.dart';
+import 'package:squirrel_play/data/services/directory_metadata_chain/game_metadata_handler.dart';
 import 'package:squirrel_play/domain/entities/game.dart';
 import 'package:squirrel_play/domain/entities/scan_directory.dart';
 import 'package:squirrel_play/domain/repositories/game_repository.dart';
@@ -24,17 +27,20 @@ typedef OnGamesAddedCallback = void Function(List<Game> games);
 class AddGameBloc extends Bloc<AddGameEvent, AddGameState> {
   final GameRepository _gameRepository;
   final HomeRepositoryImpl _homeRepository;
+  final GameMetadataHandler _metadataHandler;
   final Uuid _uuid;
   final OnGamesAddedCallback? _onGamesAdded;
 
   AddGameBloc({
     required GameRepository gameRepository,
     required HomeRepositoryImpl homeRepository,
+    required GameMetadataHandler metadataHandler,
     ScanDirectoryRepository? scanDirectoryRepository,
     Uuid? uuid,
     OnGamesAddedCallback? onGamesAdded,
   })  : _gameRepository = gameRepository,
         _homeRepository = homeRepository,
+        _metadataHandler = metadataHandler,
         _uuid = uuid ?? const Uuid(),
         _onGamesAdded = onGamesAdded,
         super(const AddGameInitial()) {
@@ -76,13 +82,20 @@ class AddGameBloc extends Bloc<AddGameEvent, AddGameState> {
     }
   }
 
-  void _onFileSelected(FileSelected event, Emitter<AddGameState> emit) {
+  void _onFileSelected(FileSelected event, Emitter<AddGameState> emit) async {
     if (state is ManualAddForm) {
       final current = state as ManualAddForm;
+      final directoryPath = path.dirname(event.path);
+      final context = DirectoryContext(
+        executablePath: event.path,
+        fileName: event.fileName,
+        directoryPath: directoryPath,
+      );
+      await _metadataHandler.handle(context);
       emit(current.copyWith(
         executablePath: event.path,
         fileName: event.fileName,
-        name: event.fileName.replaceAll('.exe', ''),
+        name: context.title ?? event.fileName.replaceAll('.exe', ''),
       ));
     }
   }
@@ -272,10 +285,20 @@ class AddGameBloc extends Bloc<AddGameEvent, AddGameState> {
             continue; // Silently skip duplicates
           }
           
+          // Run the metadata chain to get a suggested title
+          final directoryPath = path.dirname(executable.path);
+          final context = DirectoryContext(
+            executablePath: executable.path,
+            fileName: executable.fileName,
+            directoryPath: directoryPath,
+          );
+          await _metadataHandler.handle(context);
+          executable.suggestedTitle = context.title;
+          
           // Create and save the game
           final game = Game(
             id: _uuid.v4(),
-            title: executable.fileName.replaceAll('.exe', ''),
+            title: executable.suggestedTitle ?? executable.fileName.replaceAll('.exe', ''),
             executablePath: executable.path,
             directoryId: executable.directoryId,
             addedDate: DateTime.now(),

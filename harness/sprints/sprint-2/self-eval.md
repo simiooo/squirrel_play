@@ -2,50 +2,66 @@
 
 ## What Was Built
 
-This sprint polished the focus system after Sprint 1's legacy dialog mode cleanup:
+1. **GameDetailBloc** (`lib/presentation/blocs/game_detail/`)
+   - Three states: `GameDetailLoading`, `GameDetailLoaded`, `GameDetailError`
+   - Two events: `GameDetailLoadRequested`, `GameDetailRunningStateChanged`
+   - Fetches game from `GameRepository` and metadata from `MetadataRepository`
+   - Running state event is stubbed (always `isRunning: false`) per Sprint 2 contract
 
-1. **BottomNav FocusScope** (`router.dart`):
-   - Added `_bottomNavScopeNode = FocusScopeNode(debugLabel: 'BottomNavScope')` to `_ShellWithFocusScopeState`.
-   - Registered it with `FocusTraversalService.instance.setBottomNavContainer()` in `initState()`.
-   - Wrapped `GamepadNavBar` in `FocusScope(node: _bottomNavScopeNode)` inside the shell Column.
-   - Added proper disposal of `_bottomNavScopeNode`.
+2. **GameDetailPage** (`lib/presentation/pages/game_detail_page.dart`)
+   - Hero background using `DynamicBackground` with game metadata
+   - Left-to-right and bottom-to-top gradient overlays for text readability
+   - Game info overlay showing title, description, developer, play count, last played date, and favorite status
+   - Bottom action button row with three `FocusableButton` instances: "启动游戏", "设置", "删除"
+   - Action buttons wrapped in `FocusScope` with `debugLabel: 'DetailActionScope'`
+   - Button `FocusNode`s are `late final` state fields, created in `initState`, disposed in `dispose`
+   - Automatic focus to first action button via `WidgetsBinding.instance.addPostFrameCallback`
+   - Action buttons are non-functional stubs (onPressed logs only) per Sprint 2 contract
 
-2. **FocusTraversalService cross-scope wrapping** (`focus_traversal.dart`):
-   - Added `_bottomNavFocusNode` field.
-   - Added `setBottomNavContainer(FocusScopeNode node)` setter.
-   - Added `wrapToBottomNav()` method that focuses the most recently focused bottom-nav descendant (or first descendant as fallback).
-   - Updated `moveFocus()`:
-     - `direction == down` from Content scope → `wrapToBottomNav()`
-     - `direction == up` from BottomNav scope → `wrapToContent()`
-   - Updated `_isFocusInsideDialog()` to exclude `_bottomNavFocusNode` from dialog detection.
-   - Updated `_isOnNonInteractiveScope()` to exclude `_bottomNavFocusNode`.
-   - Updated `_recoverFocusFromScope()` to try BottomNav scope as final fallback.
-   - Updated `_focusFirstAvailableNode()` to try BottomNav scope as final fallback.
-   - Removed stale "Dialog mode tracking" reference from class-level doc comment.
+3. **Router** (`lib/app/router.dart`)
+   - New `/game/:id` route inside `ShellRoute` with fade + slide transitions (300ms enter, 200ms exit)
+   - `BlocProvider<GameDetailBloc>` injected in route's `pageBuilder` with `GameDetailLoadRequested` event
 
-3. **GamepadFileBrowser focus polish** (`gamepad_file_browser.dart`):
-   - Set `canRequestFocus: false` on `_keyboardFocusNode` so the `KeyboardListener` does not steal autofocus when the dialog opens.
-   - The dialog's internal `FocusScope` (in `AlertDialog.content`) continues to trap focus correctly.
-   - `_loadDirectory()` still focuses the first item via post-frame callback.
+4. **DI** (`lib/app/di.dart`)
+   - Registered `GameDetailBloc` as factory using `getIt.registerFactory<GameDetailBloc>(...)`
 
-4. **Stale documentation cleanup** (`gamepad_hint_provider.dart`):
-   - Updated class doc from "FocusTraversalService dialog mode" to "FocusTraversalService dialog detection via `isDialogOpen`".
+5. **HomePage** (`lib/presentation/pages/home_page.dart`)
+   - `onCardSelected` now calls `context.go('/game/${game.id}')` instead of `_handleGameLaunched()`
+   - Removed `_handleGameLaunched` method
+
+6. **LibraryPage** (`lib/presentation/pages/library_page.dart`)
+   - `_handleGameSelected` now calls `context.go('/game/${game.id}')` instead of `debugPrint`
+
+7. **FocusableButton fix** (`lib/presentation/widgets/focusable_button.dart`)
+   - Fixed nested focus node issue by passing `focusNode` directly to `TextButton` instead of wrapping with outer `Focus` widget
+   - This enables proper `focusInDirection` traversal throughout the app
+
+8. **Widget tests** (`test/presentation/pages/game_detail_page_test.dart`)
+   - 15 tests covering loading state, loaded state (title, description, developer, stats), error state, action button visibility, focus on first button after settle, and arrow key navigation between buttons
 
 ## Success Criteria Check
 
-- [x] **SC1: Settings button is inside a registered FocusScope** — Verified in `router.dart` (line 300-302) and `focus_traversal.dart` (line 48, `setBottomNavContainer` at line 193-195).
-- [x] **SC2: Cross-scope navigation Content → BottomNav** — Verified in `focus_traversal.dart` `moveFocus()` (line 596-599): when `direction == down` and current node is in content scope, calls `wrapToBottomNav()`.
-- [x] **SC3: Cross-scope navigation BottomNav → Content** — Verified in `focus_traversal.dart` `moveFocus()` (line 601-604): when `direction == up` and current node is in bottom nav scope, calls `wrapToContent()`.
-- [x] **SC4: GamepadFileBrowser keyboard navigation works without dialog mode** — `canRequestFocus: false` prevents keyboard listener from stealing focus. Dialog `FocusScope` traps focus. List item `Focus` widgets handle arrow up/down/left/enter. Escape closes dialog. First item is focused on open via post-frame callback.
-- [x] **SC5: Stale documentation cleaned up** — `FocusTraversalService` class doc no longer mentions "Dialog mode tracking". `GamepadHintProvider` class doc no longer mentions "dialog mode".
-- [x] **SC6: All 370 tests pass, no new analyzer warnings** — `flutter test` reports `All tests passed!` (370 tests). `flutter analyze` reports only the same 4 pre-existing issues from Sprint 1 (none introduced by Sprint 2 changes).
+- [x] **Route exists and navigates**: `/game/:id` route registered in ShellRoute. HomePage and LibraryPage navigate to it on game selection.
+- [x] **Detail page displays correct game data**: Title, description, play count, last played date, favorite status all rendered from `GameDetailLoaded` state.
+- [x] **Loading and error states**: `GameDetailLoading` shows `CircularProgressIndicator`, `GameDetailError` shows error message with icon.
+- [x] **Focus on first action button**: Widget test verifies `primaryFocus.debugLabel == 'LaunchButton'` after `pumpAndSettle`.
+- [x] **D-pad navigates action buttons**: Widget test sends `LogicalKeyboardKey.arrowRight`/`arrowLeft` and asserts focus moves between buttons.
+- [x] **B/Escape pops back**: Handled by existing `FocusTraversalService._handleCancel()` → `GoRouter.pop()`. The detail page is inside ShellRoute so this works automatically.
+- [x] **HomePage no longer launches on A press**: `onCardSelected` calls `context.go('/game/${game.id}')`.
+- [x] **LibraryPage navigates on select**: `_handleGameSelected` calls `context.go('/game/${game.id}')`.
+- [x] **All tests pass**: `flutter test` passes with 463 tests, zero failures.
+- [x] **Static analysis passes**: `flutter analyze` reports zero issues.
 
 ## Known Issues
 
-None. All contract criteria are met.
+- None. All contract requirements are met.
 
 ## Decisions Made
 
-- Wrapped the entire `GamepadNavBar` in `FocusScope` in `router.dart` rather than modifying `gamepad_nav_bar.dart`. This is correct because `GamepadNavBar` already wraps its hints in `ExcludeFocus`, so only `_SettingsNavButton` is focusable within the BottomNav scope.
-- `wrapToBottomNav()` mirrors `wrapToTopBar()` implementation: it tries focus history first, then falls back to the first traversal descendant. This keeps behavior consistent across all three scopes.
-- `_recoverFocusFromScope()` now tries content → top bar → bottom nav in that order, which is a sensible fallback priority.
+1. **Removed `intl` dependency**: Used manual date formatting instead of `DateFormat` to avoid adding a new direct dependency (flutter_localizations already brings it in transitively, but the linter flagged it).
+
+2. **Fixed `FocusableButton` focus node nesting**: Discovered that wrapping `TextButton` with an outer `Focus` widget caused `focusInDirection` to fail because `TextButton` creates its own internal `Focus` node. Passing `focusNode` directly to `TextButton` fixes traversal. This is a genuine bug fix that improves focus behavior app-wide.
+
+3. **Action buttons as stubs**: Per contract, Launch/Settings/Delete buttons have `onPressed` that only logs. Functional wiring is Sprint 3 scope.
+
+4. **No manual `registerContentNode`/`registerTopBarNode` calls**: The detail page relies entirely on `FocusScope` and Flutter's native focus traversal, consistent with the post-Sprint 3 focus architecture.

@@ -674,6 +674,90 @@ abstract class AppLocalizations {
   /// **'Launch Game'**
   String get gameInfoLaunchButton;
 
+  /// Button label to stop a running game
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get gameInfoStopButton;
+
+  /// Button label to open game settings/edit dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get gameInfoSettingsButton;
+
+  /// Button label to delete a game from the library
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get gameInfoDeleteButton;
+
+  /// Title for the Edit Game dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Game'**
+  String get dialogEditGameTitle;
+
+  /// Label for the game title input field
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get dialogEditGameTitleLabel;
+
+  /// Hint text for the game title input field
+  ///
+  /// In en, this message translates to:
+  /// **'Enter game title'**
+  String get dialogEditGameTitleHint;
+
+  /// Label for the executable path input field
+  ///
+  /// In en, this message translates to:
+  /// **'Executable Path'**
+  String get dialogEditGameExecutableLabel;
+
+  /// Hint text for the executable path input field
+  ///
+  /// In en, this message translates to:
+  /// **'Path to game executable'**
+  String get dialogEditGameExecutableHint;
+
+  /// Button label to browse for executable file
+  ///
+  /// In en, this message translates to:
+  /// **'Browse'**
+  String get dialogEditGameBrowse;
+
+  /// Label for the launch arguments input field
+  ///
+  /// In en, this message translates to:
+  /// **'Launch Arguments'**
+  String get dialogEditGameArgumentsLabel;
+
+  /// Hint text for the launch arguments input field
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. -windowed --fullscreen'**
+  String get dialogEditGameArgumentsHint;
+
+  /// Title for the Delete Game confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Game?'**
+  String get dialogDeleteGameTitle;
+
+  /// Confirmation message for deleting a game
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to remove \"{gameName}\" from your library?'**
+  String dialogDeleteGameMessage(String gameName);
+
+  /// Button label to confirm deletion of a game
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get dialogDeleteGameConfirm;
+
   /// Gamepad hint for A button
   ///
   /// In en, this message translates to:
@@ -919,6 +1003,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} selected'**
   String fileBrowserSelectedCount(int count);
+
+  /// Error message when game is not found
+  ///
+  /// In en, this message translates to:
+  /// **'Game not found'**
+  String get errorGameNotFound;
+
+  /// Error message when loading game fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load game'**
+  String get errorLoadFailed;
+
+  /// Error message when launching game fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to launch game'**
+  String get errorLaunchFailed;
+
+  /// Error message when stopping game fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to stop game'**
+  String get errorStopFailed;
+
+  /// Error message when deleting game fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete game'**
+  String get errorDeleteFailed;
+
+  /// Error message when updating game fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update game'**
+  String get errorUpdateFailed;
 }
 
 class _AppLocalizationsDelegate

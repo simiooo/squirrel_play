@@ -513,6 +513,81 @@
     "description": "Button label to launch game"
   },
 
+  "gameInfoStopButton": "Stop",
+  "@gameInfoStopButton": {
+    "description": "Button label to stop a running game"
+  },
+
+  "gameInfoSettingsButton": "Settings",
+  "@gameInfoSettingsButton": {
+    "description": "Button label to open game settings/edit dialog"
+  },
+
+  "gameInfoDeleteButton": "Delete",
+  "@gameInfoDeleteButton": {
+    "description": "Button label to delete a game from the library"
+  },
+
+  "dialogEditGameTitle": "Edit Game",
+  "@dialogEditGameTitle": {
+    "description": "Title for the Edit Game dialog"
+  },
+
+  "dialogEditGameTitleLabel": "Title",
+  "@dialogEditGameTitleLabel": {
+    "description": "Label for the game title input field"
+  },
+
+  "dialogEditGameTitleHint": "Enter game title",
+  "@dialogEditGameTitleHint": {
+    "description": "Hint text for the game title input field"
+  },
+
+  "dialogEditGameExecutableLabel": "Executable Path",
+  "@dialogEditGameExecutableLabel": {
+    "description": "Label for the executable path input field"
+  },
+
+  "dialogEditGameExecutableHint": "Path to game executable",
+  "@dialogEditGameExecutableHint": {
+    "description": "Hint text for the executable path input field"
+  },
+
+  "dialogEditGameBrowse": "Browse",
+  "@dialogEditGameBrowse": {
+    "description": "Button label to browse for executable file"
+  },
+
+  "dialogEditGameArgumentsLabel": "Launch Arguments",
+  "@dialogEditGameArgumentsLabel": {
+    "description": "Label for the launch arguments input field"
+  },
+
+  "dialogEditGameArgumentsHint": "e.g. -windowed --fullscreen",
+  "@dialogEditGameArgumentsHint": {
+    "description": "Hint text for the launch arguments input field"
+  },
+
+  "dialogDeleteGameTitle": "Delete Game?",
+  "@dialogDeleteGameTitle": {
+    "description": "Title for the Delete Game confirmation dialog"
+  },
+
+  "dialogDeleteGameMessage": "Are you sure you want to remove \"{gameName}\" from your library?",
+  "@dialogDeleteGameMessage": {
+    "description": "Confirmation message for deleting a game",
+    "placeholders": {
+      "gameName": {
+        "type": "String"
+      }
+    }
+  },
+
+  "dialogDeleteGameConfirm": "Delete",
+  "@dialogDeleteGameConfirm": {
+    "description": "Button label to confirm deletion of a game"
+  },
+
   "gamepadAButton": "A: Select",
   "@gamepadAButton": {
     "description": "Gamepad hint for A button"
@@ -751,5 +826,35 @@
         "type": "int"
       }
     }
+  },
+
+  "errorGameNotFound": "Game not found",
+  "@errorGameNotFound": {
+    "description": "Error message when game is not found"
+  },
+
+  "errorLoadFailed": "Failed to load game",
+  "@errorLoadFailed": {
+    "description": "Error message when loading game fails"
+  },
+
+  "errorLaunchFailed": "Failed to launch game",
+  "@errorLaunchFailed": {
+    "description": "Error message when launching game fails"
+  },
+
+  "errorStopFailed": "Failed to stop game",
+  "@errorStopFailed": {
+    "description": "Error message when stopping game fails"
+  },
+
+  "errorDeleteFailed": "Failed to delete game",
+  "@errorDeleteFailed": {
+    "description": "Error message when deleting game fails"
+  },
+
+  "errorUpdateFailed": "Failed to update game",
+  "@errorUpdateFailed": {
+    "description": "Error message when updating game fails"
   }
 }

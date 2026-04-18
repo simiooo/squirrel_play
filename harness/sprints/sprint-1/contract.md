@@ -1,105 +1,205 @@
-# Sprint 1 Contract: Core Cleanup — Remove Legacy Dialog Mode
+# Sprint Contract: Foundation — Database, Entity & Process Tracking
 
-## Overview
-Remove all legacy `enterDialogMode()` / `exitDialogMode()` calls from dialogs and `FocusTraversalService`, eliminate the now-redundant dialog mode state fields, and replace dialog detection with focus-tree inspection so Flutter's native `showDialog()` `FocusScope` handles trapping automatically.
+## Scope
+
+Extend the data layer to support per-game launch arguments and rebuild the `GameLauncher` service from a fire-and-forget model to full process lifecycle tracking (launch, monitor, stop). All existing tests must continue to pass, and new tests must verify the process tracking behavior.
+
+This sprint delivers the foundational data and service changes that Sprint 2 (Game Detail Page UI) and Sprint 3 (Detail Page Actions) depend on.
+
+---
+
+## Implementation Plan
+
+### 1. Database Schema v4 — Launch Arguments Column
+
+**Files modified:**
+- `lib/data/datasources/local/database_constants.dart`
+- `lib/data/datasources/local/database_helper.dart`
+
+**Changes:**
+- Add `colLaunchArguments = 'launch_arguments'` to `DatabaseConstants` column names.
+- Update `databaseVersion` from `3` to `4`.
+- Update `createGamesTable` SQL to include `launch_arguments TEXT` column.
+- Add migration block in `database_helper.dart` `onUpgrade` for `oldVersion < 4`:
+  ```sql
+  ALTER TABLE games ADD COLUMN launch_arguments TEXT
+  ```
+
+### 2. `Game` Entity — `launchArguments` Field
+
+**File modified:**
+- `lib/domain/entities/game.dart`
+
+**Changes:**
+- Add `final String? launchArguments` field.
+- Update constructor with `this.launchArguments` (default `null`).
+- Update `copyWith` with `String? launchArguments` parameter.
+- Update `props` list to include `launchArguments`.
+
+### 3. `GameModel` — `launchArguments` Field
+
+**File modified:**
+- `lib/data/models/game_model.dart`
+
+**Changes:**
+- Add `final String? launchArguments` field with `@JsonKey(name: DatabaseConstants.colLaunchArguments)`.
+- Update constructor with `this.launchArguments` (default `null`).
+- Update `fromMap` to read `launch_arguments` from the database map.
+- Update `toMap` to write `launch_arguments` to the database map.
+- Update `copyWith` with `String? launchArguments` parameter.
+
+**Generated code:**
+- `lib/data/models/game_model.g.dart` must be regenerated via `flutter pub run build_runner build --delete-conflicting-outputs`.
+
+### 4. `GameRepository` & `GameRepositoryImpl` — Updated Mappings
+
+**Files modified:**
+- `lib/domain/repositories/game_repository.dart` *(no signature changes needed — the interface already accepts/returns `Game` entities, which now carry `launchArguments`)*
+- `lib/data/repositories/game_repository_impl.dart`
+
+**Changes:**
+- Update `_mapToEntity` to pass `launchArguments: model.launchArguments`.
+- Update `_mapToModel` to pass `launchArguments: entity.launchArguments`.
+
+### 5. `GameLauncher` Interface Redesign
+
+**File modified:**
+- `lib/domain/services/game_launcher.dart`
+
+**Changes:**
+Keep existing members and add:
+- `Future<void> stopGame(String gameId)` — forcefully terminates a running game process.
+- `bool isGameRunning(String gameId)` — synchronous check for whether a game is currently tracked.
+- `Stream<Map<String, RunningGameInfo>> get runningGamesStream` — broadcast stream of all running games.
+- New class `RunningGameInfo`:
+  - `final String gameId`
+  - `final String title`
+  - `final DateTime startTime`
+  - `final int? pid` *(optional, if available from `Process`)*
+
+The existing `LaunchResult`, `LaunchStatus` enum, and `launchStatusStream` are preserved unchanged to minimize blast radius in `HomeBloc` and other consumers.
+
+### 6. `GameLauncherService` Reimplementation
+
+**File modified:**
+- `lib/data/services/game_launcher_service.dart`
+
+**Changes:**
+- Replace `ProcessStartMode.detached` with non-detached `Process.start` so the `Process` object is retained.
+- Add `final Map<String, Process> _runningProcesses` to track active processes by game ID.
+- Add `final StreamController<Map<String, RunningGameInfo>> _runningGamesController` (broadcast) for `runningGamesStream`.
+- Add `Map<String, RunningGameInfo> _runningGames` to hold the current snapshot.
+- `launchGame(Game game)`:
+  1. Parse `game.launchArguments` (if non-null) using `shellSplit` or simple space-splitting into a `List<String>`.
+  2. Call `Process.start(game.executablePath, args, workingDirectory: ..., mode: ProcessStartMode.normal)`.
+  3. On success, store the `Process` in `_runningProcesses[game.id]`.
+  4. Create a `RunningGameInfo` and add it to `_runningGames`.
+  5. Emit the updated map on `_runningGamesController`.
+  6. Attach an `process.exitCode.then(...)` listener to clean up the map and emit on exit.
+  7. Preserve existing `launchStatusStream` behavior (idle → launching → idle/error).
+- `stopGame(String gameId)`:
+  1. Look up the process in `_runningProcesses`.
+  2. Call `process.kill()`.
+  3. Remove from `_runningProcesses` and `_runningGames`.
+  4. Emit updated map on `_runningGamesController`.
+- `isGameRunning(String gameId)`:
+  1. Return `_runningProcesses.containsKey(gameId)`.
+- `dispose()`:
+  1. Close `_runningGamesController`.
+  2. Preserve existing `_statusController.close()` and `_resetTimer?.cancel()`.
+
+### 7. Dependency Injection
+
+**File modified:**
+- `lib/app/di.dart`
+
+**Changes:**
+- No constructor signature changes expected for `GameLauncherService`, so registration stays the same.
+- Verify `getIt.registerSingleton<GameLauncher>(getIt<GameLauncherService>())` still compiles after interface changes.
+
+### 8. BLoC Compatibility
+
+**Files that create `Game` objects (no changes required if `launchArguments` defaults to `null`, but verify compilation):**
+- `lib/presentation/blocs/add_game/add_game_bloc.dart`
+- `lib/presentation/blocs/quick_scan/quick_scan_bloc.dart`
+- `lib/presentation/blocs/steam_scanner/steam_scanner_bloc.dart`
+
+These blocs construct `Game` instances without `launchArguments`; since the field is nullable with a default of `null`, they compile unchanged.
+
+### 9. Tests
+
+**Files modified:**
+- `test/data/services/game_launcher_service_test.dart`
+- `test/data/repositories/game_repository_impl_test.dart`
+- `test/presentation/blocs/home/home_bloc_test.dart`
+
+**New tests to add in `game_launcher_service_test.dart`:**
+- `isGameRunning returns false when no game is running`
+- `isGameRunning returns true after successful launch`
+- `stopGame terminates a running process`
+- `runningGamesStream emits empty map initially`
+- `runningGamesStream emits game info after launch`
+- `runningGamesStream emits empty map after process exits naturally`
+- `launchGame passes parsed arguments to Process.start`
+- `launchGame with null launchArguments passes empty args`
+
+**Updates to `game_repository_impl_test.dart`:**
+- Update the inline `CREATE TABLE games` schema in the test setup to include `launch_arguments TEXT`.
+- Update all `Game(...)` constructor calls in tests to include `launchArguments: null` where needed (or rely on default).
+- Add a CRUD test that round-trips a game with `launchArguments: '-windowed --fullscreen'` and verifies it is persisted and retrieved correctly.
+
+**Updates to `home_bloc_test.dart`:**
+- Add mock stubs for the new `GameLauncher` members:
+  ```dart
+  when(() => gameLauncher.isGameRunning(any())).thenReturn(false);
+  when(() => gameLauncher.runningGamesStream).thenAnswer((_) => Stream.value({}));
+  ```
+- The existing `LaunchStatus` stream subscription behavior is preserved.
+
+---
 
 ## Success Criteria
 
-### SC1: No `enterDialogMode` or `exitDialogMode` calls remain in the codebase
-- A grep for `enterDialogMode` or `exitDialogMode` anywhere under `lib/` returns zero matches.
-- The methods `enterDialogMode()` and `exitDialogMode()` are removed from `FocusTraversalService`.
+| # | Criterion | How to Verify |
+|---|-----------|---------------|
+| 1 | Database schema is version 4 with `launch_arguments` column | Inspect `database_constants.dart`: `databaseVersion == 4`, `createGamesTable` contains `launch_arguments TEXT`. Inspect `database_helper.dart`: `onUpgrade` handles `oldVersion < 4`. |
+| 2 | `Game` entity includes `launchArguments` | `lib/domain/entities/game.dart` has nullable `launchArguments` field, updated `copyWith`, updated `props`. |
+| 3 | `GameModel` includes `launchArguments` with correct JSON/db mapping | `lib/data/models/game_model.dart` has field, `fromMap`/`toMap` handle it, `game_model.g.dart` regenerated. |
+| 4 | `GameRepositoryImpl` round-trips `launchArguments` | Repository test creates game with arguments, persists, fetches, and asserts `launchArguments` matches. |
+| 5 | `GameLauncher` interface has new lifecycle methods | `lib/domain/services/game_launcher.dart` defines `stopGame`, `isGameRunning`, `runningGamesStream`, and `RunningGameInfo`. |
+| 6 | `GameLauncherService` tracks processes in memory | Service test launches a real long-running dummy process (e.g., `sleep 5`), asserts `isGameRunning` is `true`, calls `stopGame`, asserts `false`. |
+| 7 | `GameLauncherService` emits running games on stream | Service test verifies `runningGamesStream` emits a map containing the launched game, then emits empty map after stop/exit. |
+| 8 | `GameLauncherService` parses and passes launch arguments | Service test verifies that `game.launchArguments` is split and passed as `List<String>` to `Process.start`. |
+| 9 | Existing `launchStatusStream` behavior is preserved | Existing `game_launcher_service_test.dart` tests still pass (idle → launching → idle/error, 2-second timer). |
+| 10 | All tests pass | Run `flutter test` — zero failures. |
+| 11 | Static analysis passes | Run `flutter analyze` — zero issues. |
 
-### SC2: `FocusTraversalService` no longer contains dialog mode state fields
-- The following fields are deleted from `FocusTraversalService`:
-  - `bool _isInDialogMode`
-  - `FocusNode? _dialogTriggerNode`
-  - `VoidCallback? _dialogCancelCallback`
-- The method `bool isInDialogMode()` is deleted.
+---
 
-### SC3: `FocusTraversalService` uses focus-tree inspection to detect dialogs
-- A new helper method (e.g., `bool _isFocusInsideDialog()`) is added that inspects the focus tree (e.g., by walking up ancestors of `WidgetsBinding.instance.focusManager.primaryFocus` and checking for `ModalScope` or `FocusScope` nodes created by `showDialog`).
-- `_handleKeyEvent` no longer references `_isInDialogMode`; instead, if a dialog is detected via focus-tree inspection, arrow keys and Escape are allowed to pass through to the dialog's own `KeyboardListener`.
-- `_handleCancel` no longer references `_isInDialogMode`; if focus is inside a dialog, the method returns early (letting the dialog handle its own close logic).
-- `_addToHistory` no longer skips history when `_isInDialogMode`; instead, it skips nodes that are inside a dialog scope (detected via focus-tree inspection).
-- `moveFocus` no longer has a special `_isInDialogMode` branch; it lets Flutter's built-in `FocusScope` handle dialog trapping.
+## Out of Scope for This Sprint
 
-### SC4: Dialogs still trap focus correctly
-- Each dialog already wraps its content in either `FocusScope` or `KeyboardListener`; this must remain unchanged.
-- Arrow-key navigation within each dialog must continue to work via the dialog's own `KeyboardListener` (not via `FocusTraversalService`).
+- **Game Detail Page UI** — no new pages, routes, or widgets (Sprint 2).
+- **Launch/Stop/Edit/Delete actions from a detail page** — no UI wiring for these operations (Sprint 3).
+- **Localization strings** — no new ARB entries (Sprint 3).
+- **Play count / last played date logic changes** — behavior stays as-is; the detail page will handle this in Sprint 3.
+- **Home page navigation change** — `HomePage` still launches games directly via `HomeGameLaunched`; changing to navigate to a detail page is Sprint 2.
+- **Argument parsing complexity** — simple space-delimited splitting is sufficient; shell-style quoting is not required.
+- **Cross-platform process semantics** — Linux primary target; Windows `Process` behavior is acceptable as-is.
 
-### SC5: Escape key closes dialogs
-- `AddGameDialog`, `DeleteGameDialog`, `ApiKeyDialog`, `MetadataSearchDialog`, and `GamepadFileBrowser` each have their own `KeyboardListener` that handles `LogicalKeyboardKey.escape` to close the dialog. These listeners must remain functional after removing `enterDialogMode`/`exitDialogMode`.
-- The `showDialog` barrier and dialog close animations continue to work as before.
+---
 
-### SC6: Focus restoration on dialog close remains intact
-- Each dialog's `show()` static method (or equivalent) already captures `FocusManager.instance.primaryFocus` before opening and restores it after close. This behavior must be preserved.
+## Deliverables Summary
 
-### SC7: `gamepad_hint_provider.dart` updated to use focus-tree inspection
-- `gamepad_hint_provider.dart` currently calls `FocusTraversalService.instance.isInDialogMode()`. It must be updated to use a new public helper on `FocusTraversalService` (or equivalent focus-tree check) to determine whether the current focus is inside a dialog.
-
-### SC8: All 370 existing tests pass and analyzer is clean
-- `flutter test` exits with 0 failures.
-- `flutter analyze` produces no new warnings or errors.
-
-## Files to Modify
-
-| File | Expected Changes |
-|------|-----------------|
-| `lib/presentation/navigation/focus_traversal.dart` | Remove `_isInDialogMode`, `_dialogTriggerNode`, `_dialogCancelCallback`, `isInDialogMode()`, `enterDialogMode()`, `exitDialogMode()`. Remove all `_isInDialogMode` references in `_handleKeyEvent`, `_handleCancel`, `_addToHistory`, `moveFocus`. Add `_isFocusInsideDialog()` helper using ancestor walk (e.g., checking for `ModalScope` in `debugLabel`). Update `_handleKeyEvent`, `_handleCancel`, `_addToHistory`, `moveFocus` to use the new helper. |
-| `lib/presentation/widgets/add_game_dialog.dart` | Remove `enterDialogMode` call from `initState`. Remove `exitDialogMode` call from `_closeDialog`. Remove `_triggerNode` field (no longer needed). Keep focus restoration in `show()` and `KeyboardListener` escape handling. |
-| `lib/presentation/widgets/delete_game_dialog.dart` | Remove `enterDialogMode` call from `initState`. Remove `exitDialogMode` calls from `_confirmDelete` and `_cancel`. Remove `_triggerNode` field. Keep focus restoration in `show()` and `KeyboardListener` escape handling. |
-| `lib/presentation/widgets/api_key_dialog.dart` | Remove `enterDialogMode` call from `initState`. Remove `exitDialogMode` calls from `_save`, `_skip`, and `dispose`. Remove `_triggerNode` field. Keep focus restoration in `show()` and `KeyboardListener` escape handling. |
-| `lib/presentation/widgets/metadata_search_dialog.dart` | Remove `_enterDialogMode()` method and its call from `initState`. Remove `exitDialogMode` calls from `_confirmSelection`, `_cancel`, and `dispose`. Remove `_triggerNode` field. Keep `KeyboardListener` escape handling. |
-| `lib/presentation/widgets/gamepad_file_browser.dart` | Remove `isInDialogMode()` check and `exitDialogMode()` call from `dispose`. Remove `enterDialogMode` call from `_loadDirectory`. Remove `_triggerNode` field. Keep `FocusScope` wrapper and `KeyboardListener` escape handling. |
-| `lib/presentation/navigation/gamepad_hint_provider.dart` | Replace `FocusTraversalService.instance.isInDialogMode()` with a focus-tree-based check (either via a new public `bool isDialogOpen` getter on `FocusTraversalService` or an inline equivalent). |
-
-## Files to Delete
-None.
-
-## Implementation Notes
-
-### Focus-tree-based dialog detection pattern
-Flutter's `showDialog` creates a `ModalRoute` which introduces a `FocusScope` whose `debugLabel` contains `"ModalScope"` or `"Focus Scope"`. The helper should walk up from `WidgetsBinding.instance.focusManager.primaryFocus` and return `true` if any ancestor is a `FocusScopeNode` that is NOT `_topBarFocusNode` or `_contentFocusNode` and has a label suggesting it's a modal/dialog scope. A recommended signature:
-
-```dart
-bool _isFocusInsideDialog() {
-  final node = WidgetsBinding.instance.focusManager.primaryFocus;
-  if (node == null) return false;
-  var current = node.parent;
-  while (current != null) {
-    if (current is FocusScopeNode &&
-        current != _topBarFocusNode &&
-        current != _contentFocusNode) {
-      final label = current.debugLabel ?? '';
-      if (label.contains('ModalScope') || label.contains('Dialog')) {
-        return true;
-      }
-    }
-    current = current.parent;
-  }
-  return false;
-}
-```
-
-This is a refinement of the existing `_isOnNonInteractiveScope` pattern already present in `FocusTraversalService`.
-
-### What to keep
-- **Do NOT** remove `FocusScope` wrappers from dialog content.
-- **Do NOT** remove `KeyboardListener` escape handlers from dialogs.
-- **Do NOT** remove focus-restoration logic in `show()` methods.
-- **Do NOT** modify row/grid navigation, cross-scope wrapping (`wrapToTopBar`/`wrapToContent`), activation callbacks, or focus history beyond replacing the `_isInDialogMode` guard.
-
-### What to remove
-- `_triggerNode` fields in dialogs are safe to remove because `showDialog` already restores focus when the dialog closes (each dialog's `show()` captures and restores the trigger node explicitly).
-- In `ApiKeyDialog`, the `exitDialogMode()` call in `dispose()` is safe to remove because the dialog's `show()` method restores focus after the dialog is popped.
-- In `GamepadFileBrowser`, the `exitDialogMode()` call in `dispose()` and the `enterDialogMode()` call in `_loadDirectory()` are safe to remove because `showDialog` handles focus scope automatically.
-
-## Testing Instructions
-1. Run `flutter analyze` — verify no warnings or errors.
-2. Run `flutter test` — verify all 370 tests pass.
-3. Manual verification (if evaluator has UI access):
-   - Open each dialog (`AddGameDialog`, `DeleteGameDialog`, `ApiKeyDialog`, `MetadataSearchDialog`, `GamepadFileBrowser`) using the app.
-   - Confirm arrow keys navigate within the dialog only (focus does not escape to the page behind).
-   - Confirm Escape / B button closes the dialog.
-   - Confirm focus returns to the element that opened the dialog.
-4. Run `grep -rn "enterDialogMode\|exitDialogMode" lib/` — verify zero matches.
+| File | Action | Reason |
+|------|--------|--------|
+| `lib/data/datasources/local/database_constants.dart` | Modify | Schema v4, new column |
+| `lib/data/datasources/local/database_helper.dart` | Modify | Migration 3→4 |
+| `lib/domain/entities/game.dart` | Modify | `launchArguments` field |
+| `lib/data/models/game_model.dart` | Modify | `launchArguments` field + mapping |
+| `lib/data/models/game_model.g.dart` | Regenerate | JSON serialization |
+| `lib/data/repositories/game_repository_impl.dart` | Modify | Map `launchArguments` |
+| `lib/domain/services/game_launcher.dart` | Modify | New interface methods |
+| `lib/data/services/game_launcher_service.dart` | Modify | Process tracking implementation |
+| `test/data/services/game_launcher_service_test.dart` | Modify + expand | Lifecycle tests |
+| `test/data/repositories/game_repository_impl_test.dart` | Modify | Schema + round-trip tests |
+| `test/presentation/blocs/home/home_bloc_test.dart` | Modify | Mock new interface members |

@@ -6,6 +6,7 @@ import 'package:squirrel_play/data/datasources/local/database_constants.dart';
 import 'package:squirrel_play/data/datasources/local/database_helper.dart';
 import 'package:squirrel_play/data/models/game_metadata_model.dart';
 import 'package:squirrel_play/data/services/metadata/metadata_aggregator.dart';
+import 'package:squirrel_play/data/services/metadata/rawg_batch_search_service.dart';
 import 'package:squirrel_play/data/services/metadata_service.dart';
 import 'package:squirrel_play/domain/entities/batch_metadata_progress.dart';
 import 'package:squirrel_play/domain/entities/game.dart';
@@ -23,6 +24,7 @@ class MetadataRepositoryImpl implements MetadataRepository {
   final MetadataService _metadataService;
   final MetadataAggregator _metadataAggregator;
   final GameRepository _gameRepository;
+  final RawgBatchSearchService? _rawgBatchSearchService;
 
   /// Stream controller for batch progress updates.
   final _batchProgressController = StreamController<BatchMetadataProgress>.broadcast();
@@ -35,10 +37,12 @@ class MetadataRepositoryImpl implements MetadataRepository {
     required MetadataService metadataService,
     required MetadataAggregator metadataAggregator,
     required GameRepository gameRepository,
+    RawgBatchSearchService? rawgBatchSearchService,
   })  : _databaseHelper = databaseHelper,
         _metadataService = metadataService,
         _metadataAggregator = metadataAggregator,
-        _gameRepository = gameRepository;
+        _gameRepository = gameRepository,
+        _rawgBatchSearchService = rawgBatchSearchService;
 
   @override
   Future<GameMetadata?> getMetadataForGame(String gameId) async {
@@ -159,55 +163,113 @@ class MetadataRepositoryImpl implements MetadataRepository {
     var completed = 0;
     var failed = 0;
 
-    for (var i = 0; i < games.length; i++) {
-      final game = games[i];
+    // Pre-check existing metadata and categorize games
+    final existingResults = <GameMetadata>[];
+    final steamGames = <Game>[];
+    final nonSteamGames = <Game>[];
 
-      // Emit progress
-      _batchProgressController.add(BatchMetadataProgress(
-        total: games.length,
-        completed: completed,
-        failed: failed,
-        currentGame: game.title,
-        isComplete: false,
-      ));
+    for (final game in games) {
+      final existing = await getMetadataForGame(game.id);
+      if (existing != null) {
+        existingResults.add(existing);
+        completed++;
+      } else if (_isSteamGame(game, null)) {
+        steamGames.add(game);
+      } else {
+        nonSteamGames.add(game);
+      }
+    }
 
+    // Process Steam games one by one
+    for (final game in steamGames) {
+      _emitProgress(games.length, completed, failed, game.title);
       try {
-        // Check if already has metadata
-        final existing = await getMetadataForGame(game.id);
-        if (existing != null) {
-          results.add(existing);
-          completed++;
-          continue;
-        }
-
-        // Check if this is a Steam game
-        final isSteamGame = _isSteamGame(game, null);
-
-        GameMetadata? metadata;
-        if (isSteamGame) {
-          // Use aggregator for Steam games
-          metadata = await _metadataAggregator.fetchMetadata(game);
-        } else {
-          // Use traditional flow for non-Steam games
-          metadata = await fetchAndCacheMetadata(game.id, game.title);
-        }
-
+        final metadata = await _metadataAggregator.fetchMetadata(game);
         if (metadata != null) {
           results.add(metadata);
           completed++;
         } else {
           failed++;
         }
-      } on MetadataMatchRequiredException {
-        // Low confidence match - count as failed for now
-        // User will need to manually match later
-        failed++;
       } catch (e) {
         developer.log(
           'MetadataRepository: Error fetching metadata for ${game.title}: $e',
           name: 'MetadataRepositoryImpl',
         );
         failed++;
+      }
+    }
+
+    // Batch process non-Steam games
+    if (nonSteamGames.isNotEmpty) {
+      if (_rawgBatchSearchService != null) {
+        final batchResults =
+            await _rawgBatchSearchService.searchMultipleGamesSync(
+          nonSteamGames.map((g) => g.title).toList(),
+        );
+
+        for (var i = 0; i < nonSteamGames.length; i++) {
+          final game = nonSteamGames[i];
+          final batchResult = batchResults[i];
+
+          _emitProgress(games.length, completed, failed, game.title);
+
+          try {
+            if (batchResult.success &&
+                batchResult.match != null &&
+                batchResult.match!.isAutoMatch) {
+              final metadata = await _metadataService.fetchMetadata(
+                game.id,
+                batchResult.match!.gameId,
+              );
+              if (metadata != null) {
+                await saveMetadata(metadata);
+                results.add(metadata);
+                completed++;
+              } else {
+                failed++;
+              }
+            } else if (batchResult.success &&
+                batchResult.match != null &&
+                !batchResult.match!.isAutoMatch) {
+              throw MetadataMatchRequiredException(
+                gameId: game.id,
+                gameTitle: game.title,
+                alternatives: batchResult.match!.alternatives,
+              );
+            } else {
+              failed++;
+            }
+          } on MetadataMatchRequiredException {
+            failed++;
+          } catch (e) {
+            developer.log(
+              'MetadataRepository: Error fetching metadata for '
+              '${game.title}: $e',
+              name: 'MetadataRepositoryImpl',
+            );
+            failed++;
+          }
+        }
+      } else {
+        // Fallback: process non-Steam games one by one
+        for (final game in nonSteamGames) {
+          _emitProgress(games.length, completed, failed, game.title);
+          try {
+            final metadata = await fetchAndCacheMetadata(game.id, game.title);
+            results.add(metadata);
+            completed++;
+          } on MetadataMatchRequiredException {
+            failed++;
+          } catch (e) {
+            developer.log(
+              'MetadataRepository: Error fetching metadata for '
+              '${game.title}: $e',
+              name: 'MetadataRepositoryImpl',
+            );
+            failed++;
+          }
+        }
       }
     }
 
@@ -220,7 +282,23 @@ class MetadataRepositoryImpl implements MetadataRepository {
       isComplete: true,
     ));
 
-    return results;
+    return [...existingResults, ...results];
+  }
+
+  /// Emits a progress update via the batch progress stream.
+  void _emitProgress(
+    int total,
+    int completed,
+    int failed,
+    String? currentGame,
+  ) {
+    _batchProgressController.add(BatchMetadataProgress(
+      total: total,
+      completed: completed,
+      failed: failed,
+      currentGame: currentGame,
+      isComplete: false,
+    ));
   }
 
   @override
@@ -340,9 +418,12 @@ class MetadataRepositoryImpl implements MetadataRepository {
     return GameMetadata(
       gameId: model.gameId,
       externalId: model.externalId,
+      title: model.title,
       description: model.description,
       coverImageUrl: model.coverImageUrl,
+      cardImageUrl: model.cardImageUrl,
       heroImageUrl: model.heroImageUrl,
+      logoImageUrl: model.logoImageUrl,
       genres: genres,
       screenshots: screenshots,
       releaseDate: model.releaseDate,
@@ -358,9 +439,12 @@ class MetadataRepositoryImpl implements MetadataRepository {
     return GameMetadataModel(
       gameId: entity.gameId,
       externalId: entity.externalId,
+      title: entity.title,
       description: entity.description,
       coverImageUrl: entity.coverImageUrl,
+      cardImageUrl: entity.cardImageUrl,
       heroImageUrl: entity.heroImageUrl,
+      logoImageUrl: entity.logoImageUrl,
       releaseDate: entity.releaseDate,
       rating: entity.rating,
       developer: entity.developer,

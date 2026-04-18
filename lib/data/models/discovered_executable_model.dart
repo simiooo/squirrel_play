@@ -19,6 +19,10 @@ class DiscoveredExecutableModel {
   /// Whether this executable is already in the game library.
   final bool isAlreadyAdded;
 
+  /// Suggested title from the metadata chain (e.g., Steam manifest name
+  /// or cleaned filename). Populated at scan confirmation time.
+  String? suggestedTitle;
+
   /// Creates a DiscoveredExecutableModel instance.
   DiscoveredExecutableModel({
     required this.path,
@@ -26,6 +30,7 @@ class DiscoveredExecutableModel {
     required this.directoryId,
     this.isSelected = false,
     this.isAlreadyAdded = false,
+    this.suggestedTitle,
   });
 
   /// Creates a copy of this DiscoveredExecutableModel with the given fields replaced.
@@ -35,6 +40,7 @@ class DiscoveredExecutableModel {
     String? directoryId,
     bool? isSelected,
     bool? isAlreadyAdded,
+    String? suggestedTitle,
   }) {
     return DiscoveredExecutableModel(
       path: path ?? this.path,
@@ -42,6 +48,7 @@ class DiscoveredExecutableModel {
       directoryId: directoryId ?? this.directoryId,
       isSelected: isSelected ?? this.isSelected,
       isAlreadyAdded: isAlreadyAdded ?? this.isAlreadyAdded,
+      suggestedTitle: suggestedTitle ?? this.suggestedTitle,
     );
   }
 
@@ -57,7 +64,8 @@ class DiscoveredExecutableModel {
         'fileName: $fileName, '
         'directoryId: $directoryId, '
         'isSelected: $isSelected, '
-        'isAlreadyAdded: $isAlreadyAdded)';
+        'isAlreadyAdded: $isAlreadyAdded, '
+        'suggestedTitle: $suggestedTitle)';
   }
 
   @override

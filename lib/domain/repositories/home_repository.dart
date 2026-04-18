@@ -21,4 +21,10 @@ abstract class HomeRepository {
   /// Used by HomeBloc for reactive updates. The stream emits the full
   /// list of games whenever any change occurs.
   Stream<List<Game>> watchAllGames();
+
+  /// Notifies watchers that games have changed.
+  ///
+  /// Should be called when games are added, deleted, or updated
+  /// to trigger reactive UI updates.
+  Future<void> notifyGamesChanged();
 }

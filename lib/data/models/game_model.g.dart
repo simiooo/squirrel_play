@@ -21,6 +21,7 @@ GameModel _$GameModelFromJson(Map<String, dynamic> json) => GameModel(
       ? false
       : GameModel._boolFromJson((json['is_favorite'] as num).toInt()),
   playCount: (json['play_count'] as num?)?.toInt() ?? 0,
+  launchArguments: json['launch_arguments'] as String?,
 );
 
 Map<String, dynamic> _$GameModelToJson(GameModel instance) => <String, dynamic>{
@@ -34,4 +35,5 @@ Map<String, dynamic> _$GameModelToJson(GameModel instance) => <String, dynamic>{
   ),
   'is_favorite': GameModel._boolToJson(instance.isFavorite),
   'play_count': instance.playCount,
+  'launch_arguments': instance.launchArguments,
 };

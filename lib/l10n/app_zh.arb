@@ -513,6 +513,81 @@
     "description": "启动游戏的按钮标签"
   },
 
+  "gameInfoStopButton": "停止",
+  "@gameInfoStopButton": {
+    "description": "停止运行中游戏的按钮标签"
+  },
+
+  "gameInfoSettingsButton": "设置",
+  "@gameInfoSettingsButton": {
+    "description": "打开游戏设置/编辑对话框的按钮标签"
+  },
+
+  "gameInfoDeleteButton": "删除",
+  "@gameInfoDeleteButton": {
+    "description": "从库中删除游戏的按钮标签"
+  },
+
+  "dialogEditGameTitle": "编辑游戏",
+  "@dialogEditGameTitle": {
+    "description": "编辑游戏对话框的标题"
+  },
+
+  "dialogEditGameTitleLabel": "标题",
+  "@dialogEditGameTitleLabel": {
+    "description": "游戏标题输入框的标签"
+  },
+
+  "dialogEditGameTitleHint": "输入游戏标题",
+  "@dialogEditGameTitleHint": {
+    "description": "游戏标题输入框的提示文本"
+  },
+
+  "dialogEditGameExecutableLabel": "可执行文件路径",
+  "@dialogEditGameExecutableLabel": {
+    "description": "可执行文件路径输入框的标签"
+  },
+
+  "dialogEditGameExecutableHint": "游戏可执行文件的路径",
+  "@dialogEditGameExecutableHint": {
+    "description": "可执行文件路径输入框的提示文本"
+  },
+
+  "dialogEditGameBrowse": "浏览",
+  "@dialogEditGameBrowse": {
+    "description": "浏览可执行文件按钮的标签"
+  },
+
+  "dialogEditGameArgumentsLabel": "启动参数",
+  "@dialogEditGameArgumentsLabel": {
+    "description": "启动参数输入框的标签"
+  },
+
+  "dialogEditGameArgumentsHint": "例如：-windowed --fullscreen",
+  "@dialogEditGameArgumentsHint": {
+    "description": "启动参数输入框的提示文本"
+  },
+
+  "dialogDeleteGameTitle": "删除游戏？",
+  "@dialogDeleteGameTitle": {
+    "description": "删除游戏确认对话框的标题"
+  },
+
+  "dialogDeleteGameMessage": "确定要从库中删除\"{gameName}\"吗？",
+  "@dialogDeleteGameMessage": {
+    "description": "删除游戏的确认消息",
+    "placeholders": {
+      "gameName": {
+        "type": "String"
+      }
+    }
+  },
+
+  "dialogDeleteGameConfirm": "删除",
+  "@dialogDeleteGameConfirm": {
+    "description": "确认删除游戏的按钮标签"
+  },
+
   "gamepadAButton": "A：选择",
   "@gamepadAButton": {
     "description": "A按钮的游戏手柄提示"
@@ -751,5 +826,35 @@
         "type": "int"
       }
     }
+  },
+
+  "errorGameNotFound": "游戏未找到",
+  "@errorGameNotFound": {
+    "description": "游戏未找到时的错误消息"
+  },
+
+  "errorLoadFailed": "加载游戏失败",
+  "@errorLoadFailed": {
+    "description": "加载游戏失败时的错误消息"
+  },
+
+  "errorLaunchFailed": "启动游戏失败",
+  "@errorLaunchFailed": {
+    "description": "启动游戏失败时的错误消息"
+  },
+
+  "errorStopFailed": "停止游戏失败",
+  "@errorStopFailed": {
+    "description": "停止游戏失败时的错误消息"
+  },
+
+  "errorDeleteFailed": "删除游戏失败",
+  "@errorDeleteFailed": {
+    "description": "删除游戏失败时的错误消息"
+  },
+
+  "errorUpdateFailed": "更新游戏失败",
+  "@errorUpdateFailed": {
+    "description": "更新游戏失败时的错误消息"
   }
 }

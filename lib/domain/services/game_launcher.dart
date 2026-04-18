@@ -10,6 +10,17 @@ abstract class GameLauncher {
   /// to monitor the launch progress.
   Future<LaunchResult> launchGame(Game game);
 
+  /// Forcefully terminates a running game process.
+  Future<void> stopGame(String gameId);
+
+  /// Synchronous check for whether a game is currently tracked.
+  bool isGameRunning(String gameId);
+
+  /// Stream of running games updates.
+  ///
+  /// Emits a map of game IDs to their running process info.
+  Stream<Map<String, RunningGameInfo>> get runningGamesStream;
+
   /// Stream of launch status updates.
   ///
   /// Emits status changes: idle → launching → idle (after 2s delay)
@@ -40,3 +51,26 @@ class LaunchResult {
 ///
 /// Note: After successful launch, status returns to idle after 2 seconds.
 enum LaunchStatus { idle, launching, error }
+
+/// Information about a currently running game process.
+class RunningGameInfo {
+  /// Unique identifier of the game.
+  final String gameId;
+
+  /// Title of the game.
+  final String title;
+
+  /// When the game process started.
+  final DateTime startTime;
+
+  /// Process ID, if available.
+  final int? pid;
+
+  /// Creates a RunningGameInfo.
+  const RunningGameInfo({
+    required this.gameId,
+    required this.title,
+    required this.startTime,
+    this.pid,
+  });
+}

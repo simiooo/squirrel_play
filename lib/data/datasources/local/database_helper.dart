@@ -64,27 +64,28 @@ class DatabaseHelper {
 
   /// Handles database migrations on version upgrade.
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Migration logic for future versions
-    // For now, just recreate tables if version changes
-    if (oldVersion < newVersion) {
-      // In production, proper migration scripts would be used
-      // For now, we drop and recreate (development only)
-      await _dropAllTables(db);
-      await _onCreate(db, newVersion);
+    if (oldVersion < 2) {
+      await db.execute(
+        'ALTER TABLE ${DatabaseConstants.tableGameMetadata} '
+        'ADD COLUMN ${DatabaseConstants.colMetadataTitle} TEXT',
+      );
+      await db.execute(
+        'ALTER TABLE ${DatabaseConstants.tableGameMetadata} '
+        'ADD COLUMN ${DatabaseConstants.colCardImageUrl} TEXT',
+      );
     }
-  }
-
-  /// Drops all tables (used for migrations/testing).
-  Future<void> _dropAllTables(Database db) async {
-    final batch = db.batch();
-
-    batch.execute('DROP TABLE IF EXISTS ${DatabaseConstants.tableGameScreenshots}');
-    batch.execute('DROP TABLE IF EXISTS ${DatabaseConstants.tableGameGenres}');
-    batch.execute('DROP TABLE IF EXISTS ${DatabaseConstants.tableGameMetadata}');
-    batch.execute('DROP TABLE IF EXISTS ${DatabaseConstants.tableGames}');
-    batch.execute('DROP TABLE IF EXISTS ${DatabaseConstants.tableScanDirectories}');
-
-    await batch.commit();
+    if (oldVersion < 3) {
+      await db.execute(
+        'ALTER TABLE ${DatabaseConstants.tableGameMetadata} '
+        'ADD COLUMN ${DatabaseConstants.colLogoImageUrl} TEXT',
+      );
+    }
+    if (oldVersion < 4) {
+      await db.execute(
+        'ALTER TABLE ${DatabaseConstants.tableGames} '
+        'ADD COLUMN ${DatabaseConstants.colLaunchArguments} TEXT',
+      );
+    }
   }
 
   /// Closes the database connection.

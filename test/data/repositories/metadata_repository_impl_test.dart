@@ -7,6 +7,7 @@ import 'package:squirrel_play/data/datasources/local/database_constants.dart';
 import 'package:squirrel_play/data/datasources/local/database_helper.dart';
 import 'package:squirrel_play/data/repositories/metadata_repository_impl.dart';
 import 'package:squirrel_play/data/services/metadata/metadata_aggregator.dart';
+import 'package:squirrel_play/data/services/metadata/rawg_batch_search_service.dart';
 import 'package:squirrel_play/data/services/metadata_service.dart';
 import 'package:squirrel_play/domain/entities/batch_metadata_progress.dart';
 import 'package:squirrel_play/domain/entities/game.dart';
@@ -19,6 +20,10 @@ class MockMetadataService extends Mock implements MetadataService {}
 class MockMetadataAggregator extends Mock implements MetadataAggregator {}
 
 class MockGameRepository extends Mock implements GameRepository {}
+
+class MockRawgBatchSearchService extends Mock implements RawgBatchSearchService {}
+
+class FakeGame extends Fake implements Game {}
 
 class TestDatabaseHelper implements DatabaseHelper {
   final Database _testDb;
@@ -46,6 +51,10 @@ void main() {
   // Initialize sqflite_ffi for testing
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
+
+  setUpAll(() {
+    registerFallbackValue(FakeGame());
+  });
 
   group('MetadataRepositoryImpl', () {
     late MetadataRepositoryImpl repository;
@@ -84,16 +93,19 @@ void main() {
             CREATE TABLE ${DatabaseConstants.tableGameMetadata} (
               ${DatabaseConstants.colGameId} TEXT PRIMARY KEY,
               ${DatabaseConstants.colExternalId} TEXT,
+              ${DatabaseConstants.colMetadataTitle} TEXT,
               ${DatabaseConstants.colDescription} TEXT,
               ${DatabaseConstants.colCoverImageUrl} TEXT,
+              ${DatabaseConstants.colCardImageUrl} TEXT,
               ${DatabaseConstants.colHeroImageUrl} TEXT,
+              ${DatabaseConstants.colLogoImageUrl} TEXT,
               ${DatabaseConstants.colReleaseDate} INTEGER,
               ${DatabaseConstants.colRating} REAL,
               ${DatabaseConstants.colDeveloper} TEXT,
               ${DatabaseConstants.colPublisher} TEXT,
               ${DatabaseConstants.colLastFetched} INTEGER NOT NULL,
-              FOREIGN KEY (${DatabaseConstants.colGameId}) 
-                REFERENCES ${DatabaseConstants.tableGames}(${DatabaseConstants.colId}) 
+              FOREIGN KEY (${DatabaseConstants.colGameId})
+                REFERENCES ${DatabaseConstants.tableGames}(${DatabaseConstants.colId})
                 ON DELETE CASCADE
             )
           ''');
@@ -357,6 +369,154 @@ void main() {
         expect(exception.gameTitle, equals('Test Game'));
         expect(exception.alternatives.length, equals(1));
         expect(exception.toString(), contains('Test Game'));
+      });
+    });
+
+    group('batchFetchMetadata with RawgBatchSearchService', () {
+      late MockRawgBatchSearchService mockBatchService;
+      late MetadataRepositoryImpl repositoryWithBatch;
+
+      setUp(() {
+        mockBatchService = MockRawgBatchSearchService();
+        repositoryWithBatch = MetadataRepositoryImpl(
+          databaseHelper: databaseHelper,
+          metadataService: mockMetadataService,
+          metadataAggregator: mockMetadataAggregator,
+          gameRepository: mockGameRepository,
+          rawgBatchSearchService: mockBatchService,
+        );
+      });
+
+      test('should use batch service for non-Steam games', () async {
+        final gameId = const Uuid().v4();
+        final game = Game(
+          id: gameId,
+          title: 'Non-Steam Game',
+          executablePath: '/games/game.exe',
+          addedDate: DateTime.now(),
+        );
+
+        const batchResult = BatchSearchResult(
+          gameName: 'Non-Steam Game',
+          match: MetadataMatchResult(
+            gameId: 'rawg_123',
+            gameName: 'Non-Steam Game',
+            confidence: 0.95,
+            isAutoMatch: true,
+            alternatives: [],
+          ),
+          success: true,
+        );
+
+        final metadata = GameMetadata(
+          gameId: gameId,
+          externalId: 'rawg:123',
+          description: 'Test metadata',
+          lastFetched: DateTime.now(),
+        );
+
+        when(
+          () => mockBatchService.searchMultipleGamesSync(any()),
+        ).thenAnswer((_) async => [batchResult]);
+        when(
+          () => mockMetadataService.fetchMetadata(gameId, 'rawg_123'),
+        ).thenAnswer((_) async => metadata);
+
+        final results = await repositoryWithBatch.batchFetchMetadata([game]);
+
+        expect(results.length, equals(1));
+        expect(results[0].gameId, equals(gameId));
+        verify(() => mockBatchService.searchMultipleGamesSync(['Non-Steam Game']))
+            .called(1);
+      });
+
+      test('should fall back to traditional flow when batch service is null',
+          () async {
+        final gameId = const Uuid().v4();
+        final game = Game(
+          id: gameId,
+          title: 'Non-Steam Game',
+          executablePath: '/games/game.exe',
+          addedDate: DateTime.now(),
+        );
+
+        // Use repository without batch service
+        when(() => mockGameRepository.getGameById(gameId))
+            .thenAnswer((_) async => game);
+        when(() => mockMetadataService.findMatch(any()))
+            .thenAnswer((_) async => null);
+
+        final results = await repository.batchFetchMetadata([game]);
+
+        expect(results, isEmpty);
+        verify(() => mockMetadataService.findMatch('Non-Steam Game')).called(1);
+      });
+
+      test('should throw MetadataMatchRequiredException for low confidence',
+          () async {
+        final gameId = const Uuid().v4();
+        final game = Game(
+          id: gameId,
+          title: 'Non-Steam Game',
+          executablePath: '/games/game.exe',
+          addedDate: DateTime.now(),
+        );
+
+        const batchResult = BatchSearchResult(
+          gameName: 'Non-Steam Game',
+          match: MetadataMatchResult(
+            gameId: 'rawg_123',
+            gameName: 'Non-Steam Game',
+            confidence: 0.5,
+            isAutoMatch: false,
+            alternatives: [
+              MetadataAlternative(
+                gameId: 'alt1',
+                gameName: 'Alternative',
+                confidence: 0.4,
+              ),
+            ],
+          ),
+          success: true,
+        );
+
+        when(
+          () => mockBatchService.searchMultipleGamesSync(any()),
+        ).thenAnswer((_) async => [batchResult]);
+
+        final results = await repositoryWithBatch.batchFetchMetadata([game]);
+
+        expect(results, isEmpty);
+      });
+
+      test('should use aggregator for Steam games even with batch service',
+          () async {
+        final gameId = const Uuid().v4();
+        final game = Game(
+          id: gameId,
+          title: 'Steam Game',
+          executablePath: '/home/user/.steam/steamapps/common/Game/game.exe',
+          addedDate: DateTime.now(),
+        );
+
+        final metadata = GameMetadata(
+          gameId: gameId,
+          externalId: 'steam:12345',
+          description: 'Steam metadata',
+          lastFetched: DateTime.now(),
+        );
+
+        when(() => mockMetadataAggregator.fetchMetadata(any()))
+            .thenAnswer((_) async => metadata);
+
+        final results = await repositoryWithBatch.batchFetchMetadata([game]);
+
+        expect(results.length, equals(1));
+        expect(results[0].externalId, equals('steam:12345'));
+        verify(() => mockMetadataAggregator.fetchMetadata(game)).called(1);
+        verifyNever(
+          () => mockBatchService.searchMultipleGamesSync(any()),
+        );
       });
     });
 

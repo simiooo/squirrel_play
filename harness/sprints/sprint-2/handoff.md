@@ -4,32 +4,46 @@
 
 ## What to Test
 
-### 1. BottomNav FocusScope registration
-- Read `lib/app/router.dart` lines 262-308: `_ShellWithFocusScopeState` creates `_bottomNavScopeNode`, registers it, wraps `GamepadNavBar` in `FocusScope`, and disposes it.
-- Read `lib/presentation/navigation/focus_traversal.dart` line 48: `_bottomNavFocusNode` field exists. Line 193-195: `setBottomNavContainer()` method exists.
+### 1. Navigation from HomePage
+- Launch the app
+- Press A (Enter) on any game card in the home page card row
+- Verify the app navigates to `/game/{id}` (check URL in debug output or browser address bar)
+- Verify the detail page shows the selected game's title, description (if available), and stats
 
-### 2. Cross-scope navigation Content → BottomNav
-- Read `lib/presentation/navigation/focus_traversal.dart` lines 596-599: in `moveFocus()`, when `direction == down` and current node is descendant of `_contentFocusNode`, it calls `wrapToBottomNav()`.
-- `wrapToBottomNav()` is defined at lines 728-758.
+### 2. Navigation from LibraryPage
+- Navigate to Library page
+- Press A (Enter) on any game card in the grid
+- Verify the app navigates to `/game/{id}`
 
-### 3. Cross-scope navigation BottomNav → Content
-- Read `lib/presentation/navigation/focus_traversal.dart` lines 601-604: in `moveFocus()`, when `direction == up` and current node is descendant of `_bottomNavFocusNode`, it calls `wrapToContent()`.
+### 3. Detail Page States
+- **Loading**: Briefly shows a `CircularProgressIndicator` before content loads
+- **Loaded**: Shows game title, description, developer (if metadata exists), play count, last played date, favorite status
+- **Error**: If game ID doesn't exist, shows error message with red icon
 
-### 4. GamepadFileBrowser focus polish
-- Read `lib/presentation/widgets/gamepad_file_browser.dart` lines 102-105: `_keyboardFocusNode` has `canRequestFocus: false`.
-- The dialog content is wrapped in `FocusScope` at line 326, trapping focus.
-- First item focus on open is handled at lines 207-210.
-- Arrow keys, Enter, Escape are all handled by the `Focus` widgets on list items and the `KeyboardListener`.
+### 4. Focus Behavior
+- When the detail page loads, the first action button ("启动游戏") should automatically have focus (orange/elevated background)
+- Use D-pad left/right or arrow keys to navigate between the three action buttons
+- Focus should move horizontally: Launch → Settings → Delete → Settings → Launch
 
-### 5. Stale documentation cleanup
-- Read `lib/presentation/navigation/focus_traversal.dart` line 14: class doc says "Cross-Scope wrapping (TopBar ↔ Content ↔ BottomNav)" — no mention of "Dialog mode tracking".
-- Read `lib/presentation/navigation/gamepad_hint_provider.dart` lines 13-14: class doc says "FocusTraversalService dialog detection via `isDialogOpen`" — no mention of "dialog mode".
+### 5. Back Navigation
+- Press B (Escape) on the detail page
+- Verify the app pops back to the previous page (Home or Library)
+- This is handled automatically by `FocusTraversalService._handleCancel()` — no custom back handler was added
+
+### 6. Action Buttons (Stubs)
+- Three buttons are visible: "启动游戏", "设置", "删除"
+- Pressing A on any of them logs to console but does not perform the actual action (Sprint 3 scope)
 
 ## Running the Application
 
 - Command: `flutter run -d linux`
-- No special setup needed beyond the existing Sprint 1 state.
+- The app starts on the Home page. Navigate to a game card and press A to open the detail page.
 
 ## Known Gaps
 
-None. All success criteria from the contract are implemented and verified.
+- **Launch/Stop actions**: "启动游戏" and "停止" buttons are present but non-functional. Sprint 3 wires these to `GameLauncher.launchGame()` and `GameLauncher.stopGame()`.
+- **Edit dialog**: "设置" button does not open `EditGameDialog`. Sprint 3 scope.
+- **Delete dialog**: "删除" button does not open `DeleteGameDialog`. Sprint 3 scope.
+- **Process lifecycle tracking**: `GameDetailRunningStateChanged` event exists but is stubbed. Sprint 3 subscribes to `GameLauncher.runningGamesStream`.
+- **Action button mutual exclusion**: All three buttons are always visible. Dynamic hiding based on `isRunning` is Sprint 3 scope.
+- **Localization**: Button labels are hardcoded in Chinese. Sprint 3 adds ARB entries and runs `flutter gen-l10n`.

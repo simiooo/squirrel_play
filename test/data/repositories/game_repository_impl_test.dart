@@ -33,7 +33,8 @@ void main() {
               added_date INTEGER NOT NULL,
               last_played_date INTEGER,
               is_favorite INTEGER NOT NULL DEFAULT 0,
-              play_count INTEGER NOT NULL DEFAULT 0
+              play_count INTEGER NOT NULL DEFAULT 0,
+              launch_arguments TEXT
             )
           ''');
           await db.execute('''
@@ -108,6 +109,22 @@ void main() {
         expect(result, isNotNull);
         expect(result!.id, equals(game.id));
         expect(result.title, equals(game.title));
+      });
+
+      test('should persist and retrieve launchArguments', () async {
+        final game = Game(
+          id: const Uuid().v4(),
+          title: 'Test Game',
+          executablePath: '/games/test.exe',
+          addedDate: DateTime.now(),
+          launchArguments: '-windowed --fullscreen',
+        );
+
+        await repository.addGame(game);
+        final result = await repository.getGameById(game.id);
+
+        expect(result, isNotNull);
+        expect(result!.launchArguments, equals('-windowed --fullscreen'));
       });
 
       test('should return null when game ID does not exist', () async {

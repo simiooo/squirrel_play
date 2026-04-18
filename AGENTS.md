@@ -151,3 +151,79 @@ The app has a family of reusable focusable wrappers for gamepad navigation. Foll
 - `FocusableTextField` — text inputs with focus border
 
 All use `AppColors.primaryAccent` for focus border, `AppColors.surfaceElevated` for focus background, and hook into `SoundService.instance.playFocusMove()`.
+
+## Directory Metadata Chain of Responsibility
+
+When a game is manually added or discovered via directory scanning, the app uses a **Chain of Responsibility** pattern to inspect the executable's sibling directory and determine the best initial title/metadata.
+
+### Architecture
+
+```
+lib/data/services/directory_metadata_chain/
+├── game_metadata_handler.dart      # Abstract base: setNext() + handle()
+├── directory_context.dart           # Mutable context passed through the chain
+├── steam_directory_handler.dart     # Detects Steam directories, parses appmanifest_*.acf
+├── default_metadata_handler.dart    # Terminal handler: generates title from filename
+└── directory_metadata_chain.dart    # Builder: wires handlers in order
+```
+
+### Handler Chain Order
+
+1. **`SteamDirectoryHandler`** — checks if the executable is inside a `steamapps/common/` path structure. If so, it uses `SteamManifestParser` to find the matching `appmanifest_*.acf` file and extracts the official Steam game name and appId.
+2. **`DefaultMetadataHandler`** — terminal fallback. Uses `FilenameCleaner.cleanForDisplay()` to generate a human-readable title from the executable filename (e.g., `"HollowKnight.exe"` → `"Hollow Knight"`).
+
+### Usage
+
+The chain is built via `DirectoryMetadataChain.build()` and injected into `AddGameBloc`:
+
+```dart
+// In DI (di.dart)
+getIt.registerSingleton<DirectoryMetadataChain>(
+  DirectoryMetadataChain.build(
+    steamManifestParser: getIt<SteamManifestParser>(),
+  ),
+);
+```
+
+**Manual add flow** (`AddGameBloc._onFileSelected`): When a user picks an executable file, the chain is invoked immediately to populate the form's title field with the best guess.
+
+**Scan flow** (`AddGameBloc._onConfirmScanSelection`): When discovered executables are confirmed, each gets processed through the chain, and `DiscoveredExecutableModel.suggestedTitle` is populated.
+
+### Extending the Chain
+
+To add a new handler (e.g., GOG Galaxy, Epic Games Store):
+
+1. Create a class extending `GameMetadataHandler`:
+   ```dart
+   class EpicDirectoryHandler extends GameMetadataHandler {
+     @override
+     Future<void> handle(DirectoryContext context) async {
+       if (/* can handle this directory */) {
+         context.title = /* extract title */;
+         return; // Handled — stop chain
+       }
+       await super.handle(context); // Pass to next handler
+     }
+   }
+   ```
+
+2. Register it in `DirectoryMetadataChain.build()` before `DefaultMetadataHandler`:
+   ```dart
+   static DirectoryMetadataChain build({...}) {
+     final steam = SteamDirectoryHandler(...);
+     final epic = EpicDirectoryHandler(...);
+     final fallback = DefaultMetadataHandler();
+     steam.setNext(epic);
+     epic.setNext(fallback);
+     return DirectoryMetadataChain(steam);
+   }
+   ```
+
+3. Add unit tests in `test/data/services/directory_metadata_chain/`.
+
+### Rules
+
+- **Never call `context.title = null` after another handler has set it.** Handlers either populate the field and stop, or pass through unchanged.
+- **`DefaultMetadataHandler` is always the terminal node.** It never calls `super.handle()`.
+- **The chain is async** because it may perform file I/O (scanning manifests). Always `await chain.process(context)`.
+- **`DirectoryContext` is mutable** by design — it accumulates parsed metadata as it flows through handlers. Treat it as a write-once accumulator (handlers should not overwrite each other's successful results).

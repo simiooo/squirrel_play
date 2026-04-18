@@ -54,6 +54,10 @@ class GameModel {
   @JsonKey(name: DatabaseConstants.colPlayCount)
   final int playCount;
 
+  /// Optional launch arguments for the game executable.
+  @JsonKey(name: DatabaseConstants.colLaunchArguments)
+  final String? launchArguments;
+
   /// Creates a GameModel instance.
   const GameModel({
     required this.id,
@@ -64,6 +68,7 @@ class GameModel {
     this.lastPlayedDate,
     this.isFavorite = false,
     this.playCount = 0,
+    this.launchArguments,
   });
 
   /// Creates a GameModel from a database map.
@@ -83,6 +88,7 @@ class GameModel {
           : null,
       isFavorite: (map[DatabaseConstants.colIsFavorite] as int) == 1,
       playCount: map[DatabaseConstants.colPlayCount] as int,
+      launchArguments: map[DatabaseConstants.colLaunchArguments] as String?,
     );
   }
 
@@ -97,6 +103,7 @@ class GameModel {
       DatabaseConstants.colLastPlayedDate: lastPlayedDate?.millisecondsSinceEpoch,
       DatabaseConstants.colIsFavorite: isFavorite ? 1 : 0,
       DatabaseConstants.colPlayCount: playCount,
+      DatabaseConstants.colLaunchArguments: launchArguments,
     };
   }
 
@@ -117,6 +124,7 @@ class GameModel {
     DateTime? lastPlayedDate,
     bool? isFavorite,
     int? playCount,
+    String? launchArguments,
   }) {
     return GameModel(
       id: id ?? this.id,
@@ -127,6 +135,7 @@ class GameModel {
       lastPlayedDate: lastPlayedDate ?? this.lastPlayedDate,
       isFavorite: isFavorite ?? this.isFavorite,
       playCount: playCount ?? this.playCount,
+      launchArguments: launchArguments ?? this.launchArguments,
     );
   }
 

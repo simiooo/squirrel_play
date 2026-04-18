@@ -131,56 +131,54 @@ class _FocusableButtonState extends State<FocusableButton> {
       button: true,
       label: widget.label,
       hint: widget.hint,
-      child: Focus(
-        focusNode: widget.focusNode,
-        child: AnimatedContainer(
-          duration: isFocused
-              ? const Duration(milliseconds: 150)
-              : const Duration(milliseconds: 100),
-          curve: isFocused
-              ? AppAnimationCurves.focusIn
-              : AppAnimationCurves.focusOut,
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(AppRadii.medium),
-            border: isFocused
-                ? const Border(
-                    bottom: BorderSide(
-                      color: AppColors.primaryAccent,
-                      width: 2,
-                    ),
-                  )
-                : null,
+      child: AnimatedContainer(
+        duration: isFocused
+            ? const Duration(milliseconds: 150)
+            : const Duration(milliseconds: 100),
+        curve: isFocused
+            ? AppAnimationCurves.focusIn
+            : AppAnimationCurves.focusOut,
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(AppRadii.medium),
+          border: isFocused
+              ? const Border(
+                  bottom: BorderSide(
+                    color: AppColors.primaryAccent,
+                    width: 2,
+                  ),
+                )
+              : null,
+        ),
+        child: TextButton(
+          focusNode: widget.focusNode,
+          onPressed: _handlePress,
+          style: TextButton.styleFrom(
+            minimumSize: const Size(48, 48),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.sm,
+            ),
           ),
-          child: TextButton(
-            onPressed: _handlePress,
-            style: TextButton.styleFrom(
-              minimumSize: const Size(48, 48),
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg,
-                vertical: AppSpacing.sm,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (widget.icon != null) ...[
-                  Icon(
-                    widget.icon,
-                    color: textColor,
-                    size: 20,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                ],
-                Text(
-                  widget.label,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: textColor,
-                    fontWeight: fontWeight,
-                  ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.icon != null) ...[
+                Icon(
+                  widget.icon,
+                  color: textColor,
+                  size: 20,
                 ),
+                const SizedBox(width: AppSpacing.sm),
               ],
-            ),
+              Text(
+                widget.label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: textColor,
+                  fontWeight: fontWeight,
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:squirrel_play/app/di.dart';
 import 'package:squirrel_play/core/theme/design_tokens.dart';
@@ -51,8 +52,7 @@ class _LibraryPageContentState extends State<_LibraryPageContent> {
   }
 
   void _handleGameSelected(Game game) {
-    // Sprint 4 will implement game launching
-    debugPrint('Selected game: ${game.title}');
+    context.go('/game/${game.id}');
   }
 
   void _showAddGameDialog() {

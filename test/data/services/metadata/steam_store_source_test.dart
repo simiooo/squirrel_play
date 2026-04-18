@@ -140,7 +140,8 @@ void main() {
         expect(result, isNotNull);
         expect(result!.gameId, equals('game1'));
         expect(result.externalId, equals('steam:730'));
-        expect(result.description, contains('Counter-Strike 2'));
+        expect(result.title, equals('Counter-Strike 2'));
+        expect(result.description, equals('A tactical first-person shooter'));
         expect(result.coverImageUrl, contains('730'));
         expect(result.heroImageUrl, contains('730'));
         expect(result.developer, equals('Valve'));

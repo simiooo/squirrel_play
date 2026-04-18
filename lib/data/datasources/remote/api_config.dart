@@ -32,4 +32,7 @@ class ApiConfig {
 
   /// Exponential backoff base delay in milliseconds
   static const int retryBaseDelayMs = 1000;
+
+  /// Maximum number of pages to fetch in paginated search (safety cap)
+  static const int maxPaginatedPages = 10;
 }

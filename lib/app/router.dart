@@ -5,9 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:squirrel_play/domain/repositories/home_repository.dart';
 import 'package:squirrel_play/domain/repositories/metadata_repository.dart';
 import 'package:squirrel_play/domain/services/game_launcher.dart';
+import 'package:squirrel_play/presentation/blocs/game_detail/game_detail_bloc.dart';
 import 'package:squirrel_play/presentation/blocs/home/home_bloc.dart';
 import 'package:squirrel_play/presentation/blocs/quick_scan/quick_scan_bloc.dart';
 import 'package:squirrel_play/presentation/navigation/focus_traversal.dart';
+import 'package:squirrel_play/presentation/pages/game_detail_page.dart';
 import 'package:squirrel_play/presentation/pages/gamepad_test_page.dart';
 import 'package:squirrel_play/presentation/pages/home_page.dart';
 import 'package:squirrel_play/presentation/pages/library_page.dart';
@@ -132,6 +134,51 @@ class AppRouter {
               transitionDuration: const Duration(milliseconds: 300),
               reverseTransitionDuration: const Duration(milliseconds: 200),
             ),
+          ),
+
+          // Game detail route
+          GoRoute(
+            path: '/game/:id',
+            name: 'game-detail',
+            pageBuilder: (context, state) {
+              final gameId = state.pathParameters['id']!;
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: AppShell(
+                  body: BlocProvider(
+                    create: (_) => getIt<GameDetailBloc>()
+                      ..add(GameDetailLoadRequested(gameId)),
+                    child: const GameDetailPage(),
+                  ),
+                ),
+                transitionsBuilder: (
+                  context,
+                  animation,
+                  secondaryAnimation,
+                  child,
+                ) {
+                  // Fade + slide animation (content area only, TopBar stays static)
+                  const begin = Offset(0.0, 0.05);
+                  const end = Offset.zero;
+                  const curve = Curves.easeOutCubic;
+
+                  final tween = Tween(begin: begin, end: end).chain(
+                    CurveTween(curve: curve),
+                  );
+                  final offsetAnimation = animation.drive(tween);
+
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: offsetAnimation,
+                      child: child,
+                    ),
+                  );
+                },
+                transitionDuration: const Duration(milliseconds: 300),
+                reverseTransitionDuration: const Duration(milliseconds: 200),
+              );
+            },
           ),
 
           // Settings route

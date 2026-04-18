@@ -175,8 +175,8 @@ class SteamStoreSource implements MetadataSource {
       releaseDate = _parseReleaseDate(data.releaseDate!.date);
     }
 
-    // Build description with title prefix
-    final description = '${data.name}\n\n${data.shortDescription}';
+    // Build description (plain short description, no name prefix)
+    final description = data.shortDescription;
 
     // Extract screenshots
     final screenshots = data.screenshots
@@ -198,6 +198,7 @@ class SteamStoreSource implements MetadataSource {
     return GameMetadata(
       gameId: gameId,
       externalId: 'steam:$appId',
+      title: data.name,
       description: description,
       coverImageUrl: data.headerImage,
       heroImageUrl: heroImageUrl,

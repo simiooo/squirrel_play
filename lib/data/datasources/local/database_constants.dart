@@ -6,7 +6,7 @@ class DatabaseConstants {
 
   // Database Info
   static const String databaseName = 'squirrel_play.db';
-  static const int databaseVersion = 1;
+  static const int databaseVersion = 4;
 
   // Table Names
   static const String tableGames = 'games';
@@ -24,13 +24,17 @@ class DatabaseConstants {
   static const String colLastPlayedDate = 'last_played_date';
   static const String colIsFavorite = 'is_favorite';
   static const String colPlayCount = 'play_count';
+  static const String colLaunchArguments = 'launch_arguments';
 
   // Column Names - Game Metadata Table
   static const String colGameId = 'game_id';
   static const String colExternalId = 'external_id';
+  static const String colMetadataTitle = 'title';
   static const String colDescription = 'description';
   static const String colCoverImageUrl = 'cover_image_url';
+  static const String colCardImageUrl = 'card_image_url';
   static const String colHeroImageUrl = 'hero_image_url';
+  static const String colLogoImageUrl = 'logo_image_url';
   static const String colReleaseDate = 'release_date';
   static const String colRating = 'rating';
   static const String colDeveloper = 'developer';
@@ -59,6 +63,7 @@ class DatabaseConstants {
       $colLastPlayedDate INTEGER,
       $colIsFavorite INTEGER NOT NULL DEFAULT 0,
       $colPlayCount INTEGER NOT NULL DEFAULT 0,
+      $colLaunchArguments TEXT,
       FOREIGN KEY ($colDirectoryId) REFERENCES $tableScanDirectories($colId) ON DELETE SET NULL
     )
   ''';
@@ -67,9 +72,12 @@ class DatabaseConstants {
     CREATE TABLE $tableGameMetadata (
       $colGameId TEXT PRIMARY KEY,
       $colExternalId TEXT,
+      $colMetadataTitle TEXT,
       $colDescription TEXT,
       $colCoverImageUrl TEXT,
+      $colCardImageUrl TEXT,
       $colHeroImageUrl TEXT,
+      $colLogoImageUrl TEXT,
       $colReleaseDate INTEGER,
       $colRating REAL,
       $colDeveloper TEXT,

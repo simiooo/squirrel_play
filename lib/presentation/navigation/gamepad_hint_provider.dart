@@ -133,12 +133,12 @@ class _GamepadHintProviderWrapperState
           ),
         ];
       default:
-        // Game detail page fallback - minimal hints only
+        // Game detail page - A is Confirm (Launch/Stop/Settings/Delete), B is Back
         if (location.startsWith('/game/')) {
           return [
             GamepadActionHint(
               buttonLabel: 'A',
-              actionLabel: l10n.gamepadNavPlay,
+              actionLabel: l10n.gamepadNavConfirm,
             ),
             GamepadActionHint(
               buttonLabel: 'B',

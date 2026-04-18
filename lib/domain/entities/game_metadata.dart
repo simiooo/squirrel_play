@@ -10,14 +10,23 @@ class GameMetadata extends Equatable {
   /// External API ID (e.g., RAWG game ID).
   final String? externalId;
 
+  /// Official title from metadata source (e.g., Steam/RAWG).
+  final String? title;
+
   /// Game description.
   final String? description;
 
   /// URL to cover image.
   final String? coverImageUrl;
 
+  /// URL to card/landscape image.
+  final String? cardImageUrl;
+
   /// URL to hero/background image.
   final String? heroImageUrl;
+
+  /// URL to logo image.
+  final String? logoImageUrl;
 
   /// List of genre names.
   final List<String> genres;
@@ -44,9 +53,12 @@ class GameMetadata extends Equatable {
   const GameMetadata({
     required this.gameId,
     this.externalId,
+    this.title,
     this.description,
     this.coverImageUrl,
+    this.cardImageUrl,
     this.heroImageUrl,
+    this.logoImageUrl,
     this.genres = const [],
     this.screenshots = const [],
     this.releaseDate,
@@ -60,9 +72,12 @@ class GameMetadata extends Equatable {
   GameMetadata copyWith({
     String? gameId,
     String? externalId,
+    String? title,
     String? description,
     String? coverImageUrl,
+    String? cardImageUrl,
     String? heroImageUrl,
+    String? logoImageUrl,
     List<String>? genres,
     List<String>? screenshots,
     DateTime? releaseDate,
@@ -74,9 +89,12 @@ class GameMetadata extends Equatable {
     return GameMetadata(
       gameId: gameId ?? this.gameId,
       externalId: externalId ?? this.externalId,
+      title: title ?? this.title,
       description: description ?? this.description,
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,
+      cardImageUrl: cardImageUrl ?? this.cardImageUrl,
       heroImageUrl: heroImageUrl ?? this.heroImageUrl,
+      logoImageUrl: logoImageUrl ?? this.logoImageUrl,
       genres: genres ?? this.genres,
       screenshots: screenshots ?? this.screenshots,
       releaseDate: releaseDate ?? this.releaseDate,
@@ -91,9 +109,12 @@ class GameMetadata extends Equatable {
   List<Object?> get props => [
         gameId,
         externalId,
+        title,
         description,
         coverImageUrl,
+        cardImageUrl,
         heroImageUrl,
+        logoImageUrl,
         genres,
         screenshots,
         releaseDate,

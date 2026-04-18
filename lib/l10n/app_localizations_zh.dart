@@ -309,6 +309,50 @@ class AppLocalizationsZh extends AppLocalizations {
   String get gameInfoLaunchButton => '启动游戏';
 
   @override
+  String get gameInfoStopButton => '停止';
+
+  @override
+  String get gameInfoSettingsButton => '设置';
+
+  @override
+  String get gameInfoDeleteButton => '删除';
+
+  @override
+  String get dialogEditGameTitle => '编辑游戏';
+
+  @override
+  String get dialogEditGameTitleLabel => '标题';
+
+  @override
+  String get dialogEditGameTitleHint => '输入游戏标题';
+
+  @override
+  String get dialogEditGameExecutableLabel => '可执行文件路径';
+
+  @override
+  String get dialogEditGameExecutableHint => '游戏可执行文件的路径';
+
+  @override
+  String get dialogEditGameBrowse => '浏览';
+
+  @override
+  String get dialogEditGameArgumentsLabel => '启动参数';
+
+  @override
+  String get dialogEditGameArgumentsHint => '例如：-windowed --fullscreen';
+
+  @override
+  String get dialogDeleteGameTitle => '删除游戏？';
+
+  @override
+  String dialogDeleteGameMessage(String gameName) {
+    return '确定要从库中删除\"$gameName\"吗？';
+  }
+
+  @override
+  String get dialogDeleteGameConfirm => '删除';
+
+  @override
   String get gamepadAButton => 'A：选择';
 
   @override
@@ -444,4 +488,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String fileBrowserSelectedCount(int count) {
     return '已选择 $count 项';
   }
+
+  @override
+  String get errorGameNotFound => '游戏未找到';
+
+  @override
+  String get errorLoadFailed => '加载游戏失败';
+
+  @override
+  String get errorLaunchFailed => '启动游戏失败';
+
+  @override
+  String get errorStopFailed => '停止游戏失败';
+
+  @override
+  String get errorDeleteFailed => '删除游戏失败';
+
+  @override
+  String get errorUpdateFailed => '更新游戏失败';
 }

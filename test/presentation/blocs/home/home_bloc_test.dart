@@ -83,6 +83,9 @@ void main() {
           .thenAnswer((_) => Stream.value(testGames));
       when(() => gameLauncher.launchStatusStream)
           .thenAnswer((_) => Stream.value(LaunchStatus.idle));
+      when(() => gameLauncher.isGameRunning(any())).thenReturn(false);
+      when(() => gameLauncher.runningGamesStream)
+          .thenAnswer((_) => Stream.value({}));
       when(() => metadataRepository.getMetadataForGame(any()))
           .thenAnswer((_) async => null);
       when(() => gameRepository.incrementPlayCount(any()))

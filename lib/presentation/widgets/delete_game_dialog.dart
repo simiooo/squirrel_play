@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:squirrel_play/core/theme/design_tokens.dart';
 import 'package:squirrel_play/data/services/sound_service.dart';
 import 'package:squirrel_play/domain/entities/game.dart';
+import 'package:squirrel_play/l10n/app_localizations.dart';
 import 'package:squirrel_play/presentation/widgets/focusable_button.dart';
 
 /// A confirmation dialog for deleting a game.
@@ -113,6 +114,8 @@ class _DeleteGameDialogState extends State<DeleteGameDialog>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return KeyboardListener(
       focusNode: FocusNode(debugLabel: 'DeleteDialogKeyboardListener'),
       onKeyEvent: (event) {
@@ -138,13 +141,13 @@ class _DeleteGameDialogState extends State<DeleteGameDialog>
             borderRadius: BorderRadius.circular(AppRadii.large),
           ),
           title: Text(
-            'Delete Game?',
+            l10n!.dialogDeleteGameTitle,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               color: AppColors.textPrimary,
             ),
           ),
           content: Text(
-            'Are you sure you want to remove "${widget.game.title}" from your library?',
+            l10n.dialogDeleteGameMessage(widget.game.title),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -152,12 +155,12 @@ class _DeleteGameDialogState extends State<DeleteGameDialog>
           actions: [
             FocusableButton(
               focusNode: _buttonFocusNodes[0],
-              label: 'Delete',
+              label: l10n.dialogDeleteGameConfirm,
               onPressed: _confirmDelete,
             ),
             FocusableButton(
               focusNode: _buttonFocusNodes[1],
-              label: 'Cancel',
+              label: l10n.buttonCancel,
               isPrimary: true,
               onPressed: _cancel,
             ),

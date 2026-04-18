@@ -18,7 +18,10 @@ void main() {
       gameLauncherService = GameLauncherService();
     });
 
-    tearDown(() {
+    tearDown(() async {
+      // Stop any lingering test processes
+      await gameLauncherService.stopGame('test-game-1');
+      await gameLauncherService.stopGame('test-game-2');
       gameLauncherService.dispose();
     });
 
@@ -104,6 +107,141 @@ void main() {
 
         await subscription.cancel();
       }, timeout: const Timeout(Duration(seconds: 5)));
+
+      test('launchGame passes parsed arguments to Process.start', () async {
+        final game = Game(
+          id: 'test-game-1',
+          title: 'Test Game',
+          executablePath: '/usr/bin/sleep',
+          launchArguments: '0.2',
+          addedDate: DateTime.now(),
+        );
+
+        final result = await gameLauncherService.launchGame(game);
+        expect(result.success, isTrue);
+        expect(gameLauncherService.isGameRunning('test-game-1'), isTrue);
+
+        // Wait for process to exit naturally
+        await Future.delayed(const Duration(milliseconds: 400));
+        expect(gameLauncherService.isGameRunning('test-game-1'), isFalse);
+      });
+
+      test('launchGame with null launchArguments passes empty args', () async {
+        final game = Game(
+          id: 'test-game-1',
+          title: 'Test Game',
+          executablePath: '/usr/bin/true',
+          addedDate: DateTime.now(),
+        );
+
+        final result = await gameLauncherService.launchGame(game);
+        expect(result.success, isTrue);
+      });
+    });
+
+    group('isGameRunning', () {
+      test('returns false when no game is running', () {
+        expect(gameLauncherService.isGameRunning('test-game-1'), isFalse);
+      });
+
+      test('returns true after successful launch', () async {
+        final game = Game(
+          id: 'test-game-1',
+          title: 'Test Game',
+          executablePath: '/usr/bin/sleep',
+          launchArguments: '10',
+          addedDate: DateTime.now(),
+        );
+
+        final result = await gameLauncherService.launchGame(game);
+        expect(result.success, isTrue);
+        expect(gameLauncherService.isGameRunning('test-game-1'), isTrue);
+      });
+    });
+
+    group('stopGame', () {
+      test('stopGame terminates a running process', () async {
+        final game = Game(
+          id: 'test-game-1',
+          title: 'Test Game',
+          executablePath: '/usr/bin/sleep',
+          launchArguments: '10',
+          addedDate: DateTime.now(),
+        );
+
+        await gameLauncherService.launchGame(game);
+        expect(gameLauncherService.isGameRunning('test-game-1'), isTrue);
+
+        await gameLauncherService.stopGame('test-game-1');
+        expect(gameLauncherService.isGameRunning('test-game-1'), isFalse);
+      });
+    });
+
+    group('runningGamesStream', () {
+      test('emits empty map initially', () async {
+        final values = <Map<String, RunningGameInfo>>[];
+        final subscription = gameLauncherService.runningGamesStream.listen(
+          values.add,
+        );
+
+        await Future.delayed(const Duration(milliseconds: 50));
+
+        expect(values, isNotEmpty);
+        expect(values.first, isEmpty);
+
+        await subscription.cancel();
+      });
+
+      test('emits game info after launch', () async {
+        final values = <Map<String, RunningGameInfo>>[];
+        final subscription = gameLauncherService.runningGamesStream.listen(
+          values.add,
+        );
+
+        final game = Game(
+          id: 'test-game-1',
+          title: 'Test Game',
+          executablePath: '/usr/bin/sleep',
+          launchArguments: '10',
+          addedDate: DateTime.now(),
+        );
+
+        await gameLauncherService.launchGame(game);
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        expect(values.last.containsKey('test-game-1'), isTrue);
+        expect(values.last['test-game-1']!.title, equals('Test Game'));
+        expect(values.last['test-game-1']!.pid, isNotNull);
+
+        await subscription.cancel();
+      });
+
+      test('emits empty map after process exits naturally', () async {
+        final values = <Map<String, RunningGameInfo>>[];
+        final subscription = gameLauncherService.runningGamesStream.listen(
+          values.add,
+        );
+
+        final game = Game(
+          id: 'test-game-1',
+          title: 'Test Game',
+          executablePath: '/usr/bin/sleep',
+          launchArguments: '0.2',
+          addedDate: DateTime.now(),
+        );
+
+        await gameLauncherService.launchGame(game);
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        expect(values.last.containsKey('test-game-1'), isTrue);
+
+        // Wait for process to exit naturally
+        await Future.delayed(const Duration(milliseconds: 400));
+
+        expect(values.last, isEmpty);
+
+        await subscription.cancel();
+      });
     });
 
     group('dispose', () {
@@ -113,6 +251,15 @@ void main() {
         // Stream should be closed
         expect(
           () => gameLauncherService.launchStatusStream.first,
+          throwsA(isA<StateError>()),
+        );
+      });
+
+      test('closes the running games stream controller', () async {
+        gameLauncherService.dispose();
+
+        expect(
+          () => gameLauncherService.runningGamesStream.first,
           throwsA(isA<StateError>()),
         );
       });

@@ -4,7 +4,6 @@ import 'package:squirrel_play/data/services/metadata/metadata_source_type.dart';
 import 'package:squirrel_play/data/services/metadata/steam_local_source.dart';
 import 'package:squirrel_play/data/services/steam_manifest_parser.dart';
 import 'package:squirrel_play/domain/entities/game.dart';
-import 'package:squirrel_play/domain/entities/game_metadata.dart';
 
 class MockSteamManifestParser extends Mock implements SteamManifestParser {}
 

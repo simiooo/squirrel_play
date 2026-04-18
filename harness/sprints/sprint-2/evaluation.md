@@ -1,69 +1,72 @@
-# Evaluation: Sprint 2 — Round 2
+# Evaluation: Sprint 2 — Round 1
 
 ## Overall Verdict: PASS
 
 ## Success Criteria Results
 
-1. **Settings button is inside a registered FocusScope**: **PASS**
-   - `_ShellWithFocusScopeState` in `lib/app/router.dart` (lines 264, 270, 300-303) correctly creates a `FocusScopeNode(debugLabel: 'BottomNavScope')`, registers it via `FocusTraversalService.instance.setBottomNavContainer(_bottomNavScopeNode)`, wraps `GamepadNavBar` in `FocusScope(node: _bottomNavScopeNode)`, and disposes the node.
-   - `FocusTraversalService` in `lib/presentation/navigation/focus_traversal.dart` has `_bottomNavFocusNode` field (line 48) and `setBottomNavContainer()` setter (lines 196-198).
+1. **Route exists and navigates**: **PASS** — `/game/:id` route is registered inside `ShellRoute` in `lib/app/router.dart` (line 141). `HomePage.onCardSelected` calls `context.go('/game/${game.id}')` (line 61) and `LibraryPage._handleGameSelected` calls `context.go('/game/${game.id}')` (line 55). Fade + slide transitions (300ms enter, 200ms exit) are applied consistently.
 
-2. **Cross-scope navigation Content → BottomNav**: **PASS**
-   - In `lib/presentation/navigation/focus_traversal.dart` lines 613-617, `moveFocus()` correctly checks `direction == TraversalDirection.down && _isDescendantOfScope(currentNode, _contentFocusNode)` and calls `wrapToBottomNav()`.
-   - `wrapToBottomNav()` (lines 760-794) first searches focus history for a recently focused bottom-nav descendant, then falls back to the first `traversalDescendants` of the bottom nav scope.
+2. **Detail page displays correct game data**: **PASS** — `GameDetailPage` renders title, description, developer, play count, last played date, and favorite status from `GameDetailLoaded` state. Widget tests verify each field is displayed correctly (`game_detail_page_test.dart`).
 
-3. **Cross-scope navigation BottomNav → Content**: **PASS**
-   - In `lib/presentation/navigation/focus_traversal.dart` lines 619-623, `moveFocus()` correctly checks `direction == TraversalDirection.up && _isDescendantOfScope(currentNode, _bottomNavFocusNode)` and calls `wrapToContent()`.
+3. **Loading and error states**: **PASS** — `GameDetailBloc` emits `GameDetailLoading` initially, then `GameDetailLoaded` on success, or `GameDetailError` when the game is null or an exception occurs. Widget tests verify the `CircularProgressIndicator` appears for loading and the error icon + message appear for error states.
 
-4. **GamepadFileBrowser keyboard navigation works without dialog mode**: **PASS**
-   - `lib/presentation/widgets/gamepad_file_browser.dart` line 102-105: `_keyboardFocusNode` has `canRequestFocus: false`, preventing it from stealing autofocus when the dialog opens.
-   - Line 329: Dialog content is wrapped in `FocusScope` for automatic focus trapping.
-   - Lines 210-213: `_loadDirectory()` schedules a post-frame callback to focus `_itemFocusNodes[0]` when the dialog opens.
-   - Lines 297-302: `_handleKeyEvent` handles `arrowLeft` → `_goToParent()` and `escape` → `_cancel()`.
-   - No `enterDialogMode()` / `exitDialogMode()` calls exist in the file.
+4. **Focus on first action button**: **PASS** — `FocusNode`s are `late final` state fields created in `initState` and disposed in `dispose`. `WidgetsBinding.instance.addPostFrameCallback` requests focus on `_launchFocusNode`. Widget test verifies `primaryFocus.debugLabel == 'LaunchButton'` after `pumpAndSettle`.
 
-5. **Stale documentation cleaned up**: **PASS**
-   - `lib/presentation/navigation/focus_traversal.dart` line 14: Class doc reads "Cross-Scope wrapping (TopBar ↔ Content ↔ BottomNav)" — no mention of "Dialog mode tracking".
-   - `lib/presentation/navigation/gamepad_hint_provider.dart` lines 13-14: Class doc reads "Listens to ... FocusTraversalService dialog detection via `isDialogOpen`" — no mention of "dialog mode".
+5. **D-pad navigates action buttons**: **PASS** — Action buttons are wrapped in a `FocusScope` (`debugLabel: 'DetailActionScope'`). Widget test sends `LogicalKeyboardKey.arrowRight` and `arrowLeft`, asserting focus moves between Launch → Settings → Delete buttons correctly.
 
-6. **All 370 tests pass, no new analyzer warnings**: **PASS**
-   - `flutter test` reports: **All 370 tests passed!** ✓
-   - `flutter analyze` reports **zero new issues in Sprint 2-modified files**. The only 2 issues are pre-existing warnings in test files (`metadata_aggregator_test.dart` and `steam_local_source_test.dart`), which are explicitly allowed per the contract.
-   - Fix verification: Lines 121 and 133 in `lib/presentation/navigation/focus_traversal.dart` now correctly use `void listener() => _onNodeFocusChanged(node)` instead of the previous `final listener = () => _onNodeFocusChanged(node)`, which resolved the `prefer_function_declarations_over_variables` lint violations.
+6. **B/Escape pops back**: **PASS** — `FocusTraversalService._handleCancel()` (line 416) handles `LogicalKeyboardKey.escape` and gamepad `cancel` action by calling `GoRouter.of(context).pop()` when `router.canPop()` is true. Since the detail page is inside `ShellRoute`, this pops back to Home or Library automatically. No custom back handler was needed.
+
+7. **HomePage no longer launches on A press**: **PASS** — `_handleGameSelected` calls `context.go('/game/${game.id}')`. The `_handleGameLaunched` method has been removed.
+
+8. **LibraryPage navigates on select**: **PASS** — `_handleGameSelected` calls `context.go('/game/${game.id}')` instead of `debugPrint`.
+
+9. **All tests pass**: **PASS** — `flutter test` passes with 463 test assertions, zero failures.
+
+10. **Static analysis passes**: **PASS** — `flutter analyze` reports zero issues.
 
 ## Bug Report
 
-No bugs found in this round.
+No bugs found.
+
+## Minor Gaps (Non-blocking)
+
+1. **Missing dedicated BLoC unit tests**: The contract suggested BLoC tests for each state transition as a verification method. While the widget tests indirectly verify state transitions at the UI level, there is no dedicated `test/presentation/blocs/game_detail/game_detail_bloc_test.dart` file. This is a testing coverage gap, not a functional defect.
+
+2. **Missing back-navigation widget test**: The contract suggested a widget test pumping `GameDetailPage` inside `MaterialApp.router`, simulating `LogicalKeyboardKey.escape`, and asserting the route is no longer `/game/test-id`. No such test exists. However, the functionality is verified by code inspection of `FocusTraversalService._handleCancel()` and the existing keyboard handler tests.
+
+3. **Hardcoded mixed-language strings**: Button labels are in Chinese ("启动游戏", "设置", "删除") while description fallback and stats are in English ("No description available", "plays", "Last played"). Per the contract, localization is explicitly Sprint 3 scope, so this is acceptable.
 
 ## Scoring
 
 ### Product Depth: 8/10
-The sprint goes beyond surface-level changes. The BottomNav FocusScope integration is properly wired with history-aware wrapping, fallback logic in `_recoverFocusFromScope()`, and dialog detection that correctly excludes the bottom nav scope. The file browser was created as a new widget with proper focus trapping and keyboard handling. No mockups or stubs — all functional.
+The implementation goes well beyond surface-level mockups. It includes a full BLoC with proper repository injection, hero background with gradient overlays, focus management via `FocusScope`, and comprehensive widget tests. Action buttons are stubs as specified in the contract. The only reason it's not higher is that the core interactions (launch, stop, edit, delete) are intentionally non-functional in this sprint.
 
-### Functionality: 8/10
-All core focus interactions work as specified. Cross-scope navigation is implemented bidirectionally. The file browser handles Left (parent directory), Escape (cancel), and initial focus correctly. `_isFocusInsideDialog()` correctly excludes `_bottomNavFocusNode` from dialog detection (line 274).
+### Functionality: 9/10
+All contract-specified features work correctly. Navigation from Home and Library to the detail page functions as expected. Focus initialization and D-pad traversal work reliably in widget tests. The BLoC correctly handles async loading, metadata fetch failure, and game-not-found scenarios. One point deducted for the absence of an explicit back-navigation widget test, even though the code path is clearly correct.
 
-### Visual Design: N/A (no UI changes)
-This sprint was explicitly a refactoring/polish sprint with no new UI features or visual design changes. The existing UI remains intact and functional. Scored as baseline 5 for weighted calculation neutrality.
+### Visual Design: 8/10
+The detail page follows the Steam Big Picture-inspired dark UI direction consistently. The top 60% hero background with left-to-right and bottom-to-top gradient overlays provides good text readability. The bottom action button row uses large `FocusableButton` instances with proper focus styling (`AppColors.primaryAccent` border, `AppColors.surfaceElevated` background). The mixed hardcoded Chinese/English strings are a temporary Sprint 2 artifact.
 
 ### Code Quality: 8/10
-The code is well-organized and maintainable. The focus architecture is clean, doc comments are accurate, and listener cleanup was improved with `_registeredNodeListeners`. The analyzer lint violations from Round 1 have been properly fixed. The only minor concern is that these violations were introduced in the first place, but they were caught and resolved promptly.
+The code is well-organized and maintainable. BLoC follows the established pattern with Equatable states/events, `on<Event>()` handlers in the constructor, and `part` files. DI registration uses `registerFactory` correctly for per-screen state. Focus nodes have proper lifecycle management (`initState`/`dispose`). The `FocusableButton` fix (passing `focusNode` directly to `TextButton` instead of wrapping with an outer `Focus` widget) is a genuine improvement that benefits the entire app. One point deducted for missing BLoC unit tests and one for the missing back-navigation test.
 
-### Weighted Total: 7.5/10
-Calculated as: (ProductDepth * 2 + Functionality * 3 + VisualDesign * 2 + CodeQuality * 1) / 8 = (16 + 24 + 10 + 8) / 8 = 58 / 8 = 7.25
-
-Using baseline 5 for Visual Design (no changes): **7.25/10**, rounded to **7.5/10** given the clean fix and full compliance.
+### Weighted Total: 8.4/10
+Calculated as: (8 * 2 + 9 * 3 + 8 * 2 + 8 * 1) / 8 = 67 / 8 = 8.375 ≈ 8.4
 
 ## Detailed Critique
 
-Sprint 2 successfully delivers all functional requirements from the contract. The BottomNav FocusScope architecture is clean: `_ShellWithFocusScope` creates and manages the scope node lifecycle, registers it with `FocusTraversalService`, and the service implements history-aware wrapping in both directions. The `_isFocusInsideDialog()` method correctly walks the focus tree and excludes all three registered scopes (TopBar, Content, BottomNav) before checking for ModalScope/Dialog labels.
+Sprint 2 delivers a solid, well-tested Game Detail Page that successfully transforms the app from a direct-launch model to a navigation-first model. The `GameDetailBloc` is cleanly architected with three distinct states and proper error handling. The `GameDetailPage` widget makes good use of the existing `DynamicBackground` and `FocusableButton` components, and the gradient overlay system matches the HomePage's established visual language.
 
-The `GamepadFileBrowser` is a well-constructed widget. Setting `canRequestFocus: false` on the `KeyboardListener`'s focus node is the correct fix — it allows the node to remain in the focus tree as an ancestor (so it still receives bubbled key events) without competing for autofocus when the dialog opens. The explicit `FocusScope` inside `AlertDialog.content` correctly traps focus, and the post-frame callback for initial first-item focus is the right approach.
+The focus management implementation is particularly well done. By using a local `FocusScopeNode` (`DetailActionScope`) and passing `FocusNode`s directly to `FocusableButton` widgets, the page achieves native Flutter focus traversal without any manual node registration hacks. The widget tests verify both automatic focus initialization and arrow-key navigation comprehensively.
 
-Documentation cleanup is thorough. Both `FocusTraversalService` and `GamepadHintProvider` class-level docs are accurate and free of references to the removed dialog mode concept.
+The `FocusableButton` fix is a notable bonus — by removing the outer `Focus` wrapper and passing the `focusNode` directly to `TextButton`, the Generator fixed a subtle but real bug that was preventing `focusInDirection` from working correctly across the app. This shows attention to detail beyond the sprint scope.
 
-The Round 1 blocker — two `prefer_function_declarations_over_variables` info items in `focus_traversal.dart` — has been resolved. The fix correctly changes `final listener = () => ...` to `void listener() => ...` in both `registerRow()` (line 121) and `registerGrid()` (line 133). `flutter analyze` now reports zero issues in modified files, and all 370 tests continue to pass.
+The main gaps are testing-related rather than functional. A dedicated BLoC test file would provide faster feedback and better coverage of edge cases (e.g., running state changed while loading). A widget test verifying Escape-key back navigation inside the real router would close the loop on criterion 6. Neither gap justifies failing the sprint, as the underlying functionality is correct and all existing tests pass.
 
 ## Required Fixes
 
-None. The sprint passes all success criteria.
+None. Sprint 2 passes.
+
+## Updated Sprint Status
+
+See `harness/sprint-status.md` for status update.

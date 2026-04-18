@@ -136,6 +136,7 @@ class GameRepositoryImpl implements GameRepository {
       lastPlayedDate: model.lastPlayedDate,
       isFavorite: model.isFavorite,
       playCount: model.playCount,
+      launchArguments: model.launchArguments,
     );
   }
 
@@ -149,6 +150,7 @@ class GameRepositoryImpl implements GameRepository {
       lastPlayedDate: entity.lastPlayedDate,
       isFavorite: entity.isFavorite,
       playCount: entity.playCount,
+      launchArguments: entity.launchArguments,
     );
   }
 }

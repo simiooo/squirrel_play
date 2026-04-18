@@ -7,15 +7,35 @@ import 'package:squirrel_play/domain/services/game_launcher.dart';
 /// Service for launching game executables.
 ///
 /// Implements the [GameLauncher] interface using Process.start() for
-/// Windows executable launching. Uses fire-and-forget pattern where
-/// the launch status returns to idle after 2 seconds.
+/// executable launching. Tracks running processes in memory and provides
+/// lifecycle management (launch, monitor, stop).
 class GameLauncherService implements GameLauncher {
   final _statusController = StreamController<LaunchStatus>.broadcast();
+  late final StreamController<Map<String, RunningGameInfo>> _runningGamesController;
+  final Map<String, Process> _runningProcesses = {};
+  final Map<String, RunningGameInfo> _runningGames = {};
+
   LaunchStatus _currentStatus = LaunchStatus.idle;
   Timer? _resetTimer;
 
+  /// Creates a GameLauncherService.
+  GameLauncherService() {
+    _runningGamesController =
+        StreamController<Map<String, RunningGameInfo>>.broadcast(
+      onListen: () {
+        if (!_runningGamesController.isClosed) {
+          _runningGamesController.add(Map.unmodifiable(_runningGames));
+        }
+      },
+    );
+  }
+
   @override
   Stream<LaunchStatus> get launchStatusStream => _statusController.stream;
+
+  @override
+  Stream<Map<String, RunningGameInfo>> get runningGamesStream =>
+      _runningGamesController.stream;
 
   /// Gets the current launch status.
   LaunchStatus get currentStatus => _currentStatus;
@@ -48,16 +68,37 @@ class GameLauncherService implements GameLauncher {
       // Get the working directory (parent folder of executable)
       final workingDirectory = executableFile.parent.path;
 
-      // Launch the process (fire and forget)
-      await Process.start(
+      // Parse launch arguments
+      final args = _parseLaunchArguments(game.launchArguments);
+
+      // Launch the process (non-detached so we can track it)
+      final process = await Process.start(
         game.executablePath,
-        [], // No arguments
+        args,
         workingDirectory: workingDirectory,
-        mode: ProcessStartMode.detached,
       );
 
-      // Process started successfully
-      // We don't wait for it to complete - fire and forget
+      // Track the running process
+      _runningProcesses[game.id] = process;
+      final info = RunningGameInfo(
+        gameId: game.id,
+        title: game.title,
+        startTime: DateTime.now(),
+        pid: process.pid,
+      );
+      _runningGames[game.id] = info;
+      if (!_runningGamesController.isClosed) {
+        _runningGamesController.add(Map.unmodifiable(_runningGames));
+      }
+
+      // Listen for process exit to clean up
+      process.exitCode.then((_) {
+        _runningProcesses.remove(game.id);
+        _runningGames.remove(game.id);
+        if (!_runningGamesController.isClosed) {
+          _runningGamesController.add(Map.unmodifiable(_runningGames));
+        }
+      });
 
       // Schedule status reset to idle after 2 seconds
       _scheduleResetToIdle();
@@ -76,6 +117,40 @@ class GameLauncherService implements GameLauncher {
       _setErrorStatus(error);
       return LaunchResult(success: false, errorMessage: error);
     }
+  }
+
+  /// Parses launch arguments string into a list of arguments.
+  ///
+  /// Uses simple space-delimited splitting.
+  List<String> _parseLaunchArguments(String? arguments) {
+    if (arguments == null || arguments.trim().isEmpty) {
+      return [];
+    }
+    return arguments
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((s) => s.isNotEmpty)
+        .toList();
+  }
+
+  /// Stops a running game process.
+  @override
+  Future<void> stopGame(String gameId) async {
+    final process = _runningProcesses[gameId];
+    if (process != null) {
+      process.kill();
+      _runningProcesses.remove(gameId);
+      _runningGames.remove(gameId);
+      if (!_runningGamesController.isClosed) {
+        _runningGamesController.add(Map.unmodifiable(_runningGames));
+      }
+    }
+  }
+
+  /// Checks whether a game is currently running.
+  @override
+  bool isGameRunning(String gameId) {
+    return _runningProcesses.containsKey(gameId);
   }
 
   /// Sets error status and schedules reset to idle.
@@ -100,5 +175,6 @@ class GameLauncherService implements GameLauncher {
   void dispose() {
     _resetTimer?.cancel();
     _statusController.close();
+    _runningGamesController.close();
   }
 }

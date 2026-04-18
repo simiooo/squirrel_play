@@ -57,8 +57,8 @@ class _HomePageState extends State<HomePage> {
     context.go('/library');
   }
 
-  void _handleGameLaunched(Game game) {
-    _homeBloc.add(HomeGameLaunched(game: game));
+  void _handleGameSelected(Game game) {
+    context.go('/game/${game.id}');
   }
 
   void _handleRetry() {
@@ -232,7 +232,7 @@ class _HomePageState extends State<HomePage> {
         ));
       },
       onCardSelected: (int cardIndex) {
-        _handleGameLaunched(row.games[cardIndex]);
+        _handleGameSelected(row.games[cardIndex]);
       },
       onHeaderFocused: () {
         _homeBloc.add(HomeRowHeaderFocused(row: row));

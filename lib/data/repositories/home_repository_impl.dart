@@ -68,6 +68,7 @@ class HomeRepositoryImpl implements HomeRepository {
   ///
   /// Should be called by other repositories/services when games are
   /// added, deleted, or updated.
+  @override
   Future<void> notifyGamesChanged() async {
     final games = await _gameRepository.getAllGames();
     _gameChangeController.add(games);

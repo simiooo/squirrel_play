@@ -18,6 +18,10 @@ class GameMetadataModel {
   @JsonKey(name: DatabaseConstants.colExternalId)
   final String? externalId;
 
+  /// Official title from metadata source (e.g., Steam/RAWG).
+  @JsonKey(name: DatabaseConstants.colMetadataTitle)
+  final String? title;
+
   /// Game description.
   @JsonKey(name: DatabaseConstants.colDescription)
   final String? description;
@@ -26,9 +30,17 @@ class GameMetadataModel {
   @JsonKey(name: DatabaseConstants.colCoverImageUrl)
   final String? coverImageUrl;
 
+  /// URL to card/landscape image.
+  @JsonKey(name: DatabaseConstants.colCardImageUrl)
+  final String? cardImageUrl;
+
   /// URL to hero/background image.
   @JsonKey(name: DatabaseConstants.colHeroImageUrl)
   final String? heroImageUrl;
+
+  /// URL to logo image.
+  @JsonKey(name: DatabaseConstants.colLogoImageUrl)
+  final String? logoImageUrl;
 
   /// Release date (milliseconds since epoch).
   @JsonKey(
@@ -62,9 +74,12 @@ class GameMetadataModel {
   const GameMetadataModel({
     required this.gameId,
     this.externalId,
+    this.title,
     this.description,
     this.coverImageUrl,
+    this.cardImageUrl,
     this.heroImageUrl,
+    this.logoImageUrl,
     this.releaseDate,
     this.rating,
     this.developer,
@@ -77,9 +92,12 @@ class GameMetadataModel {
     return GameMetadataModel(
       gameId: map[DatabaseConstants.colGameId] as String,
       externalId: map[DatabaseConstants.colExternalId] as String?,
+      title: map[DatabaseConstants.colMetadataTitle] as String?,
       description: map[DatabaseConstants.colDescription] as String?,
       coverImageUrl: map[DatabaseConstants.colCoverImageUrl] as String?,
+      cardImageUrl: map[DatabaseConstants.colCardImageUrl] as String?,
       heroImageUrl: map[DatabaseConstants.colHeroImageUrl] as String?,
+      logoImageUrl: map[DatabaseConstants.colLogoImageUrl] as String?,
       releaseDate: map[DatabaseConstants.colReleaseDate] != null
           ? DateTime.fromMillisecondsSinceEpoch(
               map[DatabaseConstants.colReleaseDate] as int,
@@ -99,9 +117,12 @@ class GameMetadataModel {
     return {
       DatabaseConstants.colGameId: gameId,
       DatabaseConstants.colExternalId: externalId,
+      DatabaseConstants.colMetadataTitle: title,
       DatabaseConstants.colDescription: description,
       DatabaseConstants.colCoverImageUrl: coverImageUrl,
+      DatabaseConstants.colCardImageUrl: cardImageUrl,
       DatabaseConstants.colHeroImageUrl: heroImageUrl,
+      DatabaseConstants.colLogoImageUrl: logoImageUrl,
       DatabaseConstants.colReleaseDate: releaseDate?.millisecondsSinceEpoch,
       DatabaseConstants.colRating: rating,
       DatabaseConstants.colDeveloper: developer,
@@ -121,9 +142,12 @@ class GameMetadataModel {
   GameMetadataModel copyWith({
     String? gameId,
     String? externalId,
+    String? title,
     String? description,
     String? coverImageUrl,
+    String? cardImageUrl,
     String? heroImageUrl,
+    String? logoImageUrl,
     DateTime? releaseDate,
     double? rating,
     String? developer,
@@ -133,9 +157,12 @@ class GameMetadataModel {
     return GameMetadataModel(
       gameId: gameId ?? this.gameId,
       externalId: externalId ?? this.externalId,
+      title: title ?? this.title,
       description: description ?? this.description,
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,
+      cardImageUrl: cardImageUrl ?? this.cardImageUrl,
       heroImageUrl: heroImageUrl ?? this.heroImageUrl,
+      logoImageUrl: logoImageUrl ?? this.logoImageUrl,
       releaseDate: releaseDate ?? this.releaseDate,
       rating: rating ?? this.rating,
       developer: developer ?? this.developer,

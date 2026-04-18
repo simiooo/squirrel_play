@@ -318,6 +318,50 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameInfoLaunchButton => 'Launch Game';
 
   @override
+  String get gameInfoStopButton => 'Stop';
+
+  @override
+  String get gameInfoSettingsButton => 'Settings';
+
+  @override
+  String get gameInfoDeleteButton => 'Delete';
+
+  @override
+  String get dialogEditGameTitle => 'Edit Game';
+
+  @override
+  String get dialogEditGameTitleLabel => 'Title';
+
+  @override
+  String get dialogEditGameTitleHint => 'Enter game title';
+
+  @override
+  String get dialogEditGameExecutableLabel => 'Executable Path';
+
+  @override
+  String get dialogEditGameExecutableHint => 'Path to game executable';
+
+  @override
+  String get dialogEditGameBrowse => 'Browse';
+
+  @override
+  String get dialogEditGameArgumentsLabel => 'Launch Arguments';
+
+  @override
+  String get dialogEditGameArgumentsHint => 'e.g. -windowed --fullscreen';
+
+  @override
+  String get dialogDeleteGameTitle => 'Delete Game?';
+
+  @override
+  String dialogDeleteGameMessage(String gameName) {
+    return 'Are you sure you want to remove \"$gameName\" from your library?';
+  }
+
+  @override
+  String get dialogDeleteGameConfirm => 'Delete';
+
+  @override
   String get gamepadAButton => 'A: Select';
 
   @override
@@ -454,4 +498,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String fileBrowserSelectedCount(int count) {
     return '$count selected';
   }
+
+  @override
+  String get errorGameNotFound => 'Game not found';
+
+  @override
+  String get errorLoadFailed => 'Failed to load game';
+
+  @override
+  String get errorLaunchFailed => 'Failed to launch game';
+
+  @override
+  String get errorStopFailed => 'Failed to stop game';
+
+  @override
+  String get errorDeleteFailed => 'Failed to delete game';
+
+  @override
+  String get errorUpdateFailed => 'Failed to update game';
 }

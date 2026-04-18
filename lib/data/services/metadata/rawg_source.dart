@@ -1,5 +1,6 @@
 import 'dart:developer' as developer;
 
+import 'package:meta/meta.dart';
 import 'package:squirrel_play/data/datasources/remote/rawg_api_client.dart';
 import 'package:squirrel_play/data/datasources/remote/rawg_api_models.dart';
 import 'package:squirrel_play/data/services/api_key_service.dart';
@@ -21,6 +22,15 @@ class RawgSource implements MetadataSource {
 
   /// Gets the API client for direct access (used by MetadataService for backward compatibility).
   RawgApiClient? get apiClient => _apiClient;
+
+  /// Sets the API client for testing purposes.
+  @visibleForTesting
+  set apiClient(RawgApiClient? client) {
+    _apiClient = client;
+    if (client != null) {
+      _matchingEngine = MetadataMatchingEngine(apiClient: client);
+    }
+  }
 
   RawgSource({
     required ApiKeyService apiKeyService,
@@ -189,8 +199,10 @@ class RawgSource implements MetadataSource {
     return GameMetadata(
       gameId: gameId,
       externalId: 'rawg:$gameIdInt',
+      title: details.name,
       description: details.descriptionRaw ?? details.description,
       coverImageUrl: details.backgroundImage,
+      cardImageUrl: details.backgroundImage,
       heroImageUrl: details.backgroundImageAdditional ?? details.backgroundImage,
       genres: details.genres?.map((g) => g.name).toList() ?? [],
       screenshots: screenshots.map((s) => s.url).toList(),

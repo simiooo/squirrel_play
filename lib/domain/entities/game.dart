@@ -29,6 +29,9 @@ class Game extends Equatable {
   /// Number of times the game has been launched.
   final int playCount;
 
+  /// Optional launch arguments for the game executable.
+  final String? launchArguments;
+
   /// Creates a Game entity.
   const Game({
     required this.id,
@@ -39,6 +42,7 @@ class Game extends Equatable {
     this.lastPlayedDate,
     this.isFavorite = false,
     this.playCount = 0,
+    this.launchArguments,
   });
 
   /// Creates a copy of this Game with the given fields replaced.
@@ -51,6 +55,7 @@ class Game extends Equatable {
     DateTime? lastPlayedDate,
     bool? isFavorite,
     int? playCount,
+    String? launchArguments,
   }) {
     return Game(
       id: id ?? this.id,
@@ -61,6 +66,7 @@ class Game extends Equatable {
       lastPlayedDate: lastPlayedDate ?? this.lastPlayedDate,
       isFavorite: isFavorite ?? this.isFavorite,
       playCount: playCount ?? this.playCount,
+      launchArguments: launchArguments ?? this.launchArguments,
     );
   }
 
@@ -74,5 +80,6 @@ class Game extends Equatable {
         lastPlayedDate,
         isFavorite,
         playCount,
+        launchArguments,
       ];
 }

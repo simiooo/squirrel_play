@@ -1,40 +1,64 @@
-# Contract Review: Sprint 2
+# Contract Review: Sprint 2 — Final Assessment
 
 ## Assessment: APPROVED
 
+All 5 revision items from the initial review have been addressed. The contract is now ready for implementation.
+
+---
+
+## Revision Verification
+
+| # | Feedback Item | Status | Evidence in Revised Contract |
+|---|---------------|--------|------------------------------|
+| 1 | Fix ARB file contradiction | ✅ RESOLVED | Lines 129–131: `app_en.arb` and `app_zh.arb` now marked `# UNMODIFIED (localization is Sprint 3)` |
+| 2 | Add BLoC dependencies | ✅ RESOLVED | Lines 63–90: New "BLoC Dependencies" section specifies `GameRepository` and `MetadataRepository` constructor params with DI registration code |
+| 3 | Add router-to-BLoC parameter passing | ✅ RESOLVED | Lines 92–112: New "Router-to-BLoC Parameter Passing" section with full `GoRoute` `pageBuilder` code showing `state.pathParameters['id']` → `GameDetailLoadRequested(gameId)` |
+| 4 | Clarify FocusNode lifecycle | ✅ RESOLVED | Lines 36–41, 60, 175: Explicitly states `late final` state fields in `_GameDetailPageState`, created in `initState`, disposed in `dispose`, passed via `focusNode` parameter |
+| 5 | Strengthen success criterion 6 | ✅ RESOLVED | Lines 194–196: Concrete widget test approach using `MaterialApp.router`, `tester.sendKeyEvent(LogicalKeyboardKey.escape)`, and `GoRouter.of(context).routeInformationProvider.value.uri.path` assertion |
+
+---
+
 ## Scope Coverage
 
-The contract aligns precisely with the Sprint 2 scope defined in the spec ("Polish — Settings Button & File Browser") and addresses the stale documentation issue flagged in the Sprint 1 evaluation.
+**Aligned with spec?** Yes. Sprint 2 is correctly scoped to the Game Detail Page UI, routing, and navigation changes. The contract explicitly excludes Sprint 3 functionality and does not overstep.
 
-**Spec alignment:**
-- Sprint 2 SC1 (Settings button focusable) → Covered by contract SC1 + SC2
-- Sprint 2 SC2 (Content ↔ BottomNav cross-scope navigation) → Covered by contract SC2 + SC3
-- Sprint 2 SC3 (GamepadFileBrowser without dialog mode) → Covered by contract SC4 with detailed sub-criteria
-- Sprint 2 SC4 (370 tests pass, no analyzer warnings) → Covered by contract SC6
+**Matches Sprint 2 from spec:**
+- New route `/game/:id` ✅
+- `GameDetailPage` with hero background, info overlay, action button row ✅
+- `GameDetailBloc` with loading/loaded/error states ✅
+- HomePage / LibraryPage navigation to detail page ✅
+- Focus management and back navigation ✅
 
-**Sprint 1 carryover:**
-- Stale documentation cleanup (flagged in Sprint 1 evaluation) → Covered by contract SC5
-
-The contract appropriately narrows the spec's file list by targeting `router.dart` instead of `gamepad_nav_bar.dart` for the BottomNav FocusScope wrapping, which is architecturally correct since `_ShellWithFocusScope` lives in `router.dart`.
+---
 
 ## Success Criteria Review
 
-- **SC1 (Settings button in registered FocusScope)**: Adequate. Specific, verifiable by code inspection.
-- **SC2 (Content → BottomNav wrapping)**: Adequate. Describes the exact wrapping rule (`down` from Content).
-- **SC3 (BottomNav → Content wrapping)**: Adequate. Describes the exact wrapping rule (`up` from BottomNav).
-- **SC4 (GamepadFileBrowser navigation)**: Adequate and thorough. Lists six specific behaviors (Left→parent, Escape, Up/Down, Enter/Select, initial focus, focus trapping). This is stronger than the spec's single-line criterion.
-- **SC5 (Stale documentation)**: Adequate. Two specific doc comments to fix.
-- **SC6 (Tests + analyzer)**: Adequate. Standard quality gate.
+| # | Criterion | Assessment |
+|---|-----------|------------|
+| 1 | Route exists and navigates | **Adequate** — testable via widget test or router inspection. |
+| 2 | Detail page displays correct game data | **Adequate** — mock BLoC + text finders is a solid approach. |
+| 3 | Loading and error states | **Adequate** — standard BLoC test pattern. |
+| 4 | Focus on first action button | **Adequate** — FocusNode lifecycle is now explicitly specified. |
+| 5 | D-pad navigates action buttons | **Adequate** — widget test with arrow key simulation works. |
+| 6 | B/Escape pops back | **Adequate** — specific test approach with `MaterialApp.router` and `sendKeyEvent`. |
+| 7 | HomePage no longer launches on A | **Adequate** — can verify by inspecting `_handleGameSelected` or via widget test. |
+| 8 | LibraryPage navigates on select | **Adequate** — code inspection or widget test. |
+| 9 | All tests pass | **Adequate** — clear pass/fail. |
+| 10 | Static analysis passes | **Adequate** — clear pass/fail. |
 
-## Suggested Changes
-
-None. The contract is clear, measurable, achievable, and correctly scoped.
+---
 
 ## Test Plan Preview
 
-My evaluation will verify:
-1. **Code inspection**: `_bottomNavScopeNode` exists in `router.dart`, `GamepadNavBar` is wrapped in `FocusScope`, `_bottomNavFocusNode` exists in `FocusTraversalService`.
-2. **Navigation behavior**: Run the app and attempt keyboard/gamepad navigation from page content down to the Settings button, and back up into content.
-3. **File browser**: Open the file browser dialog and verify keyboard navigation (arrow keys, Escape, Enter) works correctly and focus is trapped.
-4. **Doc comments**: Verify no stale "dialog mode" references remain.
-5. **Regression tests**: Run `flutter test` and `flutter analyze` to confirm all pass.
+When this sprint is submitted for evaluation, I will test:
+
+1. **Navigation**: Press A on Home and Library game cards → verify route is `/game/{id}`.
+2. **Data display**: Verify title, description, play count, last played, and favorite status render correctly from mocked BLoC states.
+3. **Focus behavior**: After `pumpAndSettle`, verify `tester.binding.focusManager.primaryFocus` is on the first action button's `FocusNode`.
+4. **D-pad traversal**: Send arrow right key events and verify focus moves sequentially through buttons.
+5. **Back navigation**: Verify Escape/gamepad B pops from detail page to previous page.
+6. **BLoC state machine**: Verify `GameDetailLoading` → `GameDetailLoaded` → `GameDetailError` transitions.
+7. **Regression**: Run full test suite — Home/Lib tests must still pass after navigation behavior changes.
+8. **Static analysis**: `flutter analyze` must report zero issues.
+9. **Code inspection**: Confirm no manual `registerContentNode` / `registerTopBarNode` calls exist in new code.
+10. **Sprint boundary check**: Confirm action buttons are stubs (no real launch/stop/edit/delete logic) and no Sprint 3 functionality leaked in.

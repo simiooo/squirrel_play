@@ -12,13 +12,17 @@ import 'package:squirrel_play/data/services/file_scanner_service.dart';
 import 'package:squirrel_play/data/services/game_launcher_service.dart';
 import 'package:squirrel_play/data/services/gamepad_service.dart';
 import 'package:squirrel_play/data/services/metadata/metadata_aggregator.dart';
+import 'package:squirrel_play/data/services/metadata/rawg_batch_search_service.dart';
 import 'package:squirrel_play/data/services/metadata/rawg_source.dart';
 import 'package:squirrel_play/data/services/metadata/steam_local_source.dart';
+import 'package:squirrel_play/data/services/metadata/steam_metadata_adapter.dart';
 import 'package:squirrel_play/data/services/metadata/steam_store_source.dart';
 import 'package:squirrel_play/data/services/metadata_service.dart';
 import 'package:squirrel_play/data/services/sound_service.dart';
 import 'package:squirrel_play/data/services/steam_detector.dart';
 import 'package:squirrel_play/data/services/steam_library_parser.dart';
+import 'package:squirrel_play/data/services/directory_metadata_chain/directory_metadata_chain.dart';
+import 'package:squirrel_play/data/services/directory_metadata_chain/game_metadata_handler.dart';
 import 'package:squirrel_play/data/services/steam_manifest_parser.dart';
 import 'package:squirrel_play/domain/repositories/game_repository.dart';
 import 'package:squirrel_play/domain/repositories/home_repository.dart';
@@ -26,6 +30,7 @@ import 'package:squirrel_play/domain/repositories/metadata_repository.dart';
 import 'package:squirrel_play/domain/repositories/scan_directory_repository.dart';
 import 'package:squirrel_play/domain/services/game_launcher.dart';
 import 'package:squirrel_play/presentation/blocs/add_game/add_game_bloc.dart';
+import 'package:squirrel_play/presentation/blocs/game_detail/game_detail_bloc.dart';
 import 'package:squirrel_play/presentation/blocs/game_library/game_library_bloc.dart';
 import 'package:squirrel_play/presentation/blocs/gamepad/gamepad_cubit.dart';
 import 'package:squirrel_play/presentation/blocs/gamepad/gamepad_test_bloc.dart';
@@ -104,17 +109,29 @@ Future<void> configureDependencies() async {
     ),
   );
 
+  getIt.registerSingleton<SteamMetadataAdapter>(
+    SteamMetadataAdapter(
+      steamLocalSource: getIt<SteamLocalSource>(),
+      steamStoreSource: getIt<SteamStoreSource>(),
+    ),
+  );
+
   getIt.registerSingleton<RawgSource>(
     RawgSource(
       apiKeyService: getIt<ApiKeyService>(),
     ),
   );
 
+  getIt.registerSingleton<RawgBatchSearchService>(
+    RawgBatchSearchService(
+      rawgSource: getIt<RawgSource>(),
+    ),
+  );
+
   // Metadata Aggregator (singleton with named source parameters)
   getIt.registerSingleton<MetadataAggregator>(
     MetadataAggregator(
-      steamLocalSource: getIt<SteamLocalSource>(),
-      steamStoreSource: getIt<SteamStoreSource>(),
+      steamMetadataAdapter: getIt<SteamMetadataAdapter>(),
       rawgSource: getIt<RawgSource>(),
     ),
   );
@@ -125,6 +142,13 @@ Future<void> configureDependencies() async {
       apiKeyService: getIt<ApiKeyService>(),
       metadataAggregator: getIt<MetadataAggregator>(),
       rawgSource: getIt<RawgSource>(),
+    ),
+  );
+
+  // Directory Metadata Chain
+  getIt.registerSingleton<GameMetadataHandler>(
+    DirectoryMetadataChain.build(
+      manifestParser: getIt<SteamManifestParser>(),
     ),
   );
 
@@ -150,6 +174,7 @@ Future<void> configureDependencies() async {
       metadataService: getIt<MetadataService>(),
       metadataAggregator: getIt<MetadataAggregator>(),
       gameRepository: getIt<GameRepository>(),
+      rawgBatchSearchService: getIt<RawgBatchSearchService>(),
     ),
   );
 
@@ -162,6 +187,7 @@ Future<void> configureDependencies() async {
   getIt.registerFactory<AddGameBloc>(() => AddGameBloc(
         gameRepository: getIt<GameRepository>(),
         homeRepository: getIt<HomeRepository>() as HomeRepositoryImpl,
+        metadataHandler: getIt<GameMetadataHandler>(),
         scanDirectoryRepository: getIt<ScanDirectoryRepository>(),
         uuid: getIt<Uuid>(),
         onGamesAdded: null,
@@ -171,6 +197,14 @@ Future<void> configureDependencies() async {
   getIt.registerFactory<GameLibraryBloc>(() => GameLibraryBloc(
         gameRepository: getIt<GameRepository>(),
         homeRepository: getIt<HomeRepository>() as HomeRepositoryImpl,
+      ));
+
+  // Factory for GameDetailBloc
+  getIt.registerFactory<GameDetailBloc>(() => GameDetailBloc(
+        gameRepository: getIt<GameRepository>(),
+        metadataRepository: getIt<MetadataRepository>(),
+        gameLauncher: getIt<GameLauncher>(),
+        homeRepository: getIt<HomeRepository>(),
       ));
 
   // Factory for HomeBloc

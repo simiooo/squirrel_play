@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:meta/meta.dart';
 
 import 'package:squirrel_play/data/datasources/remote/api_config.dart';
 import 'package:squirrel_play/data/datasources/remote/rawg_api_models.dart';
@@ -56,6 +57,9 @@ class RawgApiClient {
   // Rate limiting - tracks timestamps of requests in the last second
   final List<DateTime> _requestTimestamps = [];
 
+  /// Total number of requests made by this client.
+  int requestCount = 0;
+
   RawgApiClient({required String apiKey}) : _apiKey = apiKey {
     _dio = Dio(
       BaseOptions(
@@ -76,11 +80,17 @@ class RawgApiClient {
     );
   }
 
-  /// Searches for games by query string.
+  /// Test-only constructor that allows injecting a mock [Dio].
+  @visibleForTesting
+  RawgApiClient.test({required Dio dio, required String apiKey})
+      : _dio = dio,
+        _apiKey = apiKey;
+
+  /// Searches for games and returns the full response including pagination URLs.
   ///
-  /// Returns a list of search results.
+  /// Returns a [RawgSearchResponse] with results and the `next` URL.
   /// Throws [RawgApiException] on error.
-  Future<List<GameSearchResult>> searchGames(
+  Future<RawgSearchResponse<GameSearchResult>> searchGamesResponse(
     String query, {
     int pageSize = ApiConfig.defaultPageSize,
   }) async {
@@ -95,13 +105,102 @@ class RawgApiClient {
         },
       );
 
-      final searchResponse = RawgSearchResponse<GameSearchResult>.fromJson(
+      return RawgSearchResponse<GameSearchResult>.fromJson(
         response.data as Map<String, dynamic>,
         (json) => GameSearchResult.fromJson(json as Map<String, dynamic>),
       );
-
-      return searchResponse.results;
     });
+  }
+
+  /// Searches for games by query string.
+  ///
+  /// Returns a list of search results.
+  /// Throws [RawgApiException] on error.
+  Future<List<GameSearchResult>> searchGames(
+    String query, {
+    int pageSize = ApiConfig.defaultPageSize,
+  }) async {
+    final response = await searchGamesResponse(
+      query,
+      pageSize: pageSize,
+    );
+    return response.results;
+  }
+
+  /// Searches for games with recursive pagination.
+  ///
+  /// Fetches the first page, then follows `next` URLs until there are
+  /// no more pages or [maxPages] is reached.
+  ///
+  /// If [firstPageResults] is provided, the initial page fetch is skipped
+  /// and pagination continues from [firstPageNextUrl] (page 2 onwards).
+  ///
+  /// Returns a combined list of all search results across fetched pages.
+  /// Throws [RawgApiException] on error.
+  Future<List<GameSearchResult>> searchGamesPaginated(
+    String query, {
+    int pageSize = ApiConfig.defaultPageSize,
+    int? maxPages,
+    List<GameSearchResult>? firstPageResults,
+    String? firstPageNextUrl,
+  }) async {
+    final allResults = <GameSearchResult>[];
+    String? nextUrl;
+    var pagesFetched = 0;
+    final effectiveMaxPages =
+        maxPages ?? ApiConfig.maxPaginatedPages;
+
+    if (firstPageResults != null) {
+      // Skip first page fetch, use provided results
+      allResults.addAll(firstPageResults);
+      nextUrl = firstPageNextUrl;
+      pagesFetched = 1;
+    } else {
+      // Fetch first page
+      await _applyRateLimit();
+
+      final firstPageResponse = await _withRetry(() async {
+        final response = await _dio.get(
+          ApiConfig.gamesEndpoint,
+          queryParameters: {
+            ApiConfig.searchParam: query,
+            ApiConfig.pageSizeParam: pageSize,
+          },
+        );
+        return response;
+      });
+
+      final firstPage = RawgSearchResponse<GameSearchResult>.fromJson(
+        firstPageResponse.data as Map<String, dynamic>,
+        (json) => GameSearchResult.fromJson(json as Map<String, dynamic>),
+      );
+
+      allResults.addAll(firstPage.results);
+      nextUrl = firstPage.next;
+      pagesFetched = 1;
+    }
+
+    // Follow next URLs recursively
+    while (nextUrl != null && pagesFetched < effectiveMaxPages) {
+      await _applyRateLimit();
+
+      final currentNextUrl = nextUrl;
+      final nextResponse = await _withRetry(() async {
+        final response = await _dio.get(currentNextUrl);
+        return response;
+      });
+
+      final nextPage = RawgSearchResponse<GameSearchResult>.fromJson(
+        nextResponse.data as Map<String, dynamic>,
+        (json) => GameSearchResult.fromJson(json as Map<String, dynamic>),
+      );
+
+      allResults.addAll(nextPage.results);
+      nextUrl = nextPage.next;
+      pagesFetched++;
+    }
+
+    return allResults;
   }
 
   /// Gets detailed information about a specific game.
@@ -166,6 +265,7 @@ class RawgApiClient {
 
     // Add current timestamp after any delay
     _requestTimestamps.add(DateTime.now());
+    requestCount++;
   }
 
   /// Executes a request with retry logic.

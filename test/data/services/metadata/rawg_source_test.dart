@@ -1,11 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:squirrel_play/data/datasources/remote/rawg_api_client.dart';
+import 'package:squirrel_play/data/datasources/remote/rawg_api_models.dart';
 import 'package:squirrel_play/data/services/api_key_service.dart';
 import 'package:squirrel_play/data/services/metadata/metadata_source_type.dart';
 import 'package:squirrel_play/data/services/metadata/rawg_source.dart';
 import 'package:squirrel_play/domain/entities/game.dart';
 
 class MockApiKeyService extends Mock implements ApiKeyService {}
+
+class MockRawgApiClient extends Mock implements RawgApiClient {}
 
 class FakeGame extends Fake implements Game {}
 
@@ -193,6 +197,153 @@ void main() {
 
       test('should have null apiClient when not initialized', () {
         expect(source.apiClient, isNull);
+      });
+    });
+
+    group('_convertToGameMetadata mappings', () {
+      late MockRawgApiClient mockApiClient;
+
+      setUp(() {
+        mockApiClient = MockRawgApiClient();
+        source.apiClient = mockApiClient;
+      });
+
+      test('should map name to title', () async {
+        when(() => mockApiClient.getGameDetails(any())).thenAnswer(
+          (_) async => const GameDetailResponse(
+            id: 123,
+            name: 'Test Game Title',
+            slug: 'test-game-title',
+            description: 'Test description',
+            descriptionRaw: 'Test description raw',
+            backgroundImage: 'https://example.com/bg.jpg',
+            backgroundImageAdditional: 'https://example.com/bg2.jpg',
+            released: '2023-01-01',
+            rating: 4.5,
+            ratingTop: 5,
+            genres: [
+              Genre(id: 1, name: 'Action', slug: 'action'),
+            ],
+            developers: [
+              Developer(id: 1, name: 'Dev Studio', slug: 'dev-studio'),
+            ],
+            publishers: [
+              Publisher(id: 1, name: 'Pub Co', slug: 'pub-co'),
+            ],
+          ),
+        );
+
+        when(() => mockApiClient.getGameScreenshots(any())).thenAnswer(
+          (_) async => [
+            const Screenshot(id: 1, url: 'https://example.com/ss1.jpg'),
+          ],
+        );
+
+        final result = await source.fetchById('game1', 123);
+
+        expect(result, isNotNull);
+        expect(result!.title, equals('Test Game Title'));
+      });
+
+      test('should map background_image to cardImageUrl', () async {
+        when(() => mockApiClient.getGameDetails(any())).thenAnswer(
+          (_) async => const GameDetailResponse(
+            id: 123,
+            name: 'Test Game',
+            slug: 'test-game',
+            backgroundImage: 'https://example.com/bg.jpg',
+          ),
+        );
+
+        when(() => mockApiClient.getGameScreenshots(any()))
+            .thenAnswer((_) async => []);
+
+        final result = await source.fetchById('game1', 123);
+
+        expect(result, isNotNull);
+        expect(result!.cardImageUrl, equals('https://example.com/bg.jpg'));
+      });
+
+      test('should map background_image to coverImageUrl', () async {
+        when(() => mockApiClient.getGameDetails(any())).thenAnswer(
+          (_) async => const GameDetailResponse(
+            id: 123,
+            name: 'Test Game',
+            slug: 'test-game',
+            backgroundImage: 'https://example.com/bg.jpg',
+          ),
+        );
+
+        when(() => mockApiClient.getGameScreenshots(any()))
+            .thenAnswer((_) async => []);
+
+        final result = await source.fetchById('game1', 123);
+
+        expect(result, isNotNull);
+        expect(result!.coverImageUrl, equals('https://example.com/bg.jpg'));
+      });
+
+      test('should use background_image_additional for heroImageUrl', () async {
+        when(() => mockApiClient.getGameDetails(any())).thenAnswer(
+          (_) async => const GameDetailResponse(
+            id: 123,
+            name: 'Test Game',
+            slug: 'test-game',
+            backgroundImage: 'https://example.com/bg.jpg',
+            backgroundImageAdditional: 'https://example.com/bg_additional.jpg',
+          ),
+        );
+
+        when(() => mockApiClient.getGameScreenshots(any()))
+            .thenAnswer((_) async => []);
+
+        final result = await source.fetchById('game1', 123);
+
+        expect(result, isNotNull);
+        expect(
+          result!.heroImageUrl,
+          equals('https://example.com/bg_additional.jpg'),
+        );
+      });
+
+      test('should fall back to background_image when additional is null',
+          () async {
+        when(() => mockApiClient.getGameDetails(any())).thenAnswer(
+          (_) async => const GameDetailResponse(
+            id: 123,
+            name: 'Test Game',
+            slug: 'test-game',
+            backgroundImage: 'https://example.com/bg.jpg',
+            backgroundImageAdditional: null,
+          ),
+        );
+
+        when(() => mockApiClient.getGameScreenshots(any()))
+            .thenAnswer((_) async => []);
+
+        final result = await source.fetchById('game1', 123);
+
+        expect(result, isNotNull);
+        expect(result!.heroImageUrl, equals('https://example.com/bg.jpg'));
+      });
+
+      test('should set externalId to rawg:{gameIdInt}', () async {
+        when(() => mockApiClient.getGameDetails(any())).thenAnswer(
+          (_) async => const GameDetailResponse(
+            id: 456,
+            name: 'Test Game',
+            slug: 'test-game',
+            backgroundImage: 'https://example.com/bg.jpg',
+          ),
+        );
+
+        when(() => mockApiClient.getGameScreenshots(any()))
+            .thenAnswer((_) async => []);
+
+        final result = await source.fetchById('game1', 456);
+
+        expect(result, isNotNull);
+        expect(result!.externalId, equals('rawg:456'));
       });
     });
   });
