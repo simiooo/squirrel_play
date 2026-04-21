@@ -32,6 +32,12 @@ class Game extends Equatable {
   /// Optional launch arguments for the game executable.
   final String? launchArguments;
 
+  /// Platform the game belongs to (e.g., 'steam', 'manual').
+  final String? platform;
+
+  /// Platform-specific game ID (e.g., Steam appId).
+  final String? platformGameId;
+
   /// Creates a Game entity.
   const Game({
     required this.id,
@@ -43,6 +49,8 @@ class Game extends Equatable {
     this.isFavorite = false,
     this.playCount = 0,
     this.launchArguments,
+    this.platform,
+    this.platformGameId,
   });
 
   /// Creates a copy of this Game with the given fields replaced.
@@ -56,6 +64,8 @@ class Game extends Equatable {
     bool? isFavorite,
     int? playCount,
     String? launchArguments,
+    String? platform,
+    String? platformGameId,
   }) {
     return Game(
       id: id ?? this.id,
@@ -67,6 +77,8 @@ class Game extends Equatable {
       isFavorite: isFavorite ?? this.isFavorite,
       playCount: playCount ?? this.playCount,
       launchArguments: launchArguments ?? this.launchArguments,
+      platform: platform ?? this.platform,
+      platformGameId: platformGameId ?? this.platformGameId,
     );
   }
 
@@ -81,5 +93,7 @@ class Game extends Equatable {
         isFavorite,
         playCount,
         launchArguments,
+        platform,
+        platformGameId,
       ];
 }

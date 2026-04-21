@@ -528,6 +528,16 @@
     "description": "Button label to delete a game from the library"
   },
 
+  "gameInfoRefreshMetadataButton": "Refresh Metadata",
+  "@gameInfoRefreshMetadataButton": {
+    "description": "Button label to re-fetch game metadata from external APIs"
+  },
+
+  "errorApiNotConfigured": "RAWG API key is not configured. Please go to Settings to add your API key.",
+  "@errorApiNotConfigured": {
+    "description": "Error message shown when metadata fetch fails because RAWG API key is missing"
+  },
+
   "dialogEditGameTitle": "Edit Game",
   "@dialogEditGameTitle": {
     "description": "Title for the Edit Game dialog"
@@ -1029,6 +1039,11 @@
     "description": "Badge label shown for games already in the library"
   },
 
+  "steamGamesRefreshMetadata": "Refresh Metadata",
+  "@steamGamesRefreshMetadata": {
+    "description": "Tooltip for refreshing metadata of an already-added Steam game"
+  },
+
   "steamGamesImporting": "Importing games...",
   "@steamGamesImporting": {
     "description": "Message shown while importing Steam games"
@@ -1313,5 +1328,75 @@
   "gamepadTestGamepadDisconnected": "Gamepad disconnected",
   "@gamepadTestGamepadDisconnected": {
     "description": "Log message when a gamepad is disconnected"
+  },
+
+  "settingsDisplay": "Display",
+  "@settingsDisplay": {
+    "description": "Section title for display settings"
+  },
+
+  "settingsFullscreen": "Fullscreen",
+  "@settingsFullscreen": {
+    "description": "Label for fullscreen toggle"
+  },
+
+  "settingsFullscreenHint": "Toggle fullscreen mode",
+  "@settingsFullscreenHint": {
+    "description": "Accessibility hint for fullscreen switch"
+  },
+
+  "settingsSystem": "System",
+  "@settingsSystem": {
+    "description": "Section title for system settings"
+  },
+
+  "settingsLock": "Lock",
+  "@settingsLock": {
+    "description": "Button label for lock session"
+  },
+
+  "settingsSleep": "Sleep",
+  "@settingsSleep": {
+    "description": "Button label for sleep/suspend"
+  },
+
+  "settingsReboot": "Reboot",
+  "@settingsReboot": {
+    "description": "Button label for reboot"
+  },
+
+  "settingsShutdown": "Shutdown",
+  "@settingsShutdown": {
+    "description": "Button label for shutdown"
+  },
+
+  "settingsSystemVolume": "System Volume",
+  "@settingsSystemVolume": {
+    "description": "Label for system volume slider"
+  },
+
+  "settingsSystemMute": "Mute",
+  "@settingsSystemMute": {
+    "description": "Label for system mute toggle"
+  },
+
+  "settingsSystemVolumeHint": "System volume slider - use left and right to adjust",
+  "@settingsSystemVolumeHint": {
+    "description": "Accessibility hint for system volume slider"
+  },
+
+  "settingsSystemMuteHint": "Mute toggle - press to toggle system mute on or off",
+  "@settingsSystemMuteHint": {
+    "description": "Accessibility hint for system mute switch"
+  },
+
+  "settingsAboutDevice": "About This Device",
+  "@settingsAboutDevice": {
+    "description": "Button label to open system info page"
+  },
+
+  "systemInfoTitle": "About This Device",
+  "@systemInfoTitle": {
+    "description": "Title for the system info page"
   }
 }

@@ -6,7 +6,7 @@ class DatabaseConstants {
 
   // Database Info
   static const String databaseName = 'squirrel_play.db';
-  static const int databaseVersion = 4;
+  static const int databaseVersion = 5;
 
   // Table Names
   static const String tableGames = 'games';
@@ -25,6 +25,8 @@ class DatabaseConstants {
   static const String colIsFavorite = 'is_favorite';
   static const String colPlayCount = 'play_count';
   static const String colLaunchArguments = 'launch_arguments';
+  static const String colPlatform = 'platform';
+  static const String colPlatformGameId = 'platform_game_id';
 
   // Column Names - Game Metadata Table
   static const String colGameId = 'game_id';
@@ -64,6 +66,8 @@ class DatabaseConstants {
       $colIsFavorite INTEGER NOT NULL DEFAULT 0,
       $colPlayCount INTEGER NOT NULL DEFAULT 0,
       $colLaunchArguments TEXT,
+      $colPlatform TEXT,
+      $colPlatformGameId TEXT,
       FOREIGN KEY ($colDirectoryId) REFERENCES $tableScanDirectories($colId) ON DELETE SET NULL
     )
   ''';

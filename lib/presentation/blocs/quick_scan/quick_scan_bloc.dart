@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 
 import 'package:squirrel_play/data/models/discovered_executable_model.dart';
@@ -10,10 +11,11 @@ import 'package:squirrel_play/data/services/file_scanner_service.dart';
 import 'package:squirrel_play/data/services/steam_detector.dart';
 import 'package:squirrel_play/data/services/steam_library_parser.dart';
 import 'package:squirrel_play/data/services/steam_manifest_parser.dart';
+import 'package:squirrel_play/data/services/directory_metadata_chain/directory_context.dart';
+import 'package:squirrel_play/data/services/directory_metadata_chain/game_metadata_handler.dart';
+import 'package:squirrel_play/data/services/steam_path_service.dart';
 import 'package:squirrel_play/domain/entities/game.dart';
-import 'package:squirrel_play/domain/entities/game_metadata.dart';
 import 'package:squirrel_play/domain/repositories/game_repository.dart';
-import 'package:squirrel_play/domain/repositories/metadata_repository.dart';
 import 'package:squirrel_play/domain/repositories/scan_directory_repository.dart';
 import 'package:squirrel_play/presentation/blocs/metadata/metadata_bloc.dart';
 import 'package:squirrel_play/presentation/blocs/metadata/metadata_event.dart';
@@ -40,8 +42,9 @@ class QuickScanBloc extends Bloc<QuickScanEvent, QuickScanState> {
   final SteamLibraryParser _steamLibraryParser;
   final SteamManifestParser _steamManifestParser;
   final HomeRepositoryImpl _homeRepository;
+  final SteamPathService _steamPathService;
   final MetadataBloc _metadataBloc;
-  final MetadataRepository _metadataRepository;
+  final GameMetadataHandler _metadataHandler;
   final Uuid _uuid;
 
   QuickScanBloc({
@@ -52,8 +55,9 @@ class QuickScanBloc extends Bloc<QuickScanEvent, QuickScanState> {
     required SteamLibraryParser steamLibraryParser,
     required SteamManifestParser steamManifestParser,
     required HomeRepositoryImpl homeRepository,
+    required SteamPathService steamPathService,
     required MetadataBloc metadataBloc,
-    required MetadataRepository metadataRepository,
+    required GameMetadataHandler metadataHandler,
     required Uuid uuid,
   })  : _gameRepository = gameRepository,
         _scanDirectoryRepository = scanDirectoryRepository,
@@ -62,8 +66,9 @@ class QuickScanBloc extends Bloc<QuickScanEvent, QuickScanState> {
         _steamLibraryParser = steamLibraryParser,
         _steamManifestParser = steamManifestParser,
         _homeRepository = homeRepository,
+        _steamPathService = steamPathService,
         _metadataBloc = metadataBloc,
-        _metadataRepository = metadataRepository,
+        _metadataHandler = metadataHandler,
         _uuid = uuid,
         super(const QuickScanIdle()) {
     on<QuickScanRequested>(_onQuickScanRequested);
@@ -88,7 +93,13 @@ class QuickScanBloc extends Bloc<QuickScanEvent, QuickScanState> {
       // Check if we have any sources to scan
       if (directories.isEmpty) {
         // Still try to detect Steam even without directories
-        final steamPath = await _steamDetector.detectSteamPath();
+        String? steamPath = await _steamPathService.getSteamPath();
+        if (steamPath == null || !await _steamDetector.validateSteamPath(steamPath)) {
+          steamPath = await _steamDetector.detectSteamPath();
+          if (steamPath != null) {
+            await _steamPathService.saveSteamPath(steamPath);
+          }
+        }
         if (steamPath == null) {
           emit(const QuickScanNoNewGames(noDirectoriesConfigured: true));
           return;
@@ -199,7 +210,13 @@ class QuickScanBloc extends Bloc<QuickScanEvent, QuickScanState> {
   /// Scans Steam libraries for games.
   Future<void> _scanSteamLibraries(List<SteamGameData> results) async {
     try {
-      final steamPath = await _steamDetector.detectSteamPath();
+      String? steamPath = await _steamPathService.getSteamPath();
+      if (steamPath == null || !await _steamDetector.validateSteamPath(steamPath)) {
+        steamPath = await _steamDetector.detectSteamPath();
+        if (steamPath != null) {
+          await _steamPathService.saveSteamPath(steamPath);
+        }
+      }
       if (steamPath == null) return;
 
       final libraryPaths = await _steamLibraryParser.parseLibraryFolders(steamPath);
@@ -306,12 +323,23 @@ class QuickScanBloc extends Bloc<QuickScanEvent, QuickScanState> {
   /// Adds a game from a discovered executable.
   Future<Game?> _addGameFromExecutable(DiscoveredExecutableModel exe) async {
     try {
+      // Run metadata chain to detect platform (e.g., Steam)
+      final directoryPath = path.dirname(exe.path);
+      final context = DirectoryContext(
+        executablePath: exe.path,
+        fileName: exe.fileName,
+        directoryPath: directoryPath,
+      );
+      await _metadataHandler.handle(context);
+
       final game = Game(
         id: _uuid.v4(),
         title: exe.fileName.replaceAll('.exe', ''),
         executablePath: exe.path,
         directoryId: exe.directoryId.isEmpty ? null : exe.directoryId,
         addedDate: DateTime.now(),
+        platform: context.steamAppId != null ? 'steam' : null,
+        platformGameId: context.steamAppId,
       );
 
       await _gameRepository.addGame(game);
@@ -344,22 +372,11 @@ class QuickScanBloc extends Bloc<QuickScanEvent, QuickScanState> {
         title: steamGame.name,
         executablePath: executablePath,
         addedDate: DateTime.now(),
+        platform: 'steam',
+        platformGameId: steamGame.appId,
       );
 
       await _gameRepository.addGame(game);
-
-      // Create initial metadata with Steam app ID
-      final initialMetadata = GameMetadata(
-        gameId: game.id,
-        externalId: 'steam:${steamGame.appId}',
-        description: null,
-        coverImageUrl: null,
-        heroImageUrl: null,
-        genres: const [],
-        screenshots: const [],
-        lastFetched: DateTime.now(),
-      );
-      await _metadataRepository.saveMetadata(initialMetadata);
 
       // Trigger metadata fetch for enrichment
       _metadataBloc.add(FetchMetadata(

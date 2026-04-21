@@ -53,6 +53,16 @@ class ImportSelectedGames extends SteamScannerEvent {
   const ImportSelectedGames();
 }
 
+/// Event to refresh metadata for an already-added Steam game.
+class RefreshAddedGameMetadata extends SteamScannerEvent {
+  final String appId;
+
+  const RefreshAddedGameMetadata(this.appId);
+
+  @override
+  List<Object?> get props => [appId];
+}
+
 /// Event to reset the scanner to initial state.
 class ResetScanner extends SteamScannerEvent {
   const ResetScanner();

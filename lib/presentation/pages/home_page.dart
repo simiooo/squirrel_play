@@ -269,8 +269,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   /// Gets the card height for the current breakpoint.
+  /// Accounts for the 1.08x focus scale and shadow overflow.
   double _getCardHeight(BuildContext context) {
     final breakpoint = Breakpoints.getBreakpointFromContext(context);
-    return CardDimensions.getHeight(breakpoint);
+    final baseHeight = CardDimensions.getHeight(breakpoint);
+    return baseHeight * 1.08 + 32;
   }
 }

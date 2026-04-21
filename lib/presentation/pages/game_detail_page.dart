@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:squirrel_play/core/theme/design_tokens.dart';
+import 'package:squirrel_play/data/services/sound_service.dart';
 import 'package:squirrel_play/domain/entities/game.dart';
 import 'package:squirrel_play/domain/entities/game_metadata.dart';
 import 'package:squirrel_play/l10n/app_localizations.dart';
@@ -31,18 +33,24 @@ class GameDetailPage extends StatefulWidget {
 }
 
 class _GameDetailPageState extends State<GameDetailPage> {
+  late final FocusNode _backButtonFocusNode;
   late final FocusNode _launchStopFocusNode;
   late final FocusNode _settingsFocusNode;
   late final FocusNode _deleteFocusNode;
+  late final FocusNode _refreshMetadataFocusNode;
   late final FocusScopeNode _actionScopeNode;
   bool _wasRunning = false;
+  bool _apiErrorDialogShown = false;
+  bool _launchErrorDialogShown = false;
 
   @override
   void initState() {
     super.initState();
+    _backButtonFocusNode = FocusNode(debugLabel: 'DetailBackButton');
     _launchStopFocusNode = FocusNode(debugLabel: 'LaunchStopButton');
     _settingsFocusNode = FocusNode(debugLabel: 'SettingsButton');
     _deleteFocusNode = FocusNode(debugLabel: 'DeleteButton');
+    _refreshMetadataFocusNode = FocusNode(debugLabel: 'RefreshMetadataButton');
     _actionScopeNode = FocusScopeNode(debugLabel: 'DetailActionScope');
 
     // Request focus on first action button after frame builds
@@ -55,16 +63,27 @@ class _GameDetailPageState extends State<GameDetailPage> {
 
   @override
   void dispose() {
+    _backButtonFocusNode.dispose();
     _launchStopFocusNode.dispose();
     _settingsFocusNode.dispose();
     _deleteFocusNode.dispose();
+    _refreshMetadataFocusNode.dispose();
     _actionScopeNode.dispose();
     super.dispose();
   }
 
+  void _handleBack() {
+    SoundService.instance.playFocusBack();
+    if (GoRouter.of(context).canPop()) {
+      context.pop();
+    } else {
+      context.go('/');
+    }
+  }
+
   void _handleDeleted() {
     if (mounted) {
-      context.pop();
+      context.go('/');
     }
   }
 
@@ -103,6 +122,100 @@ class _GameDetailPageState extends State<GameDetailPage> {
     }
   }
 
+  void _handleRefetchMetadata() {
+    final bloc = context.read<GameDetailBloc>();
+    bloc.add(const GameDetailRefetchMetadataRequested());
+  }
+
+  void _showApiConfigDialog(String message) {
+    if (!mounted || _apiErrorDialogShown) return;
+    _apiErrorDialogShown = true;
+
+    final l10n = AppLocalizations.of(context);
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text(
+          l10n?.settingsApiKey ?? 'API Key Required',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            color: AppColors.textPrimary,
+          ),
+        ),
+        content: Text(
+          l10n?.errorApiNotConfigured ??
+              'RAWG API key is not configured. Please go to Settings to add your API key.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        actions: [
+          FocusableButton(
+            focusNode: FocusNode(debugLabel: 'ApiConfigDialogCancel'),
+            label: l10n?.buttonCancel ?? 'Cancel',
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          FocusableButton(
+            focusNode: FocusNode(debugLabel: 'ApiConfigDialogSettings'),
+            label: l10n?.pageSettings ?? 'Settings',
+            isPrimary: true,
+            onPressed: () {
+              Navigator.of(context).pop();
+              context.push('/settings');
+            },
+          ),
+        ],
+      ),
+    ).then((_) {
+      _apiErrorDialogShown = false;
+    });
+  }
+
+  void _showLaunchErrorDialog(String message) {
+    if (!mounted || _launchErrorDialogShown) return;
+    _launchErrorDialogShown = true;
+
+    final l10n = AppLocalizations.of(context);
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Row(
+          children: [
+            const Icon(Icons.error_outline, color: AppColors.error),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              l10n?.errorLaunchFailed ?? 'Launch Failed',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          message,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        actions: [
+          FocusableButton(
+            focusNode: FocusNode(debugLabel: 'LaunchErrorDialogOk'),
+            label: l10n?.buttonConfirm ?? 'OK',
+            isPrimary: true,
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
+    ).then((_) {
+      _launchErrorDialogShown = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<GameDetailBloc, GameDetailState>(
@@ -113,7 +226,19 @@ class _GameDetailPageState extends State<GameDetailPage> {
       },
       child: BlocBuilder<GameDetailBloc, GameDetailState>(
         builder: (context, state) {
-          return _buildContent(context, state);
+          return Focus(
+            onKeyEvent: (node, event) {
+              if (event is KeyDownEvent) {
+                if (event.logicalKey == LogicalKeyboardKey.gameButtonB ||
+                    event.logicalKey == LogicalKeyboardKey.escape) {
+                  _handleBack();
+                  return KeyEventResult.handled;
+                }
+              }
+              return KeyEventResult.ignored;
+            },
+            child: _buildContent(context, state),
+          );
         },
       ),
     );
@@ -166,6 +291,12 @@ class _GameDetailPageState extends State<GameDetailPage> {
     }
 
     if (state is GameDetailLoaded) {
+      // Show launch error dialog if needed
+      if (state.launchError != null && !_launchErrorDialogShown) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showLaunchErrorDialog(state.launchError!);
+        });
+      }
       return _buildLoadedContent(context, state);
     }
 
@@ -175,6 +306,13 @@ class _GameDetailPageState extends State<GameDetailPage> {
   Widget _buildLoadedContent(BuildContext context, GameDetailLoaded state) {
     final game = state.game;
     final metadata = state.metadata;
+
+    // Show API configuration dialog if needed
+    if (state.apiConfigError != null && !_apiErrorDialogShown) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showApiConfigDialog(state.apiConfigError!);
+      });
+    }
 
     return Stack(
       fit: StackFit.expand,
@@ -229,7 +367,19 @@ class _GameDetailPageState extends State<GameDetailPage> {
           ),
         ),
 
-        // Layer 3: Content layout
+        // Layer 3: Back button (top-left, above everything)
+        Positioned(
+          top: AppSpacing.xl,
+          left: AppSpacing.xl,
+          child: FocusableButton(
+            focusNode: _backButtonFocusNode,
+            label: AppLocalizations.of(context)?.buttonBack ?? 'Back',
+            icon: Icons.arrow_back,
+            onPressed: _handleBack,
+          ),
+        ),
+
+        // Layer 4: Content layout
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -441,40 +591,52 @@ class _GameDetailPageState extends State<GameDetailPage> {
       }
     });
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        // Launch / Stop button (mutually exclusive)
-        FocusableButton(
-          focusNode: _launchStopFocusNode,
-          label: isRunning
-              ? l10n!.gameInfoStopButton
-              : l10n!.gameInfoLaunchButton,
-          icon: isRunning ? Icons.stop : Icons.play_arrow,
-          isPrimary: true,
-          onPressed: isRunning ? _handleStopGame : _handleLaunchGame,
-        ),
-        const SizedBox(width: AppSpacing.md),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          // Launch / Stop button (mutually exclusive)
+          FocusableButton(
+            focusNode: _launchStopFocusNode,
+            label: isRunning
+                ? l10n!.gameInfoStopButton
+                : l10n!.gameInfoLaunchButton,
+            icon: isRunning ? Icons.stop : Icons.play_arrow,
+            isPrimary: true,
+            onPressed: isRunning ? _handleStopGame : _handleLaunchGame,
+          ),
+          const SizedBox(width: AppSpacing.md),
 
-        // Settings button (always visible)
-        FocusableButton(
-          focusNode: _settingsFocusNode,
-          label: l10n.gameInfoSettingsButton,
-          icon: Icons.settings,
-          onPressed: _handleSettings,
-        ),
+          // Settings button (always visible)
+          FocusableButton(
+            focusNode: _settingsFocusNode,
+            label: l10n.gameInfoSettingsButton,
+            icon: Icons.settings,
+            onPressed: _handleSettings,
+          ),
 
-        // Delete button (hidden when running)
-        if (!isRunning) ...[
+          // Refresh metadata button
           const SizedBox(width: AppSpacing.md),
           FocusableButton(
-            focusNode: _deleteFocusNode,
-            label: l10n.gameInfoDeleteButton,
-            icon: Icons.delete_outline,
-            onPressed: _handleDelete,
+            focusNode: _refreshMetadataFocusNode,
+            label: l10n.gameInfoRefreshMetadataButton,
+            icon: Icons.refresh,
+            onPressed: _handleRefetchMetadata,
           ),
+
+          // Delete button (hidden when running)
+          if (!isRunning) ...[
+            const SizedBox(width: AppSpacing.md),
+            FocusableButton(
+              focusNode: _deleteFocusNode,
+              label: l10n.gameInfoDeleteButton,
+              icon: Icons.delete_outline,
+              onPressed: _handleDelete,
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

@@ -4,8 +4,10 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_windows
+  fullscreen_window
   gamepads_windows
   screen_retriever
+  system_tray
   window_manager
 )
 

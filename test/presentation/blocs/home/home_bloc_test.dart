@@ -88,6 +88,8 @@ void main() {
           .thenAnswer((_) => Stream.value({}));
       when(() => metadataRepository.getMetadataForGame(any()))
           .thenAnswer((_) async => null);
+      when(() => metadataRepository.metadataChanged)
+          .thenAnswer((_) => const Stream<String>.empty());
       when(() => gameRepository.incrementPlayCount(any()))
           .thenAnswer((_) async => testGames.first);
       when(() => gameRepository.updateLastPlayed(any(), any()))

@@ -10,39 +10,35 @@ import 'package:squirrel_play/data/services/directory_metadata_chain/game_metada
 import 'package:squirrel_play/domain/entities/game.dart';
 import 'package:squirrel_play/domain/entities/scan_directory.dart';
 import 'package:squirrel_play/domain/repositories/game_repository.dart';
+import 'package:squirrel_play/domain/repositories/metadata_repository.dart';
 import 'package:squirrel_play/domain/repositories/scan_directory_repository.dart';
 
 part 'add_game_state.dart';
 part 'add_game_event.dart';
 
-/// Callback when games are successfully added.
-///
-/// This is used to notify the MetadataBloc to fetch metadata.
-typedef OnGamesAddedCallback = void Function(List<Game> games);
-
 /// BLoC for managing the Add Game dialog state.
 ///
 /// Handles both manual add and scan directory flows.
-/// After games are added, dispatches metadata fetch requests via [onGamesAdded] callback.
+/// After games are added, triggers metadata fetch via [_metadataRepository].
 class AddGameBloc extends Bloc<AddGameEvent, AddGameState> {
   final GameRepository _gameRepository;
   final HomeRepositoryImpl _homeRepository;
   final GameMetadataHandler _metadataHandler;
+  final MetadataRepository _metadataRepository;
   final Uuid _uuid;
-  final OnGamesAddedCallback? _onGamesAdded;
 
   AddGameBloc({
     required GameRepository gameRepository,
     required HomeRepositoryImpl homeRepository,
     required GameMetadataHandler metadataHandler,
     ScanDirectoryRepository? scanDirectoryRepository,
+    required MetadataRepository metadataRepository,
     Uuid? uuid,
-    OnGamesAddedCallback? onGamesAdded,
   })  : _gameRepository = gameRepository,
         _homeRepository = homeRepository,
         _metadataHandler = metadataHandler,
+        _metadataRepository = metadataRepository,
         _uuid = uuid ?? const Uuid(),
-        _onGamesAdded = onGamesAdded,
         super(const AddGameInitial()) {
     on<StartManualAdd>(_onStartManualAdd);
     on<StartScanFlow>(_onStartScanFlow);
@@ -125,19 +121,30 @@ class AddGameBloc extends Bloc<AddGameEvent, AddGameState> {
             emit(const AddGameInitial());
             return;
           }
-          
+
+          // Run metadata chain to detect platform (e.g., Steam)
+          final directoryPath = path.dirname(current.executablePath);
+          final metadataContext = DirectoryContext(
+            executablePath: current.executablePath,
+            fileName: current.fileName,
+            directoryPath: directoryPath,
+          );
+          await _metadataHandler.handle(metadataContext);
+
           // Create and save the game
           final game = Game(
             id: _uuid.v4(),
             title: current.name.trim(),
             executablePath: current.executablePath,
             addedDate: DateTime.now(),
+            platform: metadataContext.steamAppId != null ? 'steam' : null,
+            platformGameId: metadataContext.steamAppId,
           );
           
           await _gameRepository.addGame(game);
           
-          // Notify metadata bloc via callback
-          _onGamesAdded?.call([game]);
+          // Trigger metadata fetch in background
+          _triggerMetadataFetch(game);
           
           // Notify home repository to trigger reactive update
           await _homeRepository.notifyGamesChanged();
@@ -297,7 +304,9 @@ class AddGameBloc extends Bloc<AddGameEvent, AddGameState> {
           );
           await _metadataHandler.handle(context);
           executable.suggestedTitle = context.title;
-          
+          executable.platform = context.steamAppId != null ? 'steam' : null;
+          executable.platformGameId = context.steamAppId;
+
           // Create and save the game
           final game = Game(
             id: _uuid.v4(),
@@ -305,15 +314,17 @@ class AddGameBloc extends Bloc<AddGameEvent, AddGameState> {
             executablePath: executable.path,
             directoryId: executable.directoryId,
             addedDate: DateTime.now(),
+            platform: executable.platform,
+            platformGameId: executable.platformGameId,
           );
           
           await _gameRepository.addGame(game);
           addedGames.add(game);
         }
         
-        // Notify metadata bloc via callback
-        if (addedGames.isNotEmpty) {
-          _onGamesAdded?.call(addedGames);
+        // Trigger metadata fetch for all added games in background
+        for (final game in addedGames) {
+          _triggerMetadataFetch(game);
         }
         
         // Notify home repository to trigger reactive update
@@ -341,6 +352,23 @@ class AddGameBloc extends Bloc<AddGameEvent, AddGameState> {
       emit(const ScanDirectoryForm());
     } else if (event.tabIndex == 2) {
       emit(const SteamGamesForm());
+    }
+  }
+
+  /// Triggers background metadata fetch for a newly added game.
+  ///
+  /// Non-blocking: errors are swallowed to avoid interrupting the add flow.
+  void _triggerMetadataFetch(Game game) {
+    // ignore: unawaited_futures
+    _fetchMetadataInBackground(game);
+  }
+
+  Future<void> _fetchMetadataInBackground(Game game) async {
+    try {
+      await _metadataRepository.fetchAndCacheMetadata(game.id, game.title);
+    } catch (_) {
+      // Metadata fetch failure is non-critical during game add.
+      // The user can retry later via game detail page.
     }
   }
 }

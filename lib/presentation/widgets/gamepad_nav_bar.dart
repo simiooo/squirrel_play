@@ -32,11 +32,9 @@ class GamepadNavBar extends StatelessWidget {
     return SizedBox(
       height: AppSpacing.xxxl,
       child: Container(
-        padding: const EdgeInsets.only(
-          left: AppSpacing.lg,
-          right: AppSpacing.xl,
-          top: AppSpacing.sm,
-          bottom: AppSpacing.sm,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
           color: AppColors.surface.withAlpha(
@@ -50,12 +48,7 @@ class GamepadNavBar extends StatelessWidget {
             ),
           ],
         ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1200),
-            child: _buildContent(context, hints, isCompact, isExpanded),
-          ),
-        ),
+        child: _buildContent(context, hints, isCompact, isExpanded),
       ),
     );
   }
@@ -67,10 +60,10 @@ class GamepadNavBar extends StatelessWidget {
     bool isExpanded,
   ) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         // Left: Settings button (outside ExcludeFocus so it can receive focus)
         _SettingsNavButton(),
+        const Spacer(),
         // Right: Gamepad hints (excluded from focus traversal)
         ExcludeFocus(
           child: _buildHints(context, hints, isCompact, isExpanded),

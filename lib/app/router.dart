@@ -12,7 +12,9 @@ import 'package:squirrel_play/presentation/pages/game_detail_page.dart';
 import 'package:squirrel_play/presentation/pages/gamepad_test_page.dart';
 import 'package:squirrel_play/presentation/pages/home_page.dart';
 import 'package:squirrel_play/presentation/pages/library_page.dart';
+import 'package:squirrel_play/presentation/pages/network_interfaces_page.dart';
 import 'package:squirrel_play/presentation/pages/settings_page.dart';
+import 'package:squirrel_play/presentation/pages/system_info_page.dart';
 import 'package:squirrel_play/presentation/navigation/gamepad_hint_provider.dart';
 import 'package:squirrel_play/presentation/widgets/app_shell.dart';
 import 'package:squirrel_play/presentation/widgets/gamepad_nav_bar.dart';
@@ -245,6 +247,72 @@ class AppRouter {
               reverseTransitionDuration: const Duration(milliseconds: 200),
             ),
           ),
+
+          // System Info route (sibling to /settings)
+          GoRoute(
+            path: '/settings/system-info',
+            name: 'system-info',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const AppShell(
+                body: SystemInfoPage(),
+              ),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                // Fade + slide animation (content area only, TopBar stays static)
+                const begin = Offset(0.05, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.easeOutCubic;
+
+                final tween = Tween(begin: begin, end: end).chain(
+                  CurveTween(curve: curve),
+                );
+                final offsetAnimation = animation.drive(tween);
+
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: offsetAnimation,
+                    child: child,
+                  ),
+                );
+              },
+              transitionDuration: const Duration(milliseconds: 300),
+              reverseTransitionDuration: const Duration(milliseconds: 200),
+            ),
+          ),
+
+          // Network Interfaces route
+          GoRoute(
+            path: '/settings/network-interfaces',
+            name: 'network-interfaces',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const AppShell(
+                body: NetworkInterfacesPage(),
+              ),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                const begin = Offset(0.05, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.easeOutCubic;
+
+                final tween = Tween(begin: begin, end: end).chain(
+                  CurveTween(curve: curve),
+                );
+                final offsetAnimation = animation.drive(tween);
+
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: offsetAnimation,
+                    child: child,
+                  ),
+                );
+              },
+              transitionDuration: const Duration(milliseconds: 300),
+              reverseTransitionDuration: const Duration(milliseconds: 200),
+            ),
+          ),
+
         ],
       ),
     ],

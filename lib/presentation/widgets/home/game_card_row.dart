@@ -107,6 +107,14 @@ class _GameCardRowState extends State<GameCardRow> {
         'row_${widget.row.id}',
         nodes,
       );
+
+      // Auto-focus the initially focused card when the row is focused
+      if (widget.isRowFocused &&
+          widget.focusedCardIndex != null &&
+          widget.focusedCardIndex! >= 0 &&
+          widget.focusedCardIndex! < _cardFocusNodes.length) {
+        _cardFocusNodes[widget.focusedCardIndex!].requestFocus();
+      }
     });
   }
 
@@ -235,6 +243,7 @@ class _GameCardRowState extends State<GameCardRow> {
       child: ListView.builder(
         controller: _scrollController,
         scrollDirection: Axis.horizontal,
+        clipBehavior: Clip.none,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
         itemCount: _visibleGames.length + (_showViewAllButton ? 1 : 0),
         itemBuilder: (context, index) {
@@ -269,19 +278,28 @@ class _GameCardRowState extends State<GameCardRow> {
     final cardWidth = CardDimensions.getWidth(breakpoint);
     final cardHeight = CardDimensions.getHeight(breakpoint);
 
-    return Focus(
-      focusNode: _viewAllFocusNode,
-      onFocusChange: (hasFocus) {
-        if (hasFocus) {
-          SoundService.instance.playFocusMove();
-        }
+    return Actions(
+      actions: <Type, Action<Intent>>{
+        ActivateIntent: CallbackAction<ActivateIntent>(
+          onInvoke: (_) {
+            _handleViewAllActivate();
+            return null;
+          },
+        ),
       },
-      child: Builder(
-        builder: (context) {
-          final isFocused = Focus.of(context).hasFocus;
+      child: Focus(
+        focusNode: _viewAllFocusNode,
+        onFocusChange: (hasFocus) {
+          if (hasFocus) {
+            SoundService.instance.playFocusMove();
+          }
+        },
+        child: Builder(
+          builder: (context) {
+            final isFocused = Focus.of(context).hasFocus;
 
-          return GestureDetector(
-            onTap: _handleViewAllActivate,
+            return GestureDetector(
+              onTap: _handleViewAllActivate,
             child: AnimatedContainer(
               duration: AppAnimationDurations.focusIn,
               curve: AppAnimationCurves.focusIn,
@@ -334,7 +352,8 @@ class _GameCardRowState extends State<GameCardRow> {
           );
         },
       ),
-    );
+    ),
+  );
   }
 
   double _getCardHeight(BuildContext context) {

@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:squirrel_play/app/di.dart';
 import 'package:squirrel_play/core/theme/design_tokens.dart';
 import 'package:squirrel_play/core/utils/breakpoints.dart';
 import 'package:squirrel_play/data/services/sound_service.dart';
 import 'package:squirrel_play/domain/entities/game.dart';
 import 'package:squirrel_play/domain/entities/game_metadata.dart';
+import 'package:squirrel_play/domain/repositories/metadata_repository.dart';
 import 'package:squirrel_play/presentation/widgets/cached_game_image.dart';
 
 /// A reusable game card widget with focus animations.
@@ -39,6 +43,7 @@ class GameCard extends StatefulWidget {
     this.errorMessage,
     this.placeholderColor,
     this.isSelected = false,
+    this.expandToFit = false,
   });
 
   /// The focus node for this card.
@@ -80,17 +85,29 @@ class GameCard extends StatefulWidget {
   /// indicator. Focus state is determined by [focusNode.hasFocus].
   final bool isSelected;
 
+  /// Whether the card should expand to fit its parent while maintaining
+  /// the 16:9 aspect ratio. When true, fixed dimensions from
+  /// [CardDimensions] are ignored. Defaults to false.
+  final bool expandToFit;
+
   @override
   State<GameCard> createState() => _GameCardState();
 }
 
 class _GameCardState extends State<GameCard> {
   bool _wasFocused = false;
+  GameMetadata? _localMetadata;
+  bool _metadataLoading = false;
+  StreamSubscription<String>? _metadataChangeSubscription;
+
+  GameMetadata? get _effectiveMetadata => widget.metadata ?? _localMetadata;
 
   @override
   void initState() {
     super.initState();
     widget.focusNode.addListener(_onFocusChanged);
+    _loadMetadataIfNeeded();
+    _subscribeToMetadataChanges();
   }
 
   @override
@@ -100,12 +117,64 @@ class _GameCardState extends State<GameCard> {
       oldWidget.focusNode.removeListener(_onFocusChanged);
       widget.focusNode.addListener(_onFocusChanged);
     }
+    if (widget.game.id != oldWidget.game.id) {
+      _localMetadata = null;
+      _loadMetadataIfNeeded();
+    }
   }
 
   @override
   void dispose() {
     widget.focusNode.removeListener(_onFocusChanged);
+    _metadataChangeSubscription?.cancel();
     super.dispose();
+  }
+
+  void _loadMetadataIfNeeded() {
+    if (widget.metadata != null) return;
+    if (_localMetadata != null) return;
+    if (_metadataLoading) return;
+
+    MetadataRepository? repository;
+    try {
+      repository = getIt<MetadataRepository>();
+    } catch (_) {
+      // DI not configured (e.g. in widget tests) — skip loading
+      return;
+    }
+
+    _metadataLoading = true;
+    repository.getMetadataForGame(widget.game.id).then((metadata) {
+      if (mounted) {
+        setState(() {
+          _localMetadata = metadata;
+          _metadataLoading = false;
+        });
+      }
+    }).catchError((_) {
+      if (mounted) {
+        setState(() {
+          _metadataLoading = false;
+        });
+      }
+    });
+  }
+
+  void _subscribeToMetadataChanges() {
+    MetadataRepository? repository;
+    try {
+      repository = getIt<MetadataRepository>();
+    } catch (_) {
+      // DI not configured (e.g. in widget tests) — skip subscription
+      return;
+    }
+
+    _metadataChangeSubscription = repository.metadataChanged.listen((gameId) {
+      if (gameId == widget.game.id && mounted) {
+        _localMetadata = null;
+        _loadMetadataIfNeeded();
+      }
+    });
   }
 
   void _onFocusChanged() {
@@ -164,6 +233,263 @@ class _GameCardState extends State<GameCard> {
     final breakpoint = Breakpoints.getBreakpointFromContext(context);
     final cardSize = CardDimensions.getSize(breakpoint);
 
+    final cardDecoration = BoxDecoration(
+      borderRadius: BorderRadius.circular(AppRadii.medium),
+      boxShadow: isFocused
+          ? [
+              BoxShadow(
+                color: AppColors.primaryAccent.withAlpha(100),
+                blurRadius: 10,
+                spreadRadius: 2,
+              ),
+            ]
+          : [
+              BoxShadow(
+                color: Colors.black.withAlpha(64),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+      border: isFocused
+          ? Border.all(
+              color: AppColors.primaryAccent,
+              width: 2,
+            )
+          : null,
+    );
+
+    Widget cardBody = Stack(
+      fit: StackFit.expand,
+      children: [
+        // Cover image or placeholder
+        _buildCoverImage(),
+
+        // Gradient overlay for text readability
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withAlpha(204),
+                ],
+              ),
+            ),
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title
+                Text(
+                  widget.game.title,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                // Genre chips
+                _buildGenreChips(),
+              ],
+            ),
+          ),
+        ),
+
+        // Rating badge (top right)
+        if (_effectiveMetadata?.rating != null)
+          Positioned(
+            top: AppSpacing.sm,
+            right: AppSpacing.sm,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.primaryAccent,
+                borderRadius: BorderRadius.circular(AppRadii.small),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.star,
+                    color: Colors.white,
+                    size: 12,
+                  ),
+                  const SizedBox(width: 2),
+                  Text(
+                    _effectiveMetadata!.rating!.toStringAsFixed(1),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+        // Selected indicator (checkmark)
+        if (widget.isSelected)
+          Positioned(
+            top: AppSpacing.sm,
+            left: AppSpacing.sm,
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.primaryAccent,
+                borderRadius: BorderRadius.circular(AppRadii.small),
+              ),
+              padding: const EdgeInsets.all(AppSpacing.xs),
+              child: const Icon(
+                Icons.check,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+          ),
+
+        // Context action button (X) - visible when focused
+        if (isFocused && widget.onContextAction != null)
+          Positioned(
+            top: AppSpacing.sm,
+            left: widget.isSelected ? 40 : AppSpacing.sm,
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.error,
+                borderRadius: BorderRadius.circular(AppRadii.small),
+              ),
+              padding: const EdgeInsets.all(AppSpacing.xs),
+              child: const Icon(
+                Icons.close,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+          ),
+
+        // Favorite button (Y) - visible when focused
+        if (isFocused)
+          Positioned(
+            top: AppSpacing.sm,
+            right: AppSpacing.sm,
+            child: Container(
+              decoration: BoxDecoration(
+                color: widget.game.isFavorite
+                    ? AppColors.primaryAccent
+                    : AppColors.surface.withAlpha(179),
+                borderRadius: BorderRadius.circular(AppRadii.small),
+              ),
+              padding: const EdgeInsets.all(AppSpacing.xs),
+              child: Icon(
+                widget.game.isFavorite
+                    ? Icons.star
+                    : Icons.star_border,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+          ),
+
+        // Re-fetch button (Y) - visible when focused
+        if (isFocused && widget.onRefetchMetadata != null)
+          Positioned(
+            top: AppSpacing.sm,
+            left: widget.isSelected
+                ? (widget.onContextAction != null ? 72 : 40)
+                : (widget.onContextAction != null ? 40 : AppSpacing.sm),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.secondaryAccent,
+                borderRadius: BorderRadius.circular(AppRadii.small),
+              ),
+              padding: const EdgeInsets.all(AppSpacing.xs),
+              child: const Icon(
+                Icons.refresh,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+          ),
+
+        // Loading indicator
+        if (widget.isLoading)
+          Positioned(
+            top: AppSpacing.sm,
+            right: AppSpacing.sm,
+            child: Container(
+              width: 20,
+              height: 20,
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: AppColors.surface.withAlpha(179),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppColors.primaryAccent,
+                ),
+              ),
+            ),
+          ),
+
+        // Error indicator
+        if (widget.hasError)
+          Positioned(
+            top: AppSpacing.sm,
+            right: AppSpacing.sm,
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.error.withAlpha(179),
+                borderRadius: BorderRadius.circular(AppRadii.small),
+              ),
+              padding: const EdgeInsets.all(AppSpacing.xs),
+              child: const Icon(
+                Icons.error_outline,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+          ),
+      ],
+    );
+
+    cardBody = ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadii.medium),
+      child: cardBody,
+    );
+
+    if (widget.expandToFit) {
+      cardBody = Container(
+        decoration: cardDecoration,
+        child: cardBody,
+      );
+      cardBody = AspectRatio(
+        aspectRatio: 16 / 9,
+        child: cardBody,
+      );
+    } else {
+      cardBody = Container(
+        width: cardSize.width,
+        height: cardSize.height,
+        decoration: cardDecoration,
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: cardBody,
+        ),
+      );
+    }
+
     return Semantics(
       button: true,
       label: widget.game.title,
@@ -199,7 +525,7 @@ class _GameCardState extends State<GameCard> {
             return KeyEventResult.ignored;
           },
           child: AnimatedScale(
-            scale: isFocused ? 1.08 : 1.0,
+            scale: isFocused ? 1.04 : 1.0,
             duration: isFocused
                 ? const Duration(milliseconds: 200)
                 : const Duration(milliseconds: 150),
@@ -208,245 +534,7 @@ class _GameCardState extends State<GameCard> {
                 : AppAnimationCurves.pageExit,
             child: GestureDetector(
               onTap: _handlePress,
-              child: Container(
-                width: cardSize.width,
-                height: cardSize.height,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(AppRadii.medium),
-                  boxShadow: isFocused
-                      ? [
-                          BoxShadow(
-                            color: AppColors.primaryAccent.withAlpha(128),
-                            blurRadius: 16,
-                            spreadRadius: 4,
-                          ),
-                        ]
-                      : [
-                          BoxShadow(
-                            color: Colors.black.withAlpha(64),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                  border: isFocused
-                      ? Border.all(
-                          color: AppColors.primaryAccent,
-                          width: 2,
-                        )
-                      : null,
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(AppRadii.medium),
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        // Cover image or placeholder
-                        _buildCoverImage(),
-
-                        // Gradient overlay for text readability
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.black.withAlpha(204),
-                                ],
-                              ),
-                            ),
-                            padding: const EdgeInsets.all(AppSpacing.md),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Title
-                                Text(
-                                  widget.game.title,
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: AppColors.textPrimary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: AppSpacing.xs),
-                                // Genre chips
-                                _buildGenreChips(),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        // Rating badge (top right)
-                        if (widget.metadata?.rating != null)
-                          Positioned(
-                            top: AppSpacing.sm,
-                            right: AppSpacing.sm,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.sm,
-                                vertical: AppSpacing.xs,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryAccent,
-                                borderRadius: BorderRadius.circular(AppRadii.small),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.star,
-                                    color: Colors.white,
-                                    size: 12,
-                                  ),
-                                  const SizedBox(width: 2),
-                                  Text(
-                                    widget.metadata!.rating!.toStringAsFixed(1),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                        // Selected indicator (checkmark)
-                        if (widget.isSelected)
-                          Positioned(
-                            top: AppSpacing.sm,
-                            left: AppSpacing.sm,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryAccent,
-                                borderRadius: BorderRadius.circular(AppRadii.small),
-                              ),
-                              padding: const EdgeInsets.all(AppSpacing.xs),
-                              child: const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-
-                        // Context action button (X) - visible when focused
-                        if (isFocused && widget.onContextAction != null)
-                          Positioned(
-                            top: AppSpacing.sm,
-                            left: widget.isSelected ? 40 : AppSpacing.sm,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: AppColors.error,
-                                borderRadius: BorderRadius.circular(AppRadii.small),
-                              ),
-                              padding: const EdgeInsets.all(AppSpacing.xs),
-                              child: const Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-
-                        // Favorite button (Y) - visible when focused
-                        if (isFocused)
-                          Positioned(
-                            top: AppSpacing.sm,
-                            right: AppSpacing.sm,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: widget.game.isFavorite
-                                    ? AppColors.primaryAccent
-                                    : AppColors.surface.withAlpha(179),
-                                borderRadius: BorderRadius.circular(AppRadii.small),
-                              ),
-                              padding: const EdgeInsets.all(AppSpacing.xs),
-                              child: Icon(
-                                widget.game.isFavorite
-                                    ? Icons.star
-                                    : Icons.star_border,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-
-                        // Re-fetch button (Y) - visible when focused
-                        if (isFocused && widget.onRefetchMetadata != null)
-                          Positioned(
-                            top: AppSpacing.sm,
-                            left: widget.isSelected
-                                ? (widget.onContextAction != null ? 72 : 40)
-                                : (widget.onContextAction != null ? 40 : AppSpacing.sm),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: AppColors.secondaryAccent,
-                                borderRadius: BorderRadius.circular(AppRadii.small),
-                              ),
-                              padding: const EdgeInsets.all(AppSpacing.xs),
-                              child: const Icon(
-                                Icons.refresh,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-
-                        // Loading indicator
-                        if (widget.isLoading)
-                          Positioned(
-                            top: AppSpacing.sm,
-                            right: AppSpacing.sm,
-                            child: Container(
-                              width: 20,
-                              height: 20,
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                color: AppColors.surface.withAlpha(179),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppColors.primaryAccent,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                        // Error indicator
-                        if (widget.hasError)
-                          Positioned(
-                            top: AppSpacing.sm,
-                            right: AppSpacing.sm,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: AppColors.error.withAlpha(179),
-                                borderRadius: BorderRadius.circular(AppRadii.small),
-                              ),
-                              padding: const EdgeInsets.all(AppSpacing.xs),
-                              child: const Icon(
-                                Icons.error_outline,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+              child: cardBody,
             ),
           ),
         ),
@@ -455,11 +543,23 @@ class _GameCardState extends State<GameCard> {
   }
 
   Widget _buildCoverImage() {
-    final url = widget.metadata?.coverImageUrl;
+    final url = _effectiveMetadata?.coverImageUrl;
+    final fallbackUrl = _effectiveMetadata?.cardImageUrl ?? _effectiveMetadata?.heroImageUrl;
 
     if (url != null && url.isNotEmpty) {
       return CachedGameImage(
         imageUrl: url,
+        fallbackImageUrl: fallbackUrl,
+        fit: BoxFit.cover,
+        borderRadius: BorderRadius.circular(AppRadii.medium),
+        placeholderColor: widget.placeholderColor,
+      );
+    }
+
+    // No cover URL: try fallback directly
+    if (fallbackUrl != null && fallbackUrl.isNotEmpty) {
+      return CachedGameImage(
+        imageUrl: fallbackUrl,
         fit: BoxFit.cover,
         borderRadius: BorderRadius.circular(AppRadii.medium),
         placeholderColor: widget.placeholderColor,
@@ -494,7 +594,7 @@ class _GameCardState extends State<GameCard> {
   }
 
   Widget _buildGenreChips() {
-    final genres = widget.metadata?.genres ?? [];
+    final genres = _effectiveMetadata?.genres ?? [];
 
     if (genres.isEmpty) {
       return const SizedBox.shrink();

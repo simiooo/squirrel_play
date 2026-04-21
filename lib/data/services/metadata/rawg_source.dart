@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'package:meta/meta.dart';
 import 'package:squirrel_play/data/datasources/remote/rawg_api_client.dart';
 import 'package:squirrel_play/data/datasources/remote/rawg_api_models.dart';
+import 'package:squirrel_play/data/repositories/metadata_repository_impl.dart';
 import 'package:squirrel_play/data/services/api_key_service.dart';
 import 'package:squirrel_play/data/services/metadata/metadata_source.dart';
 import 'package:squirrel_play/data/services/metadata/metadata_source_type.dart';
@@ -83,7 +84,7 @@ class RawgSource implements MetadataSource {
           'RawgSource: Not initialized - no API key',
           name: 'RawgSource',
         );
-        return null;
+        throw RawgApiNotConfiguredException();
       }
     }
 
@@ -138,7 +139,9 @@ class RawgSource implements MetadataSource {
   Future<MetadataMatchResult?> findMatch(String filename) async {
     if (!isInitialized) {
       await initialize();
-      if (!isInitialized) return null;
+      if (!isInitialized) {
+        throw RawgApiNotConfiguredException();
+      }
     }
 
     return await _matchingEngine!.findBestMatch(filename);
@@ -148,7 +151,9 @@ class RawgSource implements MetadataSource {
   Future<List<MetadataAlternative>> searchManually(String query) async {
     if (!isInitialized) {
       await initialize();
-      if (!isInitialized) return [];
+      if (!isInitialized) {
+        throw RawgApiNotConfiguredException();
+      }
     }
 
     return await _matchingEngine!.searchManually(query);
@@ -162,7 +167,9 @@ class RawgSource implements MetadataSource {
   Future<GameMetadata?> fetchById(String gameId, int rawgGameId) async {
     if (!isInitialized) {
       await initialize();
-      if (!isInitialized) return null;
+      if (!isInitialized) {
+        throw RawgApiNotConfiguredException();
+      }
     }
 
     try {

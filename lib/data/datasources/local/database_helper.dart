@@ -86,6 +86,16 @@ class DatabaseHelper {
         'ADD COLUMN ${DatabaseConstants.colLaunchArguments} TEXT',
       );
     }
+    if (oldVersion < 5) {
+      await db.execute(
+        'ALTER TABLE ${DatabaseConstants.tableGames} '
+        'ADD COLUMN ${DatabaseConstants.colPlatform} TEXT',
+      );
+      await db.execute(
+        'ALTER TABLE ${DatabaseConstants.tableGames} '
+        'ADD COLUMN ${DatabaseConstants.colPlatformGameId} TEXT',
+      );
+    }
   }
 
   /// Closes the database connection.

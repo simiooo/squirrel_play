@@ -436,7 +436,7 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
                   ],
                 ),
               ),
-              if (game.isAlreadyAdded)
+              if (game.isAlreadyAdded) ...[
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.sm,
@@ -455,6 +455,47 @@ class _SteamGamesTabState extends State<SteamGamesTab> {
                     ),
                   ),
                 ),
+                const SizedBox(width: AppSpacing.sm),
+                // Refresh metadata button for already-added games
+                Focus(
+                  debugLabel: 'RefreshMetadata-${game.data.appId}',
+                  child: Builder(
+                    builder: (context) {
+                      final hasFocus = Focus.of(context).hasFocus;
+                      return GestureDetector(
+                        onTap: () {
+                          context.read<SteamScannerBloc>().add(
+                            RefreshAddedGameMetadata(game.data.appId),
+                          );
+                          SoundService.instance.playFocusSelect();
+                        },
+                        child: Tooltip(
+                          message: AppLocalizations.of(context)
+                                  ?.steamGamesRefreshMetadata ??
+                              'Refresh Metadata',
+                          child: Container(
+                            padding: const EdgeInsets.all(AppSpacing.xs),
+                            decoration: BoxDecoration(
+                              color: hasFocus
+                                  ? AppColors.primaryAccent
+                                  : Colors.transparent,
+                              borderRadius:
+                                  BorderRadius.circular(AppRadii.small),
+                            ),
+                            child: Icon(
+                              Icons.refresh,
+                              color: hasFocus
+                                  ? AppColors.textPrimary
+                                  : AppColors.textMuted,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ],
           ),
         ),

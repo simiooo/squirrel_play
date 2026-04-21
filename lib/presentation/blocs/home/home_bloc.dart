@@ -27,6 +27,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final GameLauncher _gameLauncher;
   StreamSubscription<List<Game>>? _gamesSubscription;
   StreamSubscription<LaunchStatus>? _launchStatusSubscription;
+  StreamSubscription<String>? _metadataChangeSubscription;
 
   HomeBloc({
     required HomeRepository homeRepository,
@@ -47,6 +48,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     on<HomeLaunchStatusChanged>(_onLaunchStatusChanged);
     on<HomeRetryRequested>(_onRetryRequested);
     on<HomeFavoriteToggled>(_onFavoriteToggled);
+    on<HomeMetadataChanged>(_onMetadataChanged);
 
     // Subscribe to game changes for reactive updates
     _gamesSubscription = _homeRepository.watchAllGames().listen(
@@ -58,12 +60,18 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     _launchStatusSubscription = _gameLauncher.launchStatusStream.listen(
           (status) => add(HomeLaunchStatusChanged(status)),
         );
+
+    // Subscribe to metadata changes for reactive updates
+    _metadataChangeSubscription = _metadataRepository.metadataChanged.listen(
+          (gameId) => add(HomeMetadataChanged(gameId)),
+        );
   }
 
   @override
   Future<void> close() {
     _gamesSubscription?.cancel();
     _launchStatusSubscription?.cancel();
+    _metadataChangeSubscription?.cancel();
     return super.close();
   }
 
@@ -80,9 +88,22 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         final firstRow = rows.first;
         final firstGame = firstRow.games.isNotEmpty ? firstRow.games.first : null;
 
+        // Load metadata for the initially focused game
+        GameMetadata? initialMetadata;
+        if (firstGame != null) {
+          try {
+            initialMetadata = await _metadataRepository.getMetadataForGame(
+              firstGame.id,
+            );
+          } catch (e) {
+            debugPrint('[HomeBloc] Failed to fetch initial metadata: $e');
+          }
+        }
+
         emit(HomeLoaded(
           rows: rows,
           focusedGame: firstGame,
+          focusedGameMetadata: initialMetadata,
           focusedRowIndex: 0,
           focusedCardIndex: firstRow.games.isNotEmpty ? 0 : -1,
           isLaunching: false,
@@ -180,6 +201,25 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   }
 
   void _onRetryRequested(HomeRetryRequested event, Emitter<HomeState> emit) {
+    add(const HomeLoadRequested());
+  }
+
+  void _onMetadataChanged(HomeMetadataChanged event, Emitter<HomeState> emit) async {
+    if (state is! HomeLoaded) return;
+
+    final current = state as HomeLoaded;
+
+    // If the focused game's metadata changed, refresh it
+    if (current.focusedGame?.id == event.gameId) {
+      try {
+        final metadata = await _metadataRepository.getMetadataForGame(event.gameId);
+        emit(current.copyWith(focusedGameMetadata: metadata));
+      } catch (e) {
+        debugPrint('[HomeBloc] Failed to refresh metadata: $e');
+      }
+    }
+
+    // Also trigger a full reload so card images update
     add(const HomeLoadRequested());
   }
 }

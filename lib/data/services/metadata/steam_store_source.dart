@@ -37,7 +37,8 @@ class SteamStoreSource implements MetadataSource {
 
   /// Determines if a game is a Steam game based on executable path.
   bool _isSteamGame(Game game) {
-    return game.executablePath.contains('/steamapps/common/');
+    final normalizedPath = game.executablePath.replaceAll('\\', '/');
+    return normalizedPath.contains('/steamapps/common/');
   }
 
   @override
@@ -121,7 +122,7 @@ class SteamStoreSource implements MetadataSource {
     }
 
     // Try to extract from executable path
-    final path = game.executablePath;
+    final path = game.executablePath.replaceAll('\\', '/');
 
     // Parse the path to find the steamapps directory
     final steamappsIndex = path.indexOf('/steamapps/common/');

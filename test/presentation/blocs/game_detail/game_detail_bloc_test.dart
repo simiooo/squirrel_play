@@ -162,7 +162,7 @@ void main() {
       );
 
       blocTest<GameDetailBloc, GameDetailState>(
-        'emits error when launch fails',
+        'emits launchError when launch throws',
         setUp: () {
           when(() => gameLauncher.launchGame(any()))
               .thenThrow(Exception('Launch failed'));
@@ -174,10 +174,34 @@ void main() {
         build: () => bloc,
         act: (bloc) => bloc.add(const GameDetailLaunchRequested()),
         expect: () => [
-          isA<GameDetailError>().having(
-            (s) => s.type,
-            'type',
-            GameDetailErrorType.launchFailed,
+          isA<GameDetailLoaded>().having(
+            (s) => s.launchError,
+            'launchError',
+            contains('Launch failed'),
+          ),
+        ],
+      );
+
+      blocTest<GameDetailBloc, GameDetailState>(
+        'emits launchError when launch returns failure',
+        setUp: () {
+          when(() => gameLauncher.launchGame(any()))
+              .thenAnswer((_) async => const LaunchResult(
+                    success: false,
+                    errorMessage: 'Steam not found',
+                  ));
+        },
+        seed: () => GameDetailLoaded(
+          game: testGame,
+          isRunning: false,
+        ),
+        build: () => bloc,
+        act: (bloc) => bloc.add(const GameDetailLaunchRequested()),
+        expect: () => [
+          isA<GameDetailLoaded>().having(
+            (s) => s.launchError,
+            'launchError',
+            'Steam not found',
           ),
         ],
       );

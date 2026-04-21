@@ -327,6 +327,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameInfoDeleteButton => 'Delete';
 
   @override
+  String get gameInfoRefreshMetadataButton => 'Refresh Metadata';
+
+  @override
+  String get errorApiNotConfigured =>
+      'RAWG API key is not configured. Please go to Settings to add your API key.';
+
+  @override
   String get dialogEditGameTitle => 'Edit Game';
 
   @override
@@ -614,6 +621,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get steamGamesAlreadyAdded => 'Already Added';
 
   @override
+  String get steamGamesRefreshMetadata => 'Refresh Metadata';
+
+  @override
   String get steamGamesImporting => 'Importing games...';
 
   @override
@@ -765,4 +775,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gamepadTestGamepadDisconnected => 'Gamepad disconnected';
+
+  @override
+  String get settingsDisplay => 'Display';
+
+  @override
+  String get settingsFullscreen => 'Fullscreen';
+
+  @override
+  String get settingsFullscreenHint => 'Toggle fullscreen mode';
+
+  @override
+  String get settingsSystem => 'System';
+
+  @override
+  String get settingsLock => 'Lock';
+
+  @override
+  String get settingsSleep => 'Sleep';
+
+  @override
+  String get settingsReboot => 'Reboot';
+
+  @override
+  String get settingsShutdown => 'Shutdown';
+
+  @override
+  String get settingsSystemVolume => 'System Volume';
+
+  @override
+  String get settingsSystemMute => 'Mute';
+
+  @override
+  String get settingsSystemVolumeHint =>
+      'System volume slider - use left and right to adjust';
+
+  @override
+  String get settingsSystemMuteHint =>
+      'Mute toggle - press to toggle system mute on or off';
+
+  @override
+  String get settingsAboutDevice => 'About This Device';
+
+  @override
+  String get systemInfoTitle => 'About This Device';
 }

@@ -9,11 +9,14 @@ import 'package:squirrel_play/core/theme/design_tokens.dart';
 /// Displays game covers or hero images with:
 /// - Local caching for offline viewing
 /// - Shimmer placeholder while loading
-/// - Error fallback to gradient
+/// - Error fallback to an alternative URL, then gradient
 /// - Fade-in animation when loaded
-class CachedGameImage extends StatelessWidget {
-  /// The image URL to load.
+class CachedGameImage extends StatefulWidget {
+  /// The primary image URL to load.
   final String? imageUrl;
+
+  /// Fallback URL tried when the primary URL fails.
+  final String? fallbackImageUrl;
 
   /// Width of the image.
   final double? width;
@@ -36,6 +39,7 @@ class CachedGameImage extends StatelessWidget {
   const CachedGameImage({
     super.key,
     this.imageUrl,
+    this.fallbackImageUrl,
     this.width,
     this.height,
     this.fit = BoxFit.cover,
@@ -45,33 +49,70 @@ class CachedGameImage extends StatelessWidget {
   });
 
   @override
+  State<CachedGameImage> createState() => _CachedGameImageState();
+}
+
+class _CachedGameImageState extends State<CachedGameImage> {
+  bool _hasError = false;
+
+  @override
+  void didUpdateWidget(CachedGameImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reset error state when the URL changes
+    if (oldWidget.imageUrl != widget.imageUrl ||
+        oldWidget.fallbackImageUrl != widget.fallbackImageUrl) {
+      _hasError = false;
+    }
+  }
+
+  String? get _effectiveUrl {
+    if (!_hasError) {
+      return widget.imageUrl;
+    }
+    return widget.fallbackImageUrl;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final url = imageUrl;
+    final url = _effectiveUrl;
 
     if (url == null || url.isEmpty) {
       return _buildPlaceholder();
     }
 
     return ClipRRect(
-      borderRadius: borderRadius ?? BorderRadius.zero,
+      borderRadius: widget.borderRadius ?? BorderRadius.zero,
       child: CachedNetworkImage(
         imageUrl: url,
-        width: width,
-        height: height,
-        fit: fit,
+        width: widget.width,
+        height: widget.height,
+        fit: widget.fit,
         fadeInDuration: const Duration(milliseconds: 300),
         fadeOutDuration: const Duration(milliseconds: 200),
         placeholder: (context, url) => _buildShimmerPlaceholder(),
-        errorWidget: (context, url, error) => _buildErrorPlaceholder(),
+        errorWidget: (context, url, error) {
+          if (!_hasError && widget.fallbackImageUrl != null) {
+            // Schedule retry with fallback URL
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                setState(() {
+                  _hasError = true;
+                });
+              }
+            });
+            return _buildShimmerPlaceholder();
+          }
+          return _buildPlaceholder();
+        },
         imageBuilder: (context, imageProvider) {
           return Container(
             decoration: BoxDecoration(
               image: DecorationImage(
                 image: imageProvider,
-                fit: fit,
+                fit: widget.fit,
               ),
             ),
-            child: showOverlay ? _buildOverlay() : null,
+            child: widget.showOverlay ? _buildOverlay() : null,
           );
         },
       ),
@@ -79,11 +120,11 @@ class CachedGameImage extends StatelessWidget {
   }
 
   Widget _buildPlaceholder() {
-    final baseColor = placeholderColor ?? AppColors.surfaceElevated;
+    final baseColor = widget.placeholderColor ?? AppColors.surfaceElevated;
 
     return Container(
-      width: width,
-      height: height,
+      width: widget.width,
+      height: widget.height,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -93,7 +134,7 @@ class CachedGameImage extends StatelessWidget {
             Color.lerp(baseColor, Colors.black, 0.3) ?? baseColor,
           ],
         ),
-        borderRadius: borderRadius,
+        borderRadius: widget.borderRadius,
       ),
       child: Center(
         child: Icon(
@@ -111,40 +152,9 @@ class CachedGameImage extends StatelessWidget {
       highlightColor: AppColors.surfaceElevated,
       period: const Duration(milliseconds: 1500),
       child: Container(
-        width: width,
-        height: height,
+        width: widget.width,
+        height: widget.height,
         color: AppColors.surfaceElevated,
-      ),
-    );
-  }
-
-  Widget _buildErrorPlaceholder() {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: borderRadius,
-      ),
-      child: const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.broken_image_outlined,
-              size: 32,
-              color: AppColors.textMuted,
-            ),
-            SizedBox(height: AppSpacing.sm),
-            Text(
-              'Image unavailable',
-              style: TextStyle(
-                color: AppColors.textMuted,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

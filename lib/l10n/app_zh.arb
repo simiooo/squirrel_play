@@ -528,6 +528,16 @@
     "description": "从库中删除游戏的按钮标签"
   },
 
+  "gameInfoRefreshMetadataButton": "刷新元数据",
+  "@gameInfoRefreshMetadataButton": {
+    "description": "从外部API重新获取游戏元数据的按钮标签"
+  },
+
+  "errorApiNotConfigured": "RAWG API密钥未配置。请前往设置添加您的API密钥。",
+  "@errorApiNotConfigured": {
+    "description": "当RAWG API密钥缺失导致元数据获取失败时显示的错误信息"
+  },
+
   "dialogEditGameTitle": "编辑游戏",
   "@dialogEditGameTitle": {
     "description": "编辑游戏对话框的标题"
@@ -1029,6 +1039,11 @@
     "description": "库中已有游戏的徽章标签"
   },
 
+  "steamGamesRefreshMetadata": "刷新元数据",
+  "@steamGamesRefreshMetadata": {
+    "description": "已添加 Steam 游戏刷新元数据的提示"
+  },
+
   "steamGamesImporting": "正在导入游戏...",
   "@steamGamesImporting": {
     "description": "导入 Steam 游戏时显示的消息"
@@ -1313,5 +1328,75 @@
   "gamepadTestGamepadDisconnected": "手柄已断开",
   "@gamepadTestGamepadDisconnected": {
     "description": "手柄断开时的日志消息"
+  },
+
+  "settingsDisplay": "显示",
+  "@settingsDisplay": {
+    "description": "显示设置部分的标题"
+  },
+
+  "settingsFullscreen": "全屏",
+  "@settingsFullscreen": {
+    "description": "全屏切换开关的标签"
+  },
+
+  "settingsFullscreenHint": "切换全屏模式",
+  "@settingsFullscreenHint": {
+    "description": "全屏开关的无障碍提示"
+  },
+
+  "settingsSystem": "系统",
+  "@settingsSystem": {
+    "description": "系统设置部分的标题"
+  },
+
+  "settingsLock": "锁定",
+  "@settingsLock": {
+    "description": "锁定会话的按钮标签"
+  },
+
+  "settingsSleep": "睡眠",
+  "@settingsSleep": {
+    "description": "睡眠/挂起的按钮标签"
+  },
+
+  "settingsReboot": "重启",
+  "@settingsReboot": {
+    "description": "重启的按钮标签"
+  },
+
+  "settingsShutdown": "关机",
+  "@settingsShutdown": {
+    "description": "关机的按钮标签"
+  },
+
+  "settingsSystemVolume": "系统音量",
+  "@settingsSystemVolume": {
+    "description": "系统音量滑块的标签"
+  },
+
+  "settingsSystemMute": "静音",
+  "@settingsSystemMute": {
+    "description": "系统静音切换的标签"
+  },
+
+  "settingsSystemVolumeHint": "系统音量滑块 - 使用左右方向键调节",
+  "@settingsSystemVolumeHint": {
+    "description": "系统音量滑块的无障碍提示"
+  },
+
+  "settingsSystemMuteHint": "静音切换 - 按下以切换系统静音",
+  "@settingsSystemMuteHint": {
+    "description": "系统静音开关的无障碍提示"
+  },
+
+  "settingsAboutDevice": "关于此设备",
+  "@settingsAboutDevice": {
+    "description": "打开系统信息页面的按钮标签"
+  },
+
+  "systemInfoTitle": "关于此设备",
+  "@systemInfoTitle": {
+    "description": "系统信息页面的标题"
   }
 }

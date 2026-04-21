@@ -137,6 +137,8 @@ class GameRepositoryImpl implements GameRepository {
       isFavorite: model.isFavorite,
       playCount: model.playCount,
       launchArguments: model.launchArguments,
+      platform: model.platform,
+      platformGameId: model.platformGameId,
     );
   }
 
@@ -151,6 +153,8 @@ class GameRepositoryImpl implements GameRepository {
       isFavorite: entity.isFavorite,
       playCount: entity.playCount,
       launchArguments: entity.launchArguments,
+      platform: entity.platform,
+      platformGameId: entity.platformGameId,
     );
   }
 }

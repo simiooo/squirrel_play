@@ -18,12 +18,18 @@ import 'package:squirrel_play/data/services/metadata/steam_local_source.dart';
 import 'package:squirrel_play/data/services/metadata/steam_metadata_adapter.dart';
 import 'package:squirrel_play/data/services/metadata/steam_store_source.dart';
 import 'package:squirrel_play/data/services/metadata_service.dart';
+import 'package:squirrel_play/data/services/network_status_service.dart';
 import 'package:squirrel_play/data/services/sound_service.dart';
 import 'package:squirrel_play/data/services/steam_detector.dart';
+import 'package:squirrel_play/data/services/system_info_service.dart';
+import 'package:squirrel_play/data/services/system_power_service.dart';
+import 'package:squirrel_play/data/services/system_settings_service.dart';
+import 'package:squirrel_play/data/services/system_volume_service.dart';
 import 'package:squirrel_play/data/services/steam_library_parser.dart';
 import 'package:squirrel_play/data/services/directory_metadata_chain/directory_metadata_chain.dart';
 import 'package:squirrel_play/data/services/directory_metadata_chain/game_metadata_handler.dart';
 import 'package:squirrel_play/data/services/steam_manifest_parser.dart';
+import 'package:squirrel_play/data/services/steam_path_service.dart';
 import 'package:squirrel_play/domain/repositories/game_repository.dart';
 import 'package:squirrel_play/domain/repositories/home_repository.dart';
 import 'package:squirrel_play/domain/repositories/metadata_repository.dart';
@@ -60,11 +66,31 @@ Future<void> configureDependencies() async {
   getIt.registerSingleton<SoundService>(SoundService.instance);
   getIt.registerSingleton<FocusTraversalService>(FocusTraversalService.instance);
   getIt.registerSingleton<FileScannerService>(FileScannerService());
-  getIt.registerSingleton<GameLauncherService>(GameLauncherService());
   getIt.registerSingleton<Uuid>(const Uuid());
 
   // Platform Info (for testable platform-specific code)
   getIt.registerSingleton<PlatformInfo>(PlatformInfoImpl());
+
+  // System services
+  getIt.registerSingleton<SystemSettingsService>(
+    SystemSettingsService(prefs: getIt<SharedPreferences>()),
+  );
+  getIt.registerSingleton<SystemPowerService>(
+    SystemPowerService(platformInfo: getIt<PlatformInfo>()),
+  );
+  getIt.registerSingleton<SystemVolumeService>(
+    SystemVolumeService(platformInfo: getIt<PlatformInfo>()),
+  );
+  getIt.registerSingleton<NetworkStatusService>(
+    NetworkStatusService(platformInfo: getIt<PlatformInfo>()),
+  );
+  getIt.registerSingleton<SystemInfoService>(
+    SystemInfoService(platformInfo: getIt<PlatformInfo>()),
+  );
+
+  getIt.registerSingleton<GameLauncherService>(
+    GameLauncherService(platformInfo: getIt<PlatformInfo>()),
+  );
 
   // Steam Integration Services
   getIt.registerSingleton<SteamDetector>(
@@ -77,6 +103,9 @@ Future<void> configureDependencies() async {
     SteamManifestParser(
       platformInfo: getIt<PlatformInfo>(),
     ),
+  );
+  getIt.registerSingleton<SteamPathService>(
+    SteamPathService(prefs: getIt<SharedPreferences>()),
   );
 
   // API Key Service
@@ -189,8 +218,8 @@ Future<void> configureDependencies() async {
         homeRepository: getIt<HomeRepository>() as HomeRepositoryImpl,
         metadataHandler: getIt<GameMetadataHandler>(),
         scanDirectoryRepository: getIt<ScanDirectoryRepository>(),
+        metadataRepository: getIt<MetadataRepository>(),
         uuid: getIt<Uuid>(),
-        onGamesAdded: null,
       ));
 
   // Factory for GameLibraryBloc
@@ -227,8 +256,9 @@ Future<void> configureDependencies() async {
         libraryParser: getIt<SteamLibraryParser>(),
         manifestParser: getIt<SteamManifestParser>(),
         gameRepository: getIt<GameRepository>(),
-        metadataRepository: getIt<MetadataRepository>(),
         metadataBloc: getIt<MetadataBloc>(),
+        homeRepository: getIt<HomeRepository>() as HomeRepositoryImpl,
+        steamPathService: getIt<SteamPathService>(),
         platformInfo: getIt<PlatformInfo>(),
         uuid: getIt<Uuid>(),
       ));
@@ -247,8 +277,9 @@ Future<void> configureDependencies() async {
         steamLibraryParser: getIt<SteamLibraryParser>(),
         steamManifestParser: getIt<SteamManifestParser>(),
         homeRepository: getIt<HomeRepository>() as HomeRepositoryImpl,
+        steamPathService: getIt<SteamPathService>(),
         metadataBloc: getIt<MetadataBloc>(),
-        metadataRepository: getIt<MetadataRepository>(),
+        metadataHandler: getIt<GameMetadataHandler>(),
         uuid: getIt<Uuid>(),
       ));
 

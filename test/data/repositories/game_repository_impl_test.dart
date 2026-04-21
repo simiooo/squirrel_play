@@ -34,7 +34,9 @@ void main() {
               last_played_date INTEGER,
               is_favorite INTEGER NOT NULL DEFAULT 0,
               play_count INTEGER NOT NULL DEFAULT 0,
-              launch_arguments TEXT
+              launch_arguments TEXT,
+              platform TEXT,
+              platform_game_id TEXT
             )
           ''');
           await db.execute('''

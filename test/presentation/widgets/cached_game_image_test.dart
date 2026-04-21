@@ -188,7 +188,7 @@ void main() {
       expect(cachedImage.fadeOutDuration, equals(const Duration(milliseconds: 200)));
     });
 
-    testWidgets('error placeholder should show broken image icon', (WidgetTester tester) async {
+    testWidgets('error placeholder should show default placeholder when no fallback', (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -203,7 +203,7 @@ void main() {
 
       // Get the error widget builder
       final cachedImage = tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage));
-      
+
       // Build the error widget
       final errorWidget = cachedImage.errorWidget!(
         tester.element(find.byType(CachedNetworkImage)),
@@ -220,9 +220,8 @@ void main() {
         ),
       );
 
-      // Should show broken image icon
-      expect(find.byIcon(Icons.broken_image_outlined), findsOneWidget);
-      expect(find.text('Image unavailable'), findsOneWidget);
+      // Should show default placeholder (game icon)
+      expect(find.byIcon(Icons.videogame_asset_outlined), findsOneWidget);
     });
 
     testWidgets('shimmer placeholder should have correct colors', (WidgetTester tester) async {

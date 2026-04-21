@@ -21,7 +21,8 @@ class SoundService {
   bool _isInitialized = false;
 
   /// Master volume level (0.0 to 1.0).
-  double _volume = 0.5;
+  /// Fixed at 80% — system volume is controlled via [SystemVolumeService].
+  double _volume = 0.8;
 
   /// Whether sound is muted.
   bool _isMuted = false;
@@ -75,6 +76,30 @@ class SoundService {
     debugPrint('[SoundService] Sound files are optional - app will work without them');
     debugPrint('[SoundService] Sounds will be loaded lazily on first play');
 
+    // Configure global audio context to reduce background-thread
+    // event callbacks on desktop (mitigates audioplayers Windows bug).
+    try {
+      await AudioPlayer.global.setAudioContext(
+        AudioContext(
+          android: AudioContextAndroid(
+            isSpeakerphoneOn: true,
+            stayAwake: false,
+            contentType: AndroidContentType.sonification,
+            usageType: AndroidUsageType.game,
+            audioFocus: AndroidAudioFocus.none,
+          ),
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.ambient,
+            options: {
+              AVAudioSessionOptions.mixWithOthers,
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('[SoundService] Failed to set global audio context: $e');
+    }
+
     _isInitialized = true;
     debugPrint('[SoundService] Initialized successfully');
   }
@@ -103,7 +128,7 @@ class SoundService {
 
     try {
       // Lazy load the player if not already created
-      final player = _players[soundName] ??= AudioPlayer()..setVolume(_volume);
+      final player = _players[soundName] ??= AudioPlayer()..setVolume(0.8);
 
       await player.play(AssetSource(assetPath));
       debugPrint('[SoundService] Playing $soundName from $assetPath');

@@ -1,11 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:squirrel_play/core/services/platform_info.dart';
 import 'package:squirrel_play/data/services/game_launcher_service.dart';
 import 'package:squirrel_play/domain/entities/game.dart';
 import 'package:squirrel_play/domain/services/game_launcher.dart';
 
+class MockPlatformInfo extends Mock implements PlatformInfo {}
+
 void main() {
   group('GameLauncherService', () {
     late GameLauncherService gameLauncherService;
+    late MockPlatformInfo mockPlatformInfo;
 
     final testGame = Game(
       id: 'test-game-1',
@@ -15,7 +20,11 @@ void main() {
     );
 
     setUp(() {
-      gameLauncherService = GameLauncherService();
+      mockPlatformInfo = MockPlatformInfo();
+      when(() => mockPlatformInfo.isWindows).thenReturn(false);
+      when(() => mockPlatformInfo.isLinux).thenReturn(true);
+      when(() => mockPlatformInfo.isMacOS).thenReturn(false);
+      gameLauncherService = GameLauncherService(platformInfo: mockPlatformInfo);
     });
 
     tearDown(() async {

@@ -74,3 +74,11 @@ class GameDetailEditSaved extends GameDetailEvent {
   @override
   List<Object?> get props => [game];
 }
+
+/// Event to request re-fetching of game metadata.
+class GameDetailRefetchMetadataRequested extends GameDetailEvent {
+  const GameDetailRefetchMetadataRequested();
+
+  @override
+  List<Object?> get props => [];
+}

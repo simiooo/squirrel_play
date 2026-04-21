@@ -8,10 +8,10 @@ import 'package:squirrel_play/data/models/steam_game_data.dart';
 import 'package:squirrel_play/data/services/steam_detector.dart';
 import 'package:squirrel_play/data/services/steam_library_parser.dart';
 import 'package:squirrel_play/data/services/steam_manifest_parser.dart';
+import 'package:squirrel_play/data/services/steam_path_service.dart';
 import 'package:squirrel_play/domain/entities/game.dart';
-import 'package:squirrel_play/domain/entities/game_metadata.dart';
 import 'package:squirrel_play/domain/repositories/game_repository.dart';
-import 'package:squirrel_play/domain/repositories/metadata_repository.dart';
+import 'package:squirrel_play/data/repositories/home_repository_impl.dart';
 import 'package:squirrel_play/presentation/blocs/metadata/metadata_bloc.dart';
 import 'package:squirrel_play/presentation/blocs/metadata/metadata_event.dart';
 import 'package:squirrel_play/presentation/blocs/steam_scanner/steam_scanner_event.dart';
@@ -34,8 +34,9 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
   final SteamLibraryParser _libraryParser;
   final SteamManifestParser _manifestParser;
   final GameRepository _gameRepository;
-  final MetadataRepository _metadataRepository;
   final MetadataBloc _metadataBloc;
+  final HomeRepositoryImpl _homeRepository;
+  final SteamPathService _steamPathService;
   final Uuid _uuid;
 
   String? _currentSteamPath;
@@ -45,16 +46,18 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
     required SteamLibraryParser libraryParser,
     required SteamManifestParser manifestParser,
     required GameRepository gameRepository,
-    required MetadataRepository metadataRepository,
     required MetadataBloc metadataBloc,
+    required HomeRepositoryImpl homeRepository,
+    required SteamPathService steamPathService,
     required PlatformInfo platformInfo,
     Uuid? uuid,
   })  : _steamDetector = steamDetector,
         _libraryParser = libraryParser,
         _manifestParser = manifestParser,
         _gameRepository = gameRepository,
-        _metadataRepository = metadataRepository,
         _metadataBloc = metadataBloc,
+        _homeRepository = homeRepository,
+        _steamPathService = steamPathService,
         _uuid = uuid ?? const Uuid(),
         super(const SteamScannerInitial()) {
     on<DetectSteam>(_onDetectSteam);
@@ -64,6 +67,7 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
     on<SelectAll>(_onSelectAll);
     on<SelectNone>(_onSelectNone);
     on<ImportSelectedGames>(_onImportSelectedGames);
+    on<RefreshAddedGameMetadata>(_onRefreshAddedGameMetadata);
     on<ResetScanner>(_onResetScanner);
   }
 
@@ -74,6 +78,15 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
     emit(const SteamScannerLoading(type: SteamScannerLoadingType.detecting));
 
     try {
+      // First try to load a previously saved path
+      final savedPath = await _steamPathService.getSteamPath();
+      if (savedPath != null && await _steamDetector.validateSteamPath(savedPath)) {
+        _currentSteamPath = savedPath;
+        add(const ScanLibrary());
+        return;
+      }
+
+      // Fall back to auto-detection
       final steamPath = await _steamDetector.detectSteamPath();
 
       if (steamPath == null) {
@@ -84,6 +97,7 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
       }
 
       _currentSteamPath = steamPath;
+      await _steamPathService.saveSteamPath(steamPath);
 
       // Automatically start scanning after detection
       add(const ScanLibrary());
@@ -113,6 +127,7 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
       }
 
       _currentSteamPath = event.path;
+      await _steamPathService.saveSteamPath(event.path);
 
       // Automatically start scanning after setting path
       add(const ScanLibrary());
@@ -165,11 +180,12 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
       // Check for duplicates and create view models
       final viewModels = <SteamGameViewModel>[];
       for (final game in allGames) {
-        final isAlreadyAdded = await _isGameAlreadyAdded(game);
+        final existingGame = await _findExistingGame(game);
         viewModels.add(SteamGameViewModel(
           data: game,
           isSelected: false,
-          isAlreadyAdded: isAlreadyAdded,
+          isAlreadyAdded: existingGame != null,
+          existingGameId: existingGame?.id,
         ));
       }
 
@@ -189,15 +205,15 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
     }
   }
 
-  Future<bool> _isGameAlreadyAdded(SteamGameData game) async {
+  Future<Game?> _findExistingGame(SteamGameData game) async {
     // Check if any of the possible executables are already in the library
     for (final executablePath in game.possibleExecutablePaths) {
-      final exists = await _gameRepository.gameExists(executablePath);
-      if (exists) {
-        return true;
+      final existing = await _gameRepository.getGameByExecutablePath(executablePath);
+      if (existing != null) {
+        return existing;
       }
     }
-    return false;
+    return null;
   }
 
   void _onToggleGame(
@@ -306,24 +322,13 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
           title: steamGame.name,
           executablePath: executablePath,
           addedDate: DateTime.now(),
+          platform: 'steam',
+          platformGameId: steamGame.appId,
         );
 
         await _gameRepository.addGame(game);
         addedGames.add(game);
         importedCount++;
-
-        // Create initial metadata with Steam app ID for metadata enrichment
-        final initialMetadata = GameMetadata(
-          gameId: game.id,
-          externalId: 'steam:${steamGame.appId}',
-          description: null,
-          coverImageUrl: null,
-          heroImageUrl: null,
-          genres: const [],
-          screenshots: const [],
-          lastFetched: DateTime.now(),
-        );
-        await _metadataRepository.saveMetadata(initialMetadata);
 
         // Trigger metadata fetch for enrichment
         _metadataBloc.add(FetchMetadata(
@@ -340,10 +345,47 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
       }
     }
 
+    // Notify home repository to trigger reactive update
+    if (addedGames.isNotEmpty) {
+      await _homeRepository.notifyGamesChanged();
+    }
+
     emit(SteamScannerImportComplete(
       importedCount: importedCount,
       skippedCount: skippedCount,
       errors: errors,
+    ));
+  }
+
+  Future<void> _onRefreshAddedGameMetadata(
+    RefreshAddedGameMetadata event,
+    Emitter<SteamScannerState> emit,
+  ) async {
+    if (state is! SteamScannerLoaded) return;
+
+    final current = state as SteamScannerLoaded;
+    final viewModel = current.games.firstWhere(
+      (g) => g.data.appId == event.appId && g.isAlreadyAdded,
+      orElse: () => const SteamGameViewModel(
+        data: SteamGameData(
+          appId: '',
+          name: '',
+          installDir: '',
+          libraryPath: '',
+          possibleExecutablePaths: [],
+        ),
+      ),
+    );
+
+    if (viewModel.existingGameId == null) return;
+
+    // Trigger metadata fetch for the existing game
+    _metadataBloc.add(FetchMetadata(
+      gameId: viewModel.existingGameId!,
+      gameTitle: viewModel.data.name,
+      executablePath: viewModel.data.possibleExecutablePaths.isNotEmpty
+          ? viewModel.data.possibleExecutablePaths.first
+          : null,
     ));
   }
 
@@ -352,6 +394,7 @@ class SteamScannerBloc extends Bloc<SteamScannerEvent, SteamScannerState> {
     Emitter<SteamScannerState> emit,
   ) {
     _currentSteamPath = null;
+    _steamPathService.clearSteamPath();
     emit(const SteamScannerInitial());
   }
 }

@@ -692,6 +692,18 @@ abstract class AppLocalizations {
   /// **'Delete'**
   String get gameInfoDeleteButton;
 
+  /// Button label to re-fetch game metadata from external APIs
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh Metadata'**
+  String get gameInfoRefreshMetadataButton;
+
+  /// Error message shown when metadata fetch fails because RAWG API key is missing
+  ///
+  /// In en, this message translates to:
+  /// **'RAWG API key is not configured. Please go to Settings to add your API key.'**
+  String get errorApiNotConfigured;
+
   /// Title for the Edit Game dialog
   ///
   /// In en, this message translates to:
@@ -1208,6 +1220,12 @@ abstract class AppLocalizations {
   /// **'Already Added'**
   String get steamGamesAlreadyAdded;
 
+  /// Tooltip for refreshing metadata of an already-added Steam game
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh Metadata'**
+  String get steamGamesRefreshMetadata;
+
   /// Message shown while importing Steam games
   ///
   /// In en, this message translates to:
@@ -1435,6 +1453,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Gamepad disconnected'**
   String get gamepadTestGamepadDisconnected;
+
+  /// Section title for display settings
+  ///
+  /// In en, this message translates to:
+  /// **'Display'**
+  String get settingsDisplay;
+
+  /// Label for fullscreen toggle
+  ///
+  /// In en, this message translates to:
+  /// **'Fullscreen'**
+  String get settingsFullscreen;
+
+  /// Accessibility hint for fullscreen switch
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle fullscreen mode'**
+  String get settingsFullscreenHint;
+
+  /// Section title for system settings
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get settingsSystem;
+
+  /// Button label for lock session
+  ///
+  /// In en, this message translates to:
+  /// **'Lock'**
+  String get settingsLock;
+
+  /// Button label for sleep/suspend
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep'**
+  String get settingsSleep;
+
+  /// Button label for reboot
+  ///
+  /// In en, this message translates to:
+  /// **'Reboot'**
+  String get settingsReboot;
+
+  /// Button label for shutdown
+  ///
+  /// In en, this message translates to:
+  /// **'Shutdown'**
+  String get settingsShutdown;
+
+  /// Label for system volume slider
+  ///
+  /// In en, this message translates to:
+  /// **'System Volume'**
+  String get settingsSystemVolume;
+
+  /// Label for system mute toggle
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get settingsSystemMute;
+
+  /// Accessibility hint for system volume slider
+  ///
+  /// In en, this message translates to:
+  /// **'System volume slider - use left and right to adjust'**
+  String get settingsSystemVolumeHint;
+
+  /// Accessibility hint for system mute switch
+  ///
+  /// In en, this message translates to:
+  /// **'Mute toggle - press to toggle system mute on or off'**
+  String get settingsSystemMuteHint;
+
+  /// Button label to open system info page
+  ///
+  /// In en, this message translates to:
+  /// **'About This Device'**
+  String get settingsAboutDevice;
+
+  /// Title for the system info page
+  ///
+  /// In en, this message translates to:
+  /// **'About This Device'**
+  String get systemInfoTitle;
 }
 
 class _AppLocalizationsDelegate

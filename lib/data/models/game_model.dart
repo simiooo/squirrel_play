@@ -58,6 +58,14 @@ class GameModel {
   @JsonKey(name: DatabaseConstants.colLaunchArguments)
   final String? launchArguments;
 
+  /// Platform the game belongs to (e.g., 'steam', 'manual').
+  @JsonKey(name: DatabaseConstants.colPlatform)
+  final String? platform;
+
+  /// Platform-specific game ID (e.g., Steam appId).
+  @JsonKey(name: DatabaseConstants.colPlatformGameId)
+  final String? platformGameId;
+
   /// Creates a GameModel instance.
   const GameModel({
     required this.id,
@@ -69,6 +77,8 @@ class GameModel {
     this.isFavorite = false,
     this.playCount = 0,
     this.launchArguments,
+    this.platform,
+    this.platformGameId,
   });
 
   /// Creates a GameModel from a database map.
@@ -104,6 +114,8 @@ class GameModel {
       DatabaseConstants.colIsFavorite: isFavorite ? 1 : 0,
       DatabaseConstants.colPlayCount: playCount,
       DatabaseConstants.colLaunchArguments: launchArguments,
+      DatabaseConstants.colPlatform: platform,
+      DatabaseConstants.colPlatformGameId: platformGameId,
     };
   }
 
@@ -125,6 +137,8 @@ class GameModel {
     bool? isFavorite,
     int? playCount,
     String? launchArguments,
+    String? platform,
+    String? platformGameId,
   }) {
     return GameModel(
       id: id ?? this.id,
@@ -136,6 +150,8 @@ class GameModel {
       isFavorite: isFavorite ?? this.isFavorite,
       playCount: playCount ?? this.playCount,
       launchArguments: launchArguments ?? this.launchArguments,
+      platform: platform ?? this.platform,
+      platformGameId: platformGameId ?? this.platformGameId,
     );
   }
 

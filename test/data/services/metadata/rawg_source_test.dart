@@ -4,6 +4,7 @@ import 'package:squirrel_play/data/datasources/remote/rawg_api_client.dart';
 import 'package:squirrel_play/data/datasources/remote/rawg_api_models.dart';
 import 'package:squirrel_play/data/services/api_key_service.dart';
 import 'package:squirrel_play/data/services/metadata/metadata_source_type.dart';
+import 'package:squirrel_play/data/repositories/metadata_repository_impl.dart';
 import 'package:squirrel_play/data/services/metadata/rawg_source.dart';
 import 'package:squirrel_play/domain/entities/game.dart';
 
@@ -137,7 +138,8 @@ void main() {
     });
 
     group('fetch', () {
-      test('should return null when not initialized', () async {
+      test('should throw RawgApiNotConfiguredException when not initialized',
+          () async {
         final game = Game(
           id: 'game1',
           title: 'Test Game',
@@ -145,33 +147,40 @@ void main() {
           addedDate: DateTime.now(),
         );
 
-        final result = await source.fetch(game);
-
-        expect(result, isNull);
+        expect(
+          () => source.fetch(game),
+          throwsA(isA<RawgApiNotConfiguredException>()),
+        );
       });
     });
 
     group('findMatch', () {
-      test('should return null when not initialized', () async {
-        final result = await source.findMatch('test.exe');
-
-        expect(result, isNull);
+      test('should throw RawgApiNotConfiguredException when not initialized',
+          () async {
+        expect(
+          () => source.findMatch('test.exe'),
+          throwsA(isA<RawgApiNotConfiguredException>()),
+        );
       });
     });
 
     group('searchManually', () {
-      test('should return empty list when not initialized', () async {
-        final result = await source.searchManually('test query');
-
-        expect(result, isEmpty);
+      test('should throw RawgApiNotConfiguredException when not initialized',
+          () async {
+        expect(
+          () => source.searchManually('test query'),
+          throwsA(isA<RawgApiNotConfiguredException>()),
+        );
       });
     });
 
     group('fetchById', () {
-      test('should return null when not initialized', () async {
-        final result = await source.fetchById('game1', 12345);
-
-        expect(result, isNull);
+      test('should throw RawgApiNotConfiguredException when not initialized',
+          () async {
+        expect(
+          () => source.fetchById('game1', 12345),
+          throwsA(isA<RawgApiNotConfiguredException>()),
+        );
       });
     });
 

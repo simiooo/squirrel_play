@@ -51,6 +51,11 @@ abstract class MetadataRepository {
   /// Stream of batch progress updates.
   Stream<BatchMetadataProgress> get batchProgressStream;
 
+  /// Stream of metadata change notifications.
+  ///
+  /// Emits the gameId whenever metadata is saved or cleared.
+  Stream<String> get metadataChanged;
+
   /// Performs a manual search for games with a custom query.
   ///
   /// Used when automatic matching fails and user wants to search manually.

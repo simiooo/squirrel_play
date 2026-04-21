@@ -318,6 +318,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get gameInfoDeleteButton => '删除';
 
   @override
+  String get gameInfoRefreshMetadataButton => '刷新元数据';
+
+  @override
+  String get errorApiNotConfigured => 'RAWG API密钥未配置。请前往设置添加您的API密钥。';
+
+  @override
   String get dialogEditGameTitle => '编辑游戏';
 
   @override
@@ -603,6 +609,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get steamGamesAlreadyAdded => '已添加';
 
   @override
+  String get steamGamesRefreshMetadata => '刷新元数据';
+
+  @override
   String get steamGamesImporting => '正在导入游戏...';
 
   @override
@@ -751,4 +760,46 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get gamepadTestGamepadDisconnected => '手柄已断开';
+
+  @override
+  String get settingsDisplay => '显示';
+
+  @override
+  String get settingsFullscreen => '全屏';
+
+  @override
+  String get settingsFullscreenHint => '切换全屏模式';
+
+  @override
+  String get settingsSystem => '系统';
+
+  @override
+  String get settingsLock => '锁定';
+
+  @override
+  String get settingsSleep => '睡眠';
+
+  @override
+  String get settingsReboot => '重启';
+
+  @override
+  String get settingsShutdown => '关机';
+
+  @override
+  String get settingsSystemVolume => '系统音量';
+
+  @override
+  String get settingsSystemMute => '静音';
+
+  @override
+  String get settingsSystemVolumeHint => '系统音量滑块 - 使用左右方向键调节';
+
+  @override
+  String get settingsSystemMuteHint => '静音切换 - 按下以切换系统静音';
+
+  @override
+  String get settingsAboutDevice => '关于此设备';
+
+  @override
+  String get systemInfoTitle => '关于此设备';
 }

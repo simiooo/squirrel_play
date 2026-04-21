@@ -23,6 +23,12 @@ class DiscoveredExecutableModel {
   /// or cleaned filename). Populated at scan confirmation time.
   String? suggestedTitle;
 
+  /// Platform the game belongs to (e.g., 'steam').
+  String? platform;
+
+  /// Platform-specific game ID (e.g., Steam appId).
+  String? platformGameId;
+
   /// Creates a DiscoveredExecutableModel instance.
   DiscoveredExecutableModel({
     required this.path,
@@ -31,6 +37,8 @@ class DiscoveredExecutableModel {
     this.isSelected = false,
     this.isAlreadyAdded = false,
     this.suggestedTitle,
+    this.platform,
+    this.platformGameId,
   });
 
   /// Creates a copy of this DiscoveredExecutableModel with the given fields replaced.
@@ -41,6 +49,8 @@ class DiscoveredExecutableModel {
     bool? isSelected,
     bool? isAlreadyAdded,
     String? suggestedTitle,
+    String? platform,
+    String? platformGameId,
   }) {
     return DiscoveredExecutableModel(
       path: path ?? this.path,
@@ -49,6 +59,8 @@ class DiscoveredExecutableModel {
       isSelected: isSelected ?? this.isSelected,
       isAlreadyAdded: isAlreadyAdded ?? this.isAlreadyAdded,
       suggestedTitle: suggestedTitle ?? this.suggestedTitle,
+      platform: platform ?? this.platform,
+      platformGameId: platformGameId ?? this.platformGameId,
     );
   }
 
@@ -65,7 +77,9 @@ class DiscoveredExecutableModel {
         'directoryId: $directoryId, '
         'isSelected: $isSelected, '
         'isAlreadyAdded: $isAlreadyAdded, '
-        'suggestedTitle: $suggestedTitle)';
+        'suggestedTitle: $suggestedTitle, '
+        'platform: $platform, '
+        'platformGameId: $platformGameId)';
   }
 
   @override

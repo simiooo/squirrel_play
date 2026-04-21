@@ -20,27 +20,35 @@ class GameDetailLoaded extends GameDetailState {
   final Game game;
   final GameMetadata? metadata;
   final bool isRunning;
+  final String? apiConfigError;
+  final String? launchError;
 
   const GameDetailLoaded({
     required this.game,
     this.metadata,
     this.isRunning = false,
+    this.apiConfigError,
+    this.launchError,
   });
 
   GameDetailLoaded copyWith({
     Game? game,
     GameMetadata? metadata,
     bool? isRunning,
+    String? apiConfigError,
+    String? launchError,
   }) {
     return GameDetailLoaded(
       game: game ?? this.game,
       metadata: metadata ?? this.metadata,
       isRunning: isRunning ?? this.isRunning,
+      apiConfigError: apiConfigError,
+      launchError: launchError,
     );
   }
 
   @override
-  List<Object?> get props => [game, metadata, isRunning];
+  List<Object?> get props => [game, metadata, isRunning, apiConfigError, launchError];
 }
 
 /// Types of errors that can occur on the game detail page.

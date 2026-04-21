@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:squirrel_play/data/repositories/metadata_repository_impl.dart';
 import 'package:squirrel_play/domain/entities/game.dart';
 import 'package:squirrel_play/domain/entities/game_metadata.dart';
 import 'package:squirrel_play/domain/repositories/game_repository.dart';
@@ -42,6 +43,7 @@ class GameDetailBloc extends Bloc<GameDetailEvent, GameDetailState> {
     on<GameDetailDeleteRequested>(_onDeleteRequested);
     on<GameDetailGameUpdated>(_onGameUpdated);
     on<GameDetailEditSaved>(_onEditSaved);
+    on<GameDetailRefetchMetadataRequested>(_onRefetchMetadataRequested);
 
     // Subscribe to running games stream
     _runningGamesSubscription = _gameLauncher.runningGamesStream.listen(
@@ -81,8 +83,12 @@ class GameDetailBloc extends Bloc<GameDetailEvent, GameDetailState> {
       }
 
       GameMetadata? metadata;
+      String? apiConfigError;
       try {
         metadata = await _metadataRepository.getMetadataForGame(event.gameId);
+      } on RawgApiNotConfiguredException catch (e) {
+        apiConfigError = e.toString();
+        metadata = null;
       } catch (e) {
         // Metadata fetch failure is non-critical
         metadata = null;
@@ -94,6 +100,7 @@ class GameDetailBloc extends Bloc<GameDetailEvent, GameDetailState> {
         game: game,
         metadata: metadata,
         isRunning: isRunning,
+        apiConfigError: apiConfigError,
       ));
     } catch (e) {
       emit(GameDetailError(
@@ -134,13 +141,13 @@ class GameDetailBloc extends Bloc<GameDetailEvent, GameDetailState> {
           game: updatedGame.copyWith(lastPlayedDate: DateTime.now()),
           isRunning: true,
         ));
+      } else {
+        // Launch failed - show error dialog without leaving the detail page
+        emit(current.copyWith(launchError: result.errorMessage));
       }
     } catch (e) {
-      // Launch failed - state remains the same
-      emit(GameDetailError(
-        type: GameDetailErrorType.launchFailed,
-        details: e.toString(),
-      ));
+      // Launch failed - show error dialog without leaving the detail page
+      emit(current.copyWith(launchError: e.toString()));
     }
   }
 
@@ -218,6 +225,48 @@ class GameDetailBloc extends Bloc<GameDetailEvent, GameDetailState> {
       emit(GameDetailError(
         type: GameDetailErrorType.updateFailed,
         details: e.toString(),
+      ));
+    }
+  }
+
+  Future<void> _onRefetchMetadataRequested(
+    GameDetailRefetchMetadataRequested event,
+    Emitter<GameDetailState> emit,
+  ) async {
+    if (state is! GameDetailLoaded) return;
+
+    final current = state as GameDetailLoaded;
+    final game = current.game;
+
+    emit(const GameDetailLoading());
+
+    try {
+      // Clear existing metadata first
+      await _metadataRepository.clearMetadata(game.id);
+
+      // Fetch fresh metadata
+      final metadata = await _metadataRepository.fetchAndCacheMetadata(
+        game.id,
+        game.title,
+      );
+
+      emit(GameDetailLoaded(
+        game: game,
+        metadata: metadata,
+        isRunning: current.isRunning,
+      ));
+    } on RawgApiNotConfiguredException catch (e) {
+      emit(GameDetailLoaded(
+        game: game,
+        metadata: current.metadata,
+        isRunning: current.isRunning,
+        apiConfigError: e.toString(),
+      ));
+    } catch (e) {
+      emit(GameDetailLoaded(
+        game: game,
+        metadata: current.metadata,
+        isRunning: current.isRunning,
       ));
     }
   }

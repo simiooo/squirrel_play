@@ -22,32 +22,36 @@ class SettingsLoading extends SettingsState {
 class SettingsLoaded extends SettingsState {
   final String? apiKey;
   final bool isApiConnected;
-  final double volume;
-  final bool isMuted;
+  final double systemVolume;
+  final bool isSystemMuted;
   final String languageCode;
+  final bool isFullscreen;
 
   const SettingsLoaded({
     this.apiKey,
     this.isApiConnected = false,
-    this.volume = 0.5,
-    this.isMuted = false,
+    this.systemVolume = 0.8,
+    this.isSystemMuted = false,
     this.languageCode = 'en',
+    this.isFullscreen = false,
   });
 
   SettingsLoaded copyWith({
     String? apiKey,
     bool? isApiConnected,
-    double? volume,
-    bool? isMuted,
+    double? systemVolume,
+    bool? isSystemMuted,
     String? languageCode,
+    bool? isFullscreen,
     bool clearApiKey = false,
   }) {
     return SettingsLoaded(
       apiKey: clearApiKey ? null : (apiKey ?? this.apiKey),
       isApiConnected: isApiConnected ?? this.isApiConnected,
-      volume: volume ?? this.volume,
-      isMuted: isMuted ?? this.isMuted,
+      systemVolume: systemVolume ?? this.systemVolume,
+      isSystemMuted: isSystemMuted ?? this.isSystemMuted,
       languageCode: languageCode ?? this.languageCode,
+      isFullscreen: isFullscreen ?? this.isFullscreen,
     );
   }
 
@@ -55,9 +59,10 @@ class SettingsLoaded extends SettingsState {
   List<Object?> get props => [
         apiKey,
         isApiConnected,
-        volume,
-        isMuted,
+        systemVolume,
+        isSystemMuted,
         languageCode,
+        isFullscreen,
       ];
 }
 

@@ -96,3 +96,13 @@ class HomeFavoriteToggled extends HomeEvent {
   @override
   List<Object?> get props => [gameId];
 }
+
+/// Event fired when metadata for a game has changed.
+class HomeMetadataChanged extends HomeEvent {
+  final String gameId;
+
+  const HomeMetadataChanged(this.gameId);
+
+  @override
+  List<Object?> get props => [gameId];
+}

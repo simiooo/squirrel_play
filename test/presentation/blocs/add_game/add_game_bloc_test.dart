@@ -6,7 +6,9 @@ import 'package:squirrel_play/data/repositories/home_repository_impl.dart';
 import 'package:squirrel_play/data/services/directory_metadata_chain/directory_context.dart';
 import 'package:squirrel_play/data/services/directory_metadata_chain/game_metadata_handler.dart';
 import 'package:squirrel_play/domain/entities/game.dart';
+import 'package:squirrel_play/domain/entities/game_metadata.dart';
 import 'package:squirrel_play/domain/repositories/game_repository.dart';
+import 'package:squirrel_play/domain/repositories/metadata_repository.dart';
 import 'package:squirrel_play/presentation/blocs/add_game/add_game_bloc.dart';
 import 'package:uuid/uuid.dart';
 
@@ -15,6 +17,8 @@ class MockGameRepository extends Mock implements GameRepository {}
 class MockHomeRepositoryImpl extends Mock implements HomeRepositoryImpl {}
 
 class MockGameMetadataHandler extends Mock implements GameMetadataHandler {}
+
+class MockMetadataRepository extends Mock implements MetadataRepository {}
 
 class FakeGame extends Fake implements Game {}
 
@@ -30,12 +34,14 @@ void main() {
     late GameRepository gameRepository;
     late HomeRepositoryImpl homeRepository;
     late MockGameMetadataHandler metadataHandler;
+    late MockMetadataRepository metadataRepository;
     late AddGameBloc bloc;
 
     setUp(() {
       gameRepository = MockGameRepository();
       homeRepository = MockHomeRepositoryImpl();
       metadataHandler = MockGameMetadataHandler();
+      metadataRepository = MockMetadataRepository();
 
       when(() => gameRepository.gameExists(any()))
           .thenAnswer((_) async => false);
@@ -47,11 +53,19 @@ void main() {
           .thenAnswer((_) async => {});
       when(() => gameRepository.getAllGames())
           .thenAnswer((_) async => []);
+      when(() => metadataRepository.fetchAndCacheMetadata(any(), any()))
+          .thenAnswer((_) async => GameMetadata(
+                gameId: 'test',
+                lastFetched: DateTime.now(),
+              ));
+      when(() => metadataHandler.handle(any()))
+          .thenAnswer((_) async {});
 
       bloc = AddGameBloc(
         gameRepository: gameRepository,
         homeRepository: homeRepository,
         metadataHandler: metadataHandler,
+        metadataRepository: metadataRepository,
         uuid: const Uuid(),
       );
     });

@@ -63,6 +63,13 @@ class MetadataBloc extends Bloc<MetadataEvent, MetadataState> {
       );
 
       emit(MetadataLoaded(metadata: metadata));
+    } on RawgApiNotConfiguredException catch (e) {
+      emit(MetadataError(
+        gameId: event.gameId,
+        localizationKey: 'errorApiNotConfigured',
+        details: e.toString(),
+        isRetryable: false,
+      ));
     } on MetadataMatchRequiredException catch (e) {
       emit(MetadataMatchRequired(
         gameId: event.gameId,

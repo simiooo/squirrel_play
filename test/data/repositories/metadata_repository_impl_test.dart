@@ -443,13 +443,21 @@ void main() {
         // Use repository without batch service
         when(() => mockGameRepository.getGameById(gameId))
             .thenAnswer((_) async => game);
-        when(() => mockMetadataService.findMatch(any()))
-            .thenAnswer((_) async => null);
+        when(
+          () => mockMetadataAggregator.fetchMetadata(any(),
+              externalId: any(named: 'externalId')),
+        ).thenAnswer((_) async => null);
 
         final results = await repository.batchFetchMetadata([game]);
 
-        expect(results, isEmpty);
-        verify(() => mockMetadataService.findMatch('Non-Steam Game')).called(1);
+        // When all sources fail, default metadata is returned
+        expect(results.length, equals(1));
+        expect(results[0].gameId, equals(gameId));
+        expect(results[0].title, equals(game.title));
+        verify(
+          () => mockMetadataAggregator.fetchMetadata(any(),
+              externalId: any(named: 'externalId')),
+        ).called(1);
       });
 
       test('should throw MetadataMatchRequiredException for low confidence',

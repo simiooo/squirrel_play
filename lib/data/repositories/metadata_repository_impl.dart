@@ -29,8 +29,14 @@ class MetadataRepositoryImpl implements MetadataRepository {
   /// Stream controller for batch progress updates.
   final _batchProgressController = StreamController<BatchMetadataProgress>.broadcast();
 
+  /// Stream controller for metadata change notifications.
+  final _metadataChangeController = StreamController<String>.broadcast();
+
   @override
   Stream<BatchMetadataProgress> get batchProgressStream => _batchProgressController.stream;
+
+  @override
+  Stream<String> get metadataChanged => _metadataChangeController.stream;
 
   MetadataRepositoryImpl({
     required DatabaseHelper databaseHelper,
@@ -96,57 +102,59 @@ class MetadataRepositoryImpl implements MetadataRepository {
 
     // Check if this is a Steam game by path or existing metadata
     final existingMetadata = await getMetadataForGame(gameId);
-    final isSteamGame = _isSteamGame(game, existingMetadata);
 
     GameMetadata? metadata;
 
-    if (isSteamGame) {
-      // For Steam games, use the MetadataAggregator with priority: SteamLocal -> SteamStore -> RAWG
+    try {
+      // Use the unified MetadataAggregator strategy:
+      // Steam games: SteamLocal -> SteamStore -> RAWG
+      // Non-Steam games: RAWG only
       developer.log(
-        'MetadataRepository: Using aggregator for Steam game $gameTitle',
+        'MetadataRepository: Fetching metadata for $gameTitle',
         name: 'MetadataRepositoryImpl',
       );
       metadata = await _metadataAggregator.fetchMetadata(
         game,
         externalId: existingMetadata?.externalId,
       );
-    } else {
-      // For non-Steam games, use the traditional RAWG-only flow
+    } on RawgApiNotConfiguredException {
+      // Propagate API not configured so callers can show configuration UI
+      rethrow;
+    } on MetadataMatchRequiredException {
+      // Propagate match-required for manual selection
+      rethrow;
+    } catch (e) {
       developer.log(
-        'MetadataRepository: Using RAWG flow for non-Steam game $gameTitle',
+        'MetadataRepository: Metadata fetch failed for $gameTitle: $e',
         name: 'MetadataRepositoryImpl',
       );
-      final match = await _metadataService.findMatch(gameTitle);
-
-      if (match == null) {
-        throw Exception('No match found for game: $gameTitle');
-      }
-
-      if (!match.isAutoMatch) {
-        throw MetadataMatchRequiredException(
-          gameId: gameId,
-          gameTitle: gameTitle,
-          alternatives: match.alternatives,
-        );
-      }
-
-      metadata = await _metadataService.fetchMetadata(gameId, match.gameId);
     }
 
-    if (metadata == null) {
-      throw Exception('Failed to fetch metadata for game: $gameTitle');
+    if (metadata != null) {
+      // Cache successful fetch
+      await saveMetadata(metadata);
+      return metadata;
     }
 
-    // Cache it
-    await saveMetadata(metadata);
-
-    return metadata;
+    // All sources failed — save default metadata to avoid repeated fetches
+    developer.log(
+      'MetadataRepository: Using default metadata for $gameTitle',
+      name: 'MetadataRepositoryImpl',
+    );
+    final defaultMetadata = GameMetadata(
+      gameId: gameId,
+      title: game.title,
+      lastFetched: DateTime.now(),
+    );
+    await saveMetadata(defaultMetadata);
+    return defaultMetadata;
   }
 
   /// Determines if a game is a Steam game based on executable path or metadata.
   bool _isSteamGame(Game game, GameMetadata? existingMetadata) {
     // Check executable path for Steam pattern
-    if (game.executablePath.contains('/steamapps/common/')) {
+    final normalizedPath = game.executablePath.replaceAll('\\', '/');
+    if (normalizedPath.contains('/steamapps/common/')) {
       return true;
     }
     // Check existing metadata for steam: prefix
@@ -342,6 +350,8 @@ class MetadataRepositoryImpl implements MetadataRepository {
         whereArgs: [gameId],
       );
     });
+
+    _metadataChangeController.add(gameId);
   }
 
   @override
@@ -457,6 +467,12 @@ class MetadataRepositoryImpl implements MetadataRepository {
   void dispose() {
     _batchProgressController.close();
   }
+}
+
+/// Exception thrown when the RAWG API is not configured.
+class RawgApiNotConfiguredException implements Exception {
+  @override
+  String toString() => 'RawgApiNotConfiguredException: RAWG API key is not configured';
 }
 
 /// Exception thrown when a match requires manual confirmation.

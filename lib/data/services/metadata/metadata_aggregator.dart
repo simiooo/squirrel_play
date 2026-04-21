@@ -150,7 +150,8 @@ class MetadataAggregator {
 
   /// Determines if a game is a Steam game based on executable path.
   bool _isSteamGame(Game game) {
-    return game.executablePath.contains('/steamapps/common/');
+    final normalizedPath = game.executablePath.replaceAll('\\', '/');
+    return normalizedPath.contains('/steamapps/common/');
   }
 
   /// Checks if metadata is considered complete.

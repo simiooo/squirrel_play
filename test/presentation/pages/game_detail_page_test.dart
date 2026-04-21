@@ -177,7 +177,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.byType(FocusableButton), findsNWidgets(3));
+      expect(find.byType(FocusableButton), findsNWidgets(5));
     });
 
     testWidgets('focus is on first action button after settle', (tester) async {
@@ -219,6 +219,15 @@ void main() {
         'SettingsButton',
       );
 
+      // Press right arrow to move to refresh metadata button
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.binding.focusManager.primaryFocus?.debugLabel,
+        'RefreshMetadataButton',
+      );
+
       // Press right arrow to move to delete button
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       await tester.pumpAndSettle();
@@ -228,13 +237,13 @@ void main() {
         'DeleteButton',
       );
 
-      // Press left arrow to move back to settings button
+      // Press left arrow to move back to refresh metadata button
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
       await tester.pumpAndSettle();
 
       expect(
         tester.binding.focusManager.primaryFocus?.debugLabel,
-        'SettingsButton',
+        'RefreshMetadataButton',
       );
     });
 
@@ -290,7 +299,7 @@ void main() {
       expect(find.text('Stop'), findsOneWidget);
       expect(find.text('Settings'), findsOneWidget);
       expect(find.text('Delete'), findsNothing);
-      expect(find.byType(FocusableButton), findsNWidgets(2));
+      expect(find.byType(FocusableButton), findsNWidgets(4));
     });
 
     testWidgets('when isRunning false, shows Launch, Settings, Delete buttons',
@@ -306,7 +315,7 @@ void main() {
       expect(find.text('Launch Game'), findsOneWidget);
       expect(find.text('Settings'), findsOneWidget);
       expect(find.text('Delete'), findsOneWidget);
-      expect(find.byType(FocusableButton), findsNWidgets(3));
+      expect(find.byType(FocusableButton), findsNWidgets(5));
     });
 
     testWidgets('tapping Settings button opens EditGameDialog',
@@ -334,6 +343,11 @@ void main() {
         isRunning: false,
       )));
 
+      await tester.pumpAndSettle();
+
+      // Ensure Delete button is visible before tapping (it may be off-screen
+      // in the scrollable action button row).
+      await tester.ensureVisible(find.text('Delete'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Delete'));
@@ -417,7 +431,9 @@ void main() {
         'LaunchStopButton',
       );
 
-      // Move focus to Delete button (right, right)
+      // Move focus to Delete button (right, right, right)
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       await tester.pumpAndSettle();
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);

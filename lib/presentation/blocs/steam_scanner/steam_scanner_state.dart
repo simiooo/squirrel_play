@@ -15,10 +15,14 @@ class SteamGameViewModel extends Equatable {
   /// Whether this game is already in the library.
   final bool isAlreadyAdded;
 
+  /// The ID of the existing game in the library, if already added.
+  final String? existingGameId;
+
   const SteamGameViewModel({
     required this.data,
     this.isSelected = false,
     this.isAlreadyAdded = false,
+    this.existingGameId,
   });
 
   /// Creates a copy with the given fields replaced.
@@ -26,16 +30,18 @@ class SteamGameViewModel extends Equatable {
     SteamGameData? data,
     bool? isSelected,
     bool? isAlreadyAdded,
+    String? existingGameId,
   }) {
     return SteamGameViewModel(
       data: data ?? this.data,
       isSelected: isSelected ?? this.isSelected,
       isAlreadyAdded: isAlreadyAdded ?? this.isAlreadyAdded,
+      existingGameId: existingGameId ?? this.existingGameId,
     );
   }
 
   @override
-  List<Object?> get props => [data.appId, isSelected, isAlreadyAdded];
+  List<Object?> get props => [data.appId, isSelected, isAlreadyAdded, existingGameId];
 }
 
 /// Types of loading states for the Steam scanner.

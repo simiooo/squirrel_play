@@ -121,6 +121,8 @@ class _GamepadHintProviderWrapperState
         ];
       case '/settings':
       case '/settings/gamepad-test':
+      case '/settings/system-info':
+      case '/settings/network-interfaces':
         // Only show A (Toggle) and B (Back) hints
         return [
           GamepadActionHint(

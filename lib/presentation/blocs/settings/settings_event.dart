@@ -28,19 +28,19 @@ class SettingsApiKeyCleared extends SettingsEvent {
   const SettingsApiKeyCleared();
 }
 
-/// Event to change the volume.
-class SettingsVolumeChanged extends SettingsEvent {
+/// Event to change the system volume.
+class SettingsSystemVolumeChanged extends SettingsEvent {
   final double volume;
 
-  const SettingsVolumeChanged({required this.volume});
+  const SettingsSystemVolumeChanged({required this.volume});
 
   @override
   List<Object?> get props => [volume];
 }
 
-/// Event to toggle mute.
-class SettingsMuteToggled extends SettingsEvent {
-  const SettingsMuteToggled();
+/// Event to toggle system mute.
+class SettingsSystemMuteToggled extends SettingsEvent {
+  const SettingsSystemMuteToggled();
 }
 
 /// Event to change the language.
@@ -51,4 +51,9 @@ class SettingsLanguageChanged extends SettingsEvent {
 
   @override
   List<Object?> get props => [languageCode];
+}
+
+/// Event to toggle fullscreen setting.
+class SettingsFullscreenToggled extends SettingsEvent {
+  const SettingsFullscreenToggled();
 }
